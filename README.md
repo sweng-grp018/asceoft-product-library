@@ -297,16 +297,16 @@ For bug fixes during release preparation, follow the release-branch QA process. 
 **College of Computer Studies**  
 **STSWENG Group 18 · Term 1, A.Y. 2026–2027**
 
-| Group members          |
-| ---------------------- |
-| Carlo Gabriel Barreo   |
-| Hadjj Garcia           |
-| John Benedict Garcia   |
-| James Ryan Guinto      |
-| Kim Francis Herrera    |
-| Rintaro Iwata          |
-| James Benedict Marquez |
-| Bryce Jeswin See       |
+| Team member            | Section | Primary role  | Secondary role |
+| ---------------------- | ------- | ------------- | -------------- |
+| Carlo Gabriel Barreo   | S06     | QA            | Ops            |
+| Hadjj Garcia           | S06     | Analyst       | —              |
+| John Benedict Garcia   | S03     | Developer     | QA             |
+| James Ryan Guinto      | S06     | Analyst       | QA             |
+| Kim Francis Herrera    | S06     | Ops           | Product Owner  |
+| Rintaro Iwata          | S06     | Developer     | Ops            |
+| James Benedict Marquez | S06     | Product Owner | Analyst        |
+| Bryce Jeswin See       | S03     | QA            | Ops            |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -332,5 +332,6 @@ For project-related questions, contact the **STSWENG Group 18** maintainers thro
 
 - **De La Salle University–Manila, College of Computer Studies** — academic project setting.
 - **Project client and reviewers** — requirements and feedback informing the product proposal and development plan.
+- **[Best-README-Template by othneildrew](https://github.com/othneildrew/Best-README-Template)** — README structure adapted from [`BLANK_README.md`](https://github.com/othneildrew/Best-README-Template/blob/main/BLANK_README.md).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
