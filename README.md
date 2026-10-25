@@ -306,16 +306,16 @@ For bug fixes during release preparation, follow the release-branch QA process. 
 **College of Computer Studies**  
 **STSWENG Group 18 · Term 1, A.Y. 2026–2027**
 
-| Team member            | Section | Primary role  | Secondary role |
-| ---------------------- | ------- | ------------- | -------------- |
-| Carlo Gabriel Barreo   | S06     | QA            | Ops            |
-| Hadjj Garcia           | S06     | Analyst       | —              |
-| John Benedict Garcia   | S03     | Developer     | QA             |
-| James Ryan Guinto      | S06     | Analyst       | QA             |
-| Kim Francis Herrera    | S06     | Ops           | Product Owner  |
-| Rintaro Iwata          | S06     | Developer     | Ops            |
-| James Benedict Marquez | S06     | Product Owner | Analyst        |
-| Bryce Jeswin See       | S03     | QA            | Ops            |
+| Team member            | Email                              | Section | Primary role  | Secondary role |
+| ---------------------- | ---------------------------------- | ------- | ------------- | -------------- |
+| Carlo Gabriel Barreo   | <carlo_barreo@dlsu.edu.ph>         | S06     | QA            | Ops            |
+| Hadjj Garcia           | <hadjj_garcia@dlsu.edu.ph>         | S06     | Analyst       | —              |
+| John Benedict Garcia   | <john_benedict_garcia@dlsu.edu.ph> | S03     | Developer     | QA             |
+| James Ryan Guinto      | <james_guinto@dlsu.edu.ph>         | S06     | Analyst       | QA             |
+| Kim Francis Herrera    | <kim_herrera@dlsu.edu.ph>          | S06     | Ops           | Product Owner  |
+| Rintaro Iwata          | <rintaro_iwata@dlsu.edu.ph>        | S06     | Developer     | Ops            |
+| James Benedict Marquez | <james_marquez@dlsu.edu.ph>        | S06     | Product Owner | Analyst        |
+| Bryce Jeswin See       | <bryce_see@dlsu.edu.ph>            | S03     | QA            | Ops            |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
