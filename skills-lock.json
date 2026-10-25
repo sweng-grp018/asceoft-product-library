@@ -55,6 +55,12 @@
       "skillPath": "skills/postgres-best-practices/SKILL.md",
       "computedHash": "f0e9670a035895d50945ca10ed4466513df2c486414c6fcebd3b4e38cc98a88c"
     },
+    "security-audit": {
+      "source": "cloudflare/security-audit-skill",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "98b97aad2873b3b9a8e064007c25e7827b493ba27fda8bfbdb41dab586767973"
+    },
     "shadcn": {
       "source": "shadcn/ui",
       "sourceType": "github",
