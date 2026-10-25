@@ -31,6 +31,7 @@ An **AI-powered product library** for organizing product information, finding pr
    - [How It Works](#how-it-works)
 2. [Built With](#built-with)
 3. [System Architecture](#system-architecture)
+   - [Architecture Style](#architecture-style)
 4. [Getting Started](#getting-started)
    - [Prerequisites](#prerequisites)
    - [Local Setup](#local-setup)
@@ -105,7 +106,7 @@ The following stack is selected in the project's continuous integration and tech
 | Model training/detection  | **PyTorch**, **Ultralytics YOLO**       | Model fine-tuning and multi-object detection.                                                                                  |
 | Visual/semantic retrieval | **OpenCLIP**                            | Image and text embeddings for similarity-based search.                                                                         |
 | Dataset annotation        | **CVAT**                                | Bounding-box labeling for training/evaluation datasets.                                                                        |
-| Database and vectors      | **PostgreSQL**, **pgvector**            | Relational product data and vector similarity queries.                                                                         |
+| Database and vectors      | **Neon**, **PostgreSQL**, **pgvector**  | Serverless Postgres for relational product data and vector similarity queries.                                                 |
 | Database access           | **Drizzle ORM**                         | Type-safe database queries and schema migrations.                                                                              |
 | Authentication            | **Better Auth**                         | Sessions, identity management, and role-based access.                                                                          |
 | App validation            | **Zod**                                 | TypeScript request/form validation.                                                                                            |
@@ -128,11 +129,18 @@ The following stack is selected in the project's continuous integration and tech
 
 This diagram summarizes the **planned logical architecture**, not a verified deployment topology.
 
+### Architecture Style
+
+Lensistry uses a **modular monolith** organized into **vertical slices**. Each business capability — `auth`, `catalog`, `indexing`, `repository`, and `search` — is a module whose feature slices keep their UI, server actions, validation schemas, use cases, and tests together. Modules own their database schema but share infrastructure such as the database client, environment helpers, and object storage through `src/lib`. The Next.js application composes these modules in-process, keeping module boundaries explicit without taking on the operational cost of distributed services.
+
+The Python AI service remains a separately deployable service because its training and inference workloads have different runtime and scaling requirements from the TypeScript application.
+
 ```mermaid
 flowchart TD
     U[Administrators / Staff / Public] --> W[Next.js + React + TypeScript Web App]
-    W --> A[Next.js Route Handlers on Node.js]
-    A --> D[(PostgreSQL + pgvector)]
+    W --> M[Modular Monolith: Auth / Catalog / Indexing / Repository / Search]
+    M --> A[Next.js Route Handlers on Node.js]
+    A --> D[(Neon PostgreSQL + pgvector)]
     A --> O[(Cloudflare R2 Object Storage)]
     A --> AI[FastAPI AI Service]
     AI --> Y[PyTorch + YOLO Detection]
@@ -142,7 +150,7 @@ flowchart TD
     Q --> C
 ```
 
-**Responsibilities:** The Next.js application provides product-management and search interfaces, while its Route Handlers coordinate application data, authorization, and AI requests. The Python AI service handles detection, embedding generation, and training-related operations. PostgreSQL/pgvector stores structured records and vectors, R2 holds file assets, and Celery/Redis supports longer-running tasks.
+**Responsibilities:** The Next.js application provides product-management and search interfaces, while its module boundaries keep each capability's slices self-contained. Route Handlers coordinate application data, authorization, and AI requests. The Python AI service handles detection, embedding generation, and training-related operations. Neon PostgreSQL with pgvector stores structured records and vectors, R2 holds file assets, and Celery/Redis supports longer-running tasks.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -158,7 +166,8 @@ These prerequisites reflect the planned stack. **Repository-specific commands, p
 - [Node.js](https://nodejs.org/) and [Bun](https://bun.sh/) for TypeScript dependencies/scripts
 - [Python 3](https://www.python.org/) and [uv](https://docs.astral.sh/uv/) for the AI service
 - [Docker](https://www.docker.com/) with Docker Compose
-- PostgreSQL with pgvector and Redis (expected to be supplied by the container setup)
+- A [Neon](https://neon.com/) PostgreSQL database with pgvector, or a compatible local PostgreSQL instance
+- Redis (expected to be supplied by the container setup)
 - Appropriate credentials/configuration for any Cloudflare R2 integration used in local development
 
 ### Local Setup
@@ -172,7 +181,7 @@ These prerequisites reflect the planned stack. **Repository-specific commands, p
 
 2. **Install the application dependencies.** Run `bun install` in the directory containing the application's `package.json` and `uv sync` in the directory containing the AI service's `pyproject.toml`, once those files exist.
 
-3. **Configure local services.** Follow the committed environment-variable example and Docker Compose configuration when they are added. Do not commit credentials or secrets.
+3. **Configure local services.** Follow the committed environment-variable example and Docker Compose configuration when they are added, including the Neon connection string. Do not commit credentials or secrets.
 
 4. **Apply database migrations and start the services** using the scripts defined by the repository once they are implemented.
 
@@ -206,7 +215,7 @@ Screenshots, a live demo, and concrete API examples can be linked here after the
 The roadmap groups the functionality from the project proposal into possible implementation stages. **Unchecked items are not verified as complete.**
 
 - [ ] **Foundation**
-  - [ ] Application scaffolding, database schemas, and service configuration
+  - [ ] Application scaffolding, Neon database schemas, and service configuration
   - [ ] Authentication and access roles
   - [ ] Product/SKU CRUD and reference-image uploads
 - [ ] **AI data preparation**
