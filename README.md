@@ -323,7 +323,9 @@ For bug fixes during release preparation, follow the release-branch QA process. 
 
 ## License
 
-**A license has not yet been specified in the project documents.** Please do not assume that the code is open-source or that reuse, modification, or redistribution is permitted. The team should select and add an appropriate `LICENSE` file before making any licensing claims.
+**Proprietary / All Rights Reserved.**
+
+This project and its source code, documentation, designs, models, and assets are proprietary. No part may be copied, modified, distributed, sublicensed, or used in any form without prior written permission from the copyright holder. Access to this repository does not grant any license or ownership rights.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
