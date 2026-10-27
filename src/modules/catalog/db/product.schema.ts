@@ -3,6 +3,7 @@ import {
   check,
   index,
   integer,
+  boolean,
   pgTable,
   text,
   timestamp,
@@ -84,12 +85,16 @@ export const productImages = pgTable(
       .references(() => products.id, { onDelete: "cascade" }),
     objectKey: text().notNull().unique(),
     originalFilename: text().notNull(),
+    isPrimary: boolean().notNull().default(false),
     mimeType: text().notNull(),
     byteSize: integer().notNull(),
     createdAt: timestamp({ withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [
     index("product_images_product_idx").on(t.productId),
+    uniqueIndex("product_images_one_primary_per_product_idx")
+      .on(t.productId)
+      .where(sql`${t.isPrimary} = true`),
     check("product_images_size_positive", sql`${t.byteSize} > 0`),
     check(
       "product_images_mime_valid",

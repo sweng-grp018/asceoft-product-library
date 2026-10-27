@@ -94,6 +94,7 @@ erDiagram
         uuid product_id FK
         text object_key UK
         text original_filename
+        boolean is_primary
         text mime_type
         integer byte_size
         timestamptz created_at

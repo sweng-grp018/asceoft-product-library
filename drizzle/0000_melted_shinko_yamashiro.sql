@@ -80,6 +80,7 @@ CREATE TABLE "product_images" (
 	"product_id" uuid NOT NULL,
 	"object_key" text NOT NULL,
 	"original_filename" text NOT NULL,
+	"is_primary" boolean NOT NULL DEFAULT false,
 	"mime_type" text NOT NULL,
 	"byte_size" integer NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -251,3 +252,4 @@ CREATE INDEX "search_history_user_created_idx" ON "search_history" USING btree (
 CREATE INDEX "search_results_search_rank_idx" ON "search_results" USING btree ("search_id","rank");--> statement-breakpoint
 CREATE INDEX "search_results_product_idx" ON "search_results" USING btree ("product_id");--> statement-breakpoint
 CREATE INDEX "search_results_photo_idx" ON "search_results" USING btree ("photo_id");
+CREATE UNIQUE INDEX "product_images_one_primary_per_product_idx" ON "product_images" USING btree ("product_id") WHERE is_primary = true;
