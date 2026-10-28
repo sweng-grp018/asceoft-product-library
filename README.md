@@ -177,9 +177,10 @@ Prerequisites: Bun 1.4.3 and Docker with Compose.
 1. Install dependencies: `bun install`
 2. Start the local database: `docker compose up -d --wait db`
 3. Copy the environment template: `cp .env.example .env.local` (Windows: `Copy-Item .env.example .env.local`)
-4. Generate a `BETTER_AUTH_SECRET` (at least 32 characters) and set it in `.env.local`.
-5. Apply migrations: `bun run db:migrate`
-6. Start the app: `bun run dev` and open <http://localhost:3000>
+4. In `.env.local`, set `DATABASE_URL` from the service definition in `docker-compose.yml`: user `lensistry`, password `lensistry`, database `lensistry`, host `127.0.0.1`, port `5433`.
+5. Generate a `BETTER_AUTH_SECRET` (at least 32 characters) and set it in `.env.local`.
+6. Apply migrations: `bun run db:migrate`
+7. Start the app: `bun run dev` and open <http://localhost:3000>
 
 `docker compose down` stops the database while keeping data. `docker compose down -v` deletes local database data and forces a fresh migration.
 
