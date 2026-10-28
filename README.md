@@ -270,7 +270,7 @@ The **CI** workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) de
 - Pushes to those branches, including merges. These runs verify the resulting branch code after the merge; a failure does not undo the merge.
 - Manual runs from the Actions tab, once the workflow exists on the default branch.
 
-Each check uses an Ubuntu runner, the Bun version pinned in `package.json`, and `bun install --frozen-lockfile`. The four checks run independently:
+Each check uses an Ubuntu runner, the Bun version pinned in `package.json`, and `bun install --frozen-lockfile`. The checks run independently:
 
 | Check      | Command                                            |
 | ---------- | -------------------------------------------------- |
@@ -281,7 +281,9 @@ Each check uses an Ubuntu runner, the Bun version pinned in `package.json`, and 
 
 The configured `tsrs` compiler currently has no Windows binary; the workflow runs it on Linux.
 
-The final **CI Gate** job passes only when all four checks succeed. It writes a result table to the Actions run summary, including when a check fails or is skipped. Job logs contain the detailed output. Superseded PR runs are cancelled; shared-branch push runs can finish independently.
+**Lint**, **Typecheck**, and **Build** are required by the final gate. **Formatting** runs and reports repository-wide drift, but is advisory until the repository formatting baseline is applied.
+
+The final **CI Gate** job passes only when lint, typecheck, and build succeed. It writes a result table to the Actions run summary, including when a check fails or is skipped. Job logs contain the detailed output. Superseded PR runs are cancelled; shared-branch push runs can finish independently.
 
 Repository rulesets must be configured separately to require **CI Gate** and reviewer approval before merging. Adding this workflow alone does not enforce merge protection. GitHub Actions email/web notifications depend on each member's notification settings; this workflow does not send team-wide messages.
 
