@@ -172,20 +172,18 @@ These prerequisites reflect the planned stack. **Repository-specific commands, p
 
 ### Local Setup
 
-1. **Clone the team's repository** once its URL is available:
+Prerequisites: Bun 1.4.3 and Docker with Compose.
 
-   ```bash
-   git clone <repository-url>
-   cd <repository-directory>
-   ```
+1. Install dependencies: `bun install`
+2. Start the local database: `docker compose up -d --wait db`
+3. Copy the environment template: `cp .env.example .env.local` (Windows: `Copy-Item .env.example .env.local`)
+4. Generate a `BETTER_AUTH_SECRET` (at least 32 characters) and set it in `.env.local`.
+5. Apply migrations: `bun run db:migrate`
+6. Start the app: `bun run dev` and open <http://localhost:3000>
 
-2. **Install the application dependencies.** Run `bun install` in the directory containing the application's `package.json` and `uv sync` in the directory containing the AI service's `pyproject.toml`, once those files exist.
+`docker compose down` stops the database while keeping data. `docker compose down -v` deletes local database data and forces a fresh migration.
 
-3. **Configure local services.** Follow the committed environment-variable example and Docker Compose configuration when they are added, including the Neon connection string. Do not commit credentials or secrets.
-
-4. **Apply database migrations and start the services** using the scripts defined by the repository once they are implemented.
-
-> This section deliberately does not invent a directory layout, `.env` schema, migration command, or start script that is not yet specified in the project documents.
+The AI service under `services/` is not part of this local stack yet; run it separately once its dependencies are configured.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
