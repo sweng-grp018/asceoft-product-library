@@ -264,21 +264,32 @@ The project plan calls for a release branch at the end of each sprint and a **pl
 
 ## Quality Assurance and CI
 
-The planned **GitHub Actions** CI process validates pull requests targeting `development` and checks integration into the release branch. Its intended progression is:
+The **CI** workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) defines the initial validation and build checks. After the workflow is published to GitHub with Actions enabled, it runs for:
 
-```text
-Code checkout
-    -> Code validation (lint and format)
-    -> Build and TypeScript checks
-    -> Automated tests (frontend, backend, AI)
-    -> Build verification and reporting
-    -> Manual pull request approval
-    -> Merge / QA / release
-```
+- Pull requests targeting `development`, `release/**`, or `main`, including draft PRs and hotfix PRs. Opening, updating, reopening, marking ready, or editing a PR triggers a run.
+- Pushes to those branches, including merges. These runs verify the resulting branch code after the merge; a failure does not undo the merge.
+- Manual runs from the Actions tab, once the workflow exists on the default branch.
 
-The project's quality plan includes **Oxlint/Oxfmt/Ruff** for code quality; **Vitest and React Testing Library** for TypeScript, React component, and Next.js route tests; **pytest and HTTPX** for Python testing; and **Playwright** for end-to-end workflows. The CI workflow also aims to catch failures in product CRUD, service integration, AI classification, and image matching.
+Each check uses an Ubuntu runner, the Bun version pinned in `package.json`, and `bun install --frozen-lockfile`. The checks run independently:
 
-A failed check blocks merging until the developer resolves the issue and CI passes again. A successful automated build **does not** replace human code review or QA approval.
+| Check      | Command                                            |
+| ---------- | -------------------------------------------------- |
+| Lint       | `bun run lint`                                     |
+| Formatting | `bun run format:check`                             |
+| Typecheck  | `bun --bun next typegen`, then `bun run typecheck` |
+| Build      | `bun run build`                                    |
+
+The configured `tsrs` compiler currently has no Windows binary; the workflow runs it on Linux.
+
+**Lint**, **Formatting**, **Typecheck**, and **Build** are required by the final gate. Formatting skips generated files listed in `.oxfmtrc.json`.
+
+The final **CI Gate** job passes only when lint, formatting, typecheck, and build succeed. It writes a result table to the Actions run summary, including when a check fails or is skipped. Job logs contain the detailed output. Superseded PR runs are cancelled; shared-branch push runs can finish independently.
+
+Repository rulesets must be configured separately to require **CI Gate** and reviewer approval before merging. Adding this workflow alone does not enforce merge protection. GitHub Actions email/web notifications depend on each member's notification settings; this workflow does not send team-wide messages.
+
+This initial workflow does not run automated tests, provision a shared QA environment, deploy the app, or synchronize branches. The existing scripts run Next.js under Bun; moving to the README's planned Node.js production runtime is a separate decision. Scaffolded routes or other existing code issues can cause checks to fail and must be fixed before CI can pass.
+
+The testing roadmap remains **Vitest and React Testing Library** for TypeScript and React, **pytest and HTTPX** for the Python service, and **Playwright** for browser workflows, with **Ruff** for Python quality checks. Add those CI jobs when their configurations, dependencies, and meaningful tests exist. A successful build does not replace automated tests, human review, or QA approval.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 

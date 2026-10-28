@@ -1,0 +1,143 @@
+# Basic syntax:
+# name: name declaration for that certain step
+# run: tell github actions to execute command/execute terminal commands
+# uses: execute pre-defined github action
+
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - development
+      - "release/**"
+      - main
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+  push:
+    branches:
+      - development
+      - "release/**"
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+# Cancel outdated CI runs for the same PR,
+# while allowing different (different group) PRs and push runs to execute independently.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Check lint
+        run: bun run lint
+
+  # Formatting is part of the merge gate. Generated files are excluded via .oxfmtrc.json.
+  format:
+    name: Formatting
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Check formatting
+        run: bun run format:check
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Generate Next.js route types
+        run: bun --bun next typegen
+      - name: Check types
+        run: bun run typecheck
+
+  build:
+    name: Build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+      - name: Build application
+        run: bun run build
+
+  ci-gate:
+    name: CI Gate
+    needs: [lint, format, typecheck, build]
+    if: ${{ always() }} #will run even if one job fails to report failure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Summarize checks and enforce gate
+        env:
+          LINT_RESULT: ${{ needs.lint.result }}
+          FORMAT_RESULT: ${{ needs.format.result }}
+          TYPECHECK_RESULT: ${{ needs.typecheck.result }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          {
+            printf '## CI results\n\n'
+            printf '| Check | Result |\n| --- | --- |\n'
+            printf '| Lint | %s |\n' "$LINT_RESULT"
+            printf '| Formatting | %s |\n' "$FORMAT_RESULT"
+            printf '| Typecheck | %s |\n' "$TYPECHECK_RESULT"
+            printf '| Build | %s |\n' "$BUILD_RESULT"
+            printf '\nAutomated tests are not configured yet.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          for result in "$LINT_RESULT" "$FORMAT_RESULT" "$TYPECHECK_RESULT" "$BUILD_RESULT"; do
+            if [[ "$result" != "success" ]]; then
+              echo "::error::Lint, formatting, typecheck, and build must succeed. Inspect the failed, cancelled, or skipped jobs."
+              exit 1
+            fi
+          done

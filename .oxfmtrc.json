@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "ignorePatterns": [
+    "node_modules/**",
+    ".next/**",
+    "out/**",
+    "build/**",
+    "dist/**",
+    "coverage/**",
+    ".agents/**",
+    "src/components/ui/**",
+    "src/hooks/use-mobile.ts",
+    "src/lib/utils.ts",
+    "src/app/globals.css",
+    "src/app/api/auth/**",
+    "**/.venv/**",
+    "**/__pycache__/**",
+    "**/.pytest_cache/**"
+  ]
+}
