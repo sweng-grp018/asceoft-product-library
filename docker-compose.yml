@@ -11,7 +11,8 @@ services:
       POSTGRES_PASSWORD: lensistry
     ports:
       # 5433 avoids collisions with a host-installed PostgreSQL on 5432.
-      - "127.0.0.1:5433:5432"
+      # Override with DB_PORT if 5433 is also taken, and update DATABASE_URL to match.
+      - "127.0.0.1:${DB_PORT:-5433}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
