@@ -281,9 +281,9 @@ Each check uses an Ubuntu runner, the Bun version pinned in `package.json`, and 
 
 The configured `tsrs` compiler currently has no Windows binary; the workflow runs it on Linux.
 
-**Lint**, **Typecheck**, and **Build** are required by the final gate. **Formatting** runs and reports repository-wide drift, but is advisory until the repository formatting baseline is applied.
+**Lint**, **Formatting**, **Typecheck**, and **Build** are required by the final gate. Formatting skips generated files listed in `.oxfmtrc.json`.
 
-The final **CI Gate** job passes only when lint, typecheck, and build succeed. It writes a result table to the Actions run summary, including when a check fails or is skipped. Job logs contain the detailed output. Superseded PR runs are cancelled; shared-branch push runs can finish independently.
+The final **CI Gate** job passes only when lint, formatting, typecheck, and build succeed. It writes a result table to the Actions run summary, including when a check fails or is skipped. Job logs contain the detailed output. Superseded PR runs are cancelled; shared-branch push runs can finish independently.
 
 Repository rulesets must be configured separately to require **CI Gate** and reviewer approval before merging. Adding this workflow alone does not enforce merge protection. GitHub Actions email/web notifications depend on each member's notification settings; this workflow does not send team-wide messages.
 
