@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  ADMIN
+  STAFF
+  PUBLIC
+}
+
+enum IndexStatus {
+  PENDING
+  PROCESSING
+  INDEXED
+  FAILED
+}
+
+model User {
+  id           String          @id @default(uuid())
+  email        String          @unique
+  name         String
+  passwordHash String
+  role         UserRole        @default(STAFF)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  searches     SearchHistory[]
+}
+
+model Product {
+  id           String           @id @default(uuid())
+  sku          String           @unique
+  name         String
+  brand        String?
+  category     String?
+  description  String?
+  indexStatus  IndexStatus      @default(PENDING)
+  indexError   String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  images       ReferenceImage[]
+  matches      DetectionMatch[]
+
+  @@index([name])
+  @@index([brand])
+}
+
+model ReferenceImage {
+  id             String    @id @default(uuid())
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  objectKey      String    @unique
+  contentType    String
+  embedding      Float[]   @default([])
+  embeddingModel String?
+  isPrimary      Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+
+  @@index([productId])
+}
+
+model RepositoryImage {
+  id          String           @id @default(uuid())
+  objectKey   String           @unique
+  contentType String
+  store       String?
+  campaign    String?
+  capturedAt  DateTime?
+  createdAt   DateTime         @default(now())
+  searches    SearchHistory[]
+}
+
+model SearchHistory {
+  id           String           @id @default(uuid())
+  userId       String?
+  user         User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  imageId      String?
+  image        RepositoryImage? @relation(fields: [imageId], references: [id], onDelete: SetNull)
+  query        String?
+  createdAt    DateTime         @default(now())
+  matches      DetectionMatch[]
+
+  @@index([userId, createdAt])
+}
+
+model DetectionMatch {
+  id              String        @id @default(uuid())
+  searchHistoryId String
+  history         SearchHistory @relation(fields: [searchHistoryId], references: [id], onDelete: Cascade)
+  productId       String?
+  product         Product?      @relation(fields: [productId], references: [id], onDelete: SetNull)
+  boundingBox     Json
+  detectorScore   Float
+  similarityScore Float?
+  manuallySet     Boolean       @default(false)
+
+  @@index([searchHistoryId])
+}

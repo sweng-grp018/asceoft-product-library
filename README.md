@@ -1,313 +1,135 @@
 <a id="readme-top"></a>
 
-<!-- Based on othneildrew/Best-README-Template's BLANK_README.md, adapted for STSWENG Group 18. -->
-
 <div align="center">
 
 # Lensistry
 
 **See it. Search it. Know it.**
 
-An **AI-powered product library** for organizing product information, finding products through text or images, and detecting multiple products in a single photograph.
+Standalone AI-powered product/SKU catalog and shelf-photo identification proof of concept, built by **DLSU STSWENG Group 18**.
 
-[![Project Status](https://img.shields.io/badge/status-planned%20%2F%20in%20development-2563eb?style=for-the-badge)](#roadmap)
-[![Project Type](https://img.shields.io/badge/project-STSWENG%20Group%2018-334155?style=for-the-badge)](#team)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7-3178c6?style=for-the-badge&logo=typescript&logoColor=white)](#built-with)
-[![Python](https://img.shields.io/badge/Python-3-3776ab?style=for-the-badge&logo=python&logoColor=white)](#built-with)
-
-[About](#about-the-project) · [Features](#planned-features) · [Technology](#built-with) · [Getting Started](#getting-started) · [Contributing](#contributing)
+[Overview](#overview) · [Architecture](#architecture) · [Setup](#local-development) · [API](#api-contracts) · [Validation](#validation) · [Gitflow](#gitflow)
 
 </div>
 
-> [!NOTE]
-> Lensistry is the **proposed product name** for the AI-enabled Product Library developed by **De La Salle University–Manila, STSWENG Group 18** (1st Term, A.Y. 2026–2027). This README documents the project's **planned scope and selected technologies**. Features, integrations, and deployment should not be considered live until implemented and verified.
+> **Development status (October 2026):** The repository contains a working implementation of web/API routes and a model inference scaffold, but deployment, live database/S3 integration, model quality and full end-to-end behavior still require environment-dependent verification. The client-requested stack is implemented independently of Skaffld CORE; integration is future work.
 
-<details>
-  <summary><strong>Table of Contents</strong></summary>
+## Overview
 
-1. [About the Project](#about-the-project)
-   - [Who It's For](#who-its-for)
-   - [Planned Features](#planned-features)
-   - [How It Works](#how-it-works)
-2. [Built With](#built-with)
-3. [System Architecture](#system-architecture)
-   - [Architecture Style](#architecture-style)
-4. [Getting Started](#getting-started)
-   - [Prerequisites](#prerequisites)
-   - [Local Setup](#local-setup)
-5. [Usage](#usage)
-6. [Roadmap](#roadmap)
-7. [Development Workflow](#development-workflow)
-8. [Quality Assurance and CI](#quality-assurance-and-ci)
-9. [Contributing](#contributing)
-10. [Team](#team)
-11. [License](#license)
-12. [Contact](#contact)
-13. [Acknowledgments](#acknowledgments)
+Lensistry helps administrators maintain a SKU catalog with reference photos; staff can upload shelf photographs, find several objects, compare them with indexed SKUs, inspect scores, and correct mistakes. Public visitors can search catalog metadata without authentication.
 
-</details>
+| Capability                                                                             | Current state                                                                                   |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Public catalog search by name, brand or SKU                                            | Implemented through Express and Next.js                                                         |
+| Staff/CMS sign-in and admin-managed staff users                                        | NextAuth credentials with Express-issued JWT and database-backed role checks                    |
+| Product CRUD, reference photos and indexing states                                     | Implemented; admin only                                                                         |
+| Shelf photo uploads, detection, similarity matching and history                        | Implemented as synchronous POC workflow; requires running AI models and object storage          |
+| Unknown detections, bounding-box coordinates, similarity scores and manual corrections | Implemented in API/history UI; image overlay and calibrated probabilities are not yet available |
+| Text embeddings / semantic natural-language search                                     | Not implemented; text search is database substring matching                                     |
+| Object-detector training/fine-tuning, asynchronous jobs, batch evaluation              | Not implemented; next phase                                                                     |
+| Skaffld CORE sync / migration                                                          | Not implemented; application owns its catalog, identity and database                            |
 
-<!-- ABOUT THE PROJECT -->
+## Architecture
 
-## About the Project
+The client-aligned technology stack is:
 
-**Lensistry** is a proposed centralized product information and visual-search platform. It addresses the difficulty of locating and identifying products across a growing collection of product records, reference images, and photos captured in stores, on shelves, or in other environments.
-
-The system is designed to learn visual characteristics from reference images, support AI-generated searchable product descriptions, and let users search by **product name, natural-language description, or uploaded image**. Its planned AI pipeline combines **object detection** for finding several products in one image with **image/text embeddings** for similarity-based retrieval.
-
-The product library is intended to be adaptable to different industries and product categories rather than being limited to a specific brand or retail setting.
-
-### Who It's For
-
-| User                                  | Intended use                                                                               |
-| ------------------------------------- | ------------------------------------------------------------------------------------------ |
-| **Company administrators**            | Maintain product/SKU records, upload reference images, and manage the centralized catalog. |
-| **New employees and warehouse staff** | Learn about and identify unfamiliar products using text or visual search.                  |
-| **General public**                    | Search for and identify products using descriptions or uploaded images.                    |
-
-### Planned Features
-
-- **Product catalog management** — Create, view, update, and delete products/SKUs, including names, brands, categories, descriptions, and reference images.
-- **AI training and indexing** — Upload multiple reference images per product and generate embeddings for recognition and retrieval.
-- **Processing status and retries** — Track whether a product is **pending**, **processing**, **trained/indexed**, or **failed**, and reprocess failed tasks.
-- **Multimodal product search** — Search by product name, natural-language description, or uploaded image.
-- **Image repository** — Store shelf/store photographs together with associated source information such as store, date, or campaign.
-- **Multi-product detection and matching** — Detect multiple items in a photograph and retrieve relevant images/records with confidence or similarity scores.
-- **Search history** — Save and revisit past queries and detected matches.
-
-### How It Works
-
-The intended workflow is:
-
-1. **Register a product.** An administrator records its identifying information and reference images.
-2. **Prepare the AI data.** Labeled examples support object-detection model training; image/text embeddings support similarity search and indexing.
-3. **Submit a search.** A user enters a name or description, or uploads an image.
-4. **Identify candidate matches.** The AI pipeline detects products where applicable and compares visual or text representations against indexed products.
-5. **Review the results.** The user sees the matching products, their associated records, and applicable confidence/similarity scores; the query can be saved in search history.
-
-> AI-generated descriptions and the precise search-ranking pipeline are part of the proposed functionality; their implementation details and evaluation metrics are still to be finalized.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- BUILT WITH -->
-
-## Built With
-
-The following stack is selected in the project's continuous integration and technology plan. These are **technology choices**, not a claim that each integration has already been completed.
-
-| Area                      | Selected tools                          | Purpose                                                                                                                        |
-| ------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| Languages                 | **TypeScript 7**, **Python 3**          | Type-safe application code and Python-based AI development.                                                                    |
-| Full-stack web framework  | **Next.js**, **React**                  | App Router-based user interface, server-side rendering, and application routes.                                                |
-| UI                        | **Tailwind CSS**, **shadcn/ui**         | Responsive styling and reusable interface components.                                                                          |
-| API/backend               | **Next.js Route Handlers**, **Node.js** | Application APIs, product operations, and integration with the Python AI service.                                              |
-| JavaScript tooling        | **Bun**, **TypeScript compiler**        | Dependency management, project scripts, and type checking. Bun is the package manager, **not** the planned production runtime. |
-| AI service                | **FastAPI**, **Pydantic**               | Python inference/training endpoints and schema validation.                                                                     |
-| Model training/detection  | **PyTorch**, **Ultralytics YOLO**       | Model fine-tuning and multi-object detection.                                                                                  |
-| Visual/semantic retrieval | **OpenCLIP**                            | Image and text embeddings for similarity-based search.                                                                         |
-| Dataset annotation        | **CVAT**                                | Bounding-box labeling for training/evaluation datasets.                                                                        |
-| Database and vectors      | **Neon**, **PostgreSQL**, **pgvector**  | Serverless Postgres for relational product data and vector similarity queries.                                                 |
-| Database access           | **Drizzle ORM**                         | Type-safe database queries and schema migrations.                                                                              |
-| Authentication            | **Better Auth**                         | Sessions, identity management, and role-based access.                                                                          |
-| App validation            | **Zod**                                 | TypeScript request/form validation.                                                                                            |
-| Object storage            | **Cloudflare R2**                       | Product images, repository photographs, and model artifacts.                                                                   |
-| Background jobs           | **Celery**, **Redis**                   | Long-running model training, indexing, and batch tasks.                                                                        |
-| Python tooling            | **uv**                                  | Python dependencies and reproducible environments.                                                                             |
-| TypeScript testing        | **Vitest**, **React Testing Library**   | React component, application logic, and Next.js API route unit/integration testing.                                            |
-| Python testing            | **pytest**, **HTTPX**                   | AI service and endpoint tests.                                                                                                 |
-| End-to-end tests          | **Playwright**                          | Browser-based workflow tests.                                                                                                  |
-| Code quality              | **Oxlint**, **Oxfmt**, **Ruff**         | TypeScript/JavaScript linting and formatting; Python linting and formatting.                                                   |
-| Containers                | **Docker**, **Docker Compose**          | Consistent local and deployment environments.                                                                                  |
-| CI and source control     | **Git**, **GitHub**, **GitHub Actions** | Gitflow collaboration and automated checks.                                                                                    |
-| API documentation         | **OpenAPI**                             | API definitions and integration contracts.                                                                                     |
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- SYSTEM ARCHITECTURE -->
-
-## System Architecture
-
-This diagram summarizes the **planned logical architecture**, not a verified deployment topology.
-
-### Architecture Style
-
-Lensistry uses a **modular monolith** organized into **vertical slices**. Each business capability — `auth`, `catalog`, `indexing`, `repository`, and `search` — is a module whose feature slices keep their UI, server actions, validation schemas, use cases, and tests together. Modules own their database schema but share infrastructure such as the database client, environment helpers, and object storage through `src/lib`. The Next.js application composes these modules in-process, keeping module boundaries explicit without taking on the operational cost of distributed services.
-
-The Python AI service remains a separately deployable service because its training and inference workloads have different runtime and scaling requirements from the TypeScript application.
+| Layer                 | Technology                                                                                                       |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                               |
+| Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                      |
+| Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                  |
+| Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**  |
+| Images                | **S3-compatible storage** with presigned uploads (MinIO in development; other compatible providers configurable) |
+| AI                    | Python 3.11–3.13, **FastAPI**, **PyTorch**, **Ultralytics YOLO11**, **OpenCLIP ViT-B/32**                        |
+| Dependency management | Bun for JavaScript workspace; uv for Python                                                                      |
+| Tests/quality         | Node test runner, Python pytest/HTTPX, Oxlint, Oxfmt, Ruff                                                       |
 
 ```mermaid
-flowchart TD
-    U[Administrators / Staff / Public] --> W[Next.js + React + TypeScript Web App]
-    W --> M[Modular Monolith: Auth / Catalog / Indexing / Repository / Search]
-    M --> A[Next.js Route Handlers on Node.js]
-    A --> D[(Neon PostgreSQL + pgvector)]
-    A --> O[(Cloudflare R2 Object Storage)]
-    A --> AI[FastAPI AI Service]
-    AI --> Y[PyTorch + YOLO Detection]
-    AI --> C[OpenCLIP Embeddings]
-    AI --> Q[Celery + Redis Background Jobs]
-    Q --> Y
-    Q --> C
+flowchart LR
+  V[Public / staff / admin] --> W[Next.js + NextAuth CMS]
+  W --> E[Express API + RBAC]
+  E --> P[(PostgreSQL / Prisma)]
+  E --> S[(S3-compatible bucket)]
+  E --> A[FastAPI]
+  A --> Y[YOLO11 detection]
+  A --> C[OpenCLIP embeddings]
 ```
 
-**Responsibilities:** The Next.js application provides product-management and search interfaces, while its module boundaries keep each capability's slices self-contained. Route Handlers coordinate application data, authorization, and AI requests. The Python AI service handles detection, embedding generation, and training-related operations. Neon PostgreSQL with pgvector stores structured records and vectors, R2 holds file assets, and Celery/Redis supports longer-running tasks.
+Express owns data, credential checks, privileged operations and access to storage. Next.js routes and Server Actions are the browser-facing entry points; Python is a separate inference runtime. Feature code is grouped in `src/modules/` and `api/src/modules/`; the API, web app and AI service communicate across explicit HTTP boundaries. No Skaffld CORE dependencies are required. Future synchronization should use stable SKU identifiers and versioned APIs, with deliberate identity mapping.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+### Image indexing versus training
 
-<!-- GETTING STARTED -->
+**Indexing** does not fine-tune a neural network. Administrators upload JPEG/PNG/WebP reference photos (10 MiB each), then request indexing. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. The current 512-dimensional vectors are kept as PostgreSQL float arrays and compared in the API for this small POC; a vector index should be considered only when catalog size warrants it.
 
-## Getting Started
+**Detection** runs a general-purpose `yolo11n.pt` detector on a shelf photo. Each bounding-box crop is embedded with the same OpenCLIP model and compared using cosine similarity to indexed reference embeddings. Similarity below `0.78` yields **Unknown**. This threshold is an **uncalibrated heuristic** and similarity is not a probability. YOLO11n has not been trained on the project's SKU labels, so detection coverage can be poor for packaging, crowded shelves or uncommon products. Manual SKU corrections are stored separately from the AI prediction. Annotated product-specific images and detector fine-tuning are the future **training** phase, distinct from indexing.
 
-These prerequisites reflect the planned stack. **Repository-specific commands, package paths, environment variables, migration steps, and service ports will be documented when the application scaffold is available.**
+Requests currently run synchronously for simplicity. A queue (Celery/Redis or a simpler durable worker) should be introduced only after measurements show that inference latency, retry behavior or batch volume require it.
 
-### Prerequisites
+## Local development
 
-- [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/) and [Bun](https://bun.sh/) for TypeScript dependencies/scripts
-- [Python 3](https://www.python.org/) and [uv](https://docs.astral.sh/uv/) for the AI service
-- [Docker](https://www.docker.com/) with Docker Compose
-- A [Neon](https://neon.com/) PostgreSQL database with pgvector, or a compatible local PostgreSQL instance
-- Redis (expected to be supplied by the container setup)
-- Appropriate credentials/configuration for any Cloudflare R2 integration used in local development
+Prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3**, Docker Compose (Postgres/MinIO), **Python 3.11–3.13** and [uv](https://docs.astral.sh/uv/). Python inference models require significant disk space and CPU/GPU memory; weights may download on first inference. Do not put live secrets in version control.
 
-### Local Setup
+1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`).
+2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL`, `WEB_ORIGIN` and `AI_SERVICE_URL` consistent with your services. The example MinIO credentials are local-development defaults only.
+3. Run `docker compose up -d`. This starts PostgreSQL on port **5432** and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. Set production passwords and persistent storage separately.
+4. Run `bun run db:generate` followed by `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; verify `DATABASE_URL` first.
+5. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
+6. Run the AI service with `cd services && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000`.
+7. In separate terminals from the repository root, start the Express API with `bun run dev:api` (port **4000**) and the Next.js web app with `bun run dev` (port **3000**). Open `http://localhost:3000` or `/sign-in`.
 
-1. **Clone the team's repository** once its URL is available:
+The API loads the root `.env`; Prisma CLI configuration reads the same file. API and AI health endpoints are `GET /health` on ports 4000 and 8000 respectively. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration.
 
-   ```bash
-   git clone <repository-url>
-   cd <repository-directory>
-   ```
+**Environment summary:** `DATABASE_URL`, `API_PORT`, `API_URL`, `WEB_ORIGIN`, `AUTH_SECRET`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` and `AI_SERVICE_URL`. Set optional `YOLO_WEIGHTS` in the AI service to use your own compatible detector weights.
 
-2. **Install the application dependencies.** Run `bun install` in the directory containing the application's `package.json` and `uv sync` in the directory containing the AI service's `pyproject.toml`, once those files exist.
+## API contracts
 
-3. **Configure local services.** Follow the committed environment-variable example and Docker Compose configuration when they are added, including the Neon connection string. Do not commit credentials or secrets.
+Express provides JSON endpoints, with Zod validation and role checks at the backend:
 
-4. **Apply database migrations and start the services** using the scripts defined by the repository once they are implemented.
+| Method            | Path                                   | Role                                      |
+| ----------------- | -------------------------------------- | ----------------------------------------- |
+| POST              | `/auth/login`                          | Public credential exchange (rate limited) |
+| GET               | `/auth/me`                             | Signed-in                                 |
+| POST              | `/auth/users`                          | Admin                                     |
+| GET               | `/products`, `/products/:id`           | Public                                    |
+| POST/PATCH/DELETE | `/products`, `/products/:id`           | Admin                                     |
+| POST              | `/products/:id/images`                 | Admin; returns a presigned S3 PUT URL     |
+| POST              | `/products/:id/index`                  | Admin; synchronous reference embedding    |
+| GET/POST          | `/repository`                          | Staff/admin                               |
+| POST              | `/repository/:id/analyze`              | Staff/admin; YOLO and matching            |
+| GET               | `/repository/searches/recent`          | Signed-in staff/admin; own searches       |
+| PATCH             | `/repository/searches/:id/matches/:id` | Search owner or admin; manual correction  |
 
-> This section deliberately does not invent a directory layout, `.env` schema, migration command, or start script that is not yet specified in the project documents.
+Images are stored in S3-compatible storage; only object keys and metadata are stored in PostgreSQL. JWT validation verifies issuer, audience, expiry and the current user/role in the database. Direct API access cannot bypass these checks. NextAuth sessions are intended for the CMS; there is no public self-registration workflow.
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+## Validation
 
-<!-- USAGE -->
+From the repository root:
 
-## Usage
+```bash
+bun run lint
+bun run format:check
+bun --bun next typegen
+bun run typecheck
+bun run typecheck:api
+bun run test:api
+bun run build
+```
 
-The following are **intended use cases**, rather than instructions for a released application:
+Python's lightweight API validation tests run with `cd services && uv run --extra dev pytest -q` after installing dependencies. `uv run --extra dev ruff check .` checks Python style. Full detector and embedding inference must also be verified with actual weights and representative product images. There are currently no configured Playwright browser tests or measured accuracy benchmarks; a passing static build or mocked unit tests do **not** prove production readiness.
 
-| Scenario                          | Expected workflow                                                                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| **Maintain a catalog**            | An administrator creates a product/SKU, adds metadata, and uploads multiple reference images.                                         |
-| **Identify an item**              | A staff member uploads a product photograph and reviews matching product records.                                                     |
-| **Search by description**         | A user types a phrase describing a product and reviews semantically relevant catalog matches.                                         |
-| **Find products in shelf photos** | A user searches for a particular product and reviews associated images where it was detected, with confidence/similarity information. |
-| **Monitor AI processing**         | An administrator checks indexing/training status and retries unsuccessful jobs.                                                       |
-| **Revisit a query**               | A user opens saved search history and reviews earlier matches.                                                                        |
+**Proposed POC acceptance gates (to confirm with client; none measured yet):** evaluate a held-out, SKU-stratified set of annotated shelf photos including lookalike packaging, occlusion, varying angles and lighting; target detector `mAP@0.5 ≥ 0.75` and recall `≥ 0.80`; top-1 SKU identification accuracy `≥ 0.90` on correctly detected known objects; unknown-product false acceptance `≤ 5%`. Also report end-to-end precision/recall, error by SKU and camera-angle subgroup, latency p50/p95, and manual-correction rate. Calibrate the matching threshold only on a validation split, then freeze it for test data.
 
-Screenshots, a live demo, and concrete API examples can be linked here after the relevant implementation is available.
+## Roadmap and limitations
 
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Near term: live smoke tests against PostgreSQL/MinIO and downloaded AI weights; bounding-box overlays and reference-image previews; meaningful integration and browser tests; measured detection/matching benchmarks; file lifecycle cleanup and batch job durability. Later: train a product-specific detector using labeled data (e.g. CVAT), add a scalable vector index and natural-language retrieval, design API versioning / SKU mapping for optional Skaffld integration, and add deployment-specific security and monitoring. Avoid claiming these as shipped until implemented and verified.
 
-<!-- ROADMAP -->
+## Gitflow
 
-## Roadmap
-
-The roadmap groups the functionality from the project proposal into possible implementation stages. **Unchecked items are not verified as complete.**
-
-- [ ] **Foundation**
-  - [ ] Application scaffolding, Neon database schemas, and service configuration
-  - [ ] Authentication and access roles
-  - [ ] Product/SKU CRUD and reference-image uploads
-- [ ] **AI data preparation**
-  - [ ] Image repository and source metadata
-  - [ ] Dataset annotation and object-detector fine-tuning
-  - [ ] Embedding generation, indexing, status tracking, and retries
-- [ ] **Search and recognition**
-  - [ ] Product-name and natural-language search
-  - [ ] Image-based search and similarity scoring
-  - [ ] Multi-product detection and image-to-record matching
-  - [ ] Search history and results review
-- [ ] **Validation and release**
-  - [ ] Automated frontend, backend, and AI service tests
-  - [ ] End-to-end tests and CI quality gates
-  - [ ] QA review, deployment configuration, and release verification
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- DEVELOPMENT WORKFLOW -->
-
-## Development Workflow
-
-The team follows **Agile development** with iterative sprints and client/QA feedback, and uses **Gitflow** to separate features, releases, and urgent fixes.
-
-| Branch        | Role                                                                 |
-| ------------- | -------------------------------------------------------------------- |
-| `main`        | Production-ready, approved releases and hotfixes.                    |
-| `development` | Shared integration branch for completed feature work.                |
-| `feature/*`   | Isolated implementation branches merged back into `development`.     |
-| `release/*`   | QA, stabilization, and release preparation.                          |
-| `hotfix/*`    | Urgent fixes for production issues, propagated to affected branches. |
-
-The project plan calls for a release branch at the end of each sprint and a **planned Friday, 9:00 PM** release to production, subject to successful QA and required approvals.
-
-### Pull Request Rules
-
-1. **No direct pushes** to protected shared branches; propose changes through pull requests.
-2. Obtain **at least one reviewer approval** before merging.
-3. Ensure **all required automated checks pass** before merging.
-4. Follow the team's standardized branch and commit naming conventions.
-5. Delete merged feature, release, and hotfix branches when appropriate.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CI AND QUALITY -->
-
-## Quality Assurance and CI
-
-The **CI** workflow in [`.github/workflows/ci.yml`](.github/workflows/ci.yml) defines the initial validation and build checks. After the workflow is published to GitHub with Actions enabled, it runs for:
-
-- Pull requests targeting `development`, `release/**`, or `main`, including draft PRs and hotfix PRs. Opening, updating, reopening, marking ready, or editing a PR triggers a run.
-- Pushes to those branches, including merges. These runs verify the resulting branch code after the merge; a failure does not undo the merge.
-- Manual runs from the Actions tab, once the workflow exists on the default branch.
-
-Each check uses an Ubuntu runner, the Bun version pinned in `package.json`, and `bun install --frozen-lockfile`. The checks run independently:
-
-| Check      | Command                                            |
-| ---------- | -------------------------------------------------- |
-| Lint       | `bun run lint`                                     |
-| Formatting | `bun run format:check`                             |
-| Typecheck  | `bun --bun next typegen`, then `bun run typecheck` |
-| Build      | `bun run build`                                    |
-
-The configured `tsrs` compiler currently has no Windows binary; the workflow runs it on Linux.
-
-**Lint**, **Formatting**, **Typecheck**, and **Build** are required by the final gate. Formatting skips generated files listed in `.oxfmtrc.json`.
-
-The final **CI Gate** job passes only when lint, formatting, typecheck, and build succeed. It writes a result table to the Actions run summary, including when a check fails or is skipped. Job logs contain the detailed output. Superseded PR runs are cancelled; shared-branch push runs can finish independently.
-
-Repository rulesets must be configured separately to require **CI Gate** and reviewer approval before merging. Adding this workflow alone does not enforce merge protection. GitHub Actions email/web notifications depend on each member's notification settings; this workflow does not send team-wide messages.
-
-This initial workflow does not run automated tests, provision a shared QA environment, deploy the app, or synchronize branches. The existing scripts run Next.js under Bun; moving to the README's planned Node.js production runtime is a separate decision. Scaffolded routes or other existing code issues can cause checks to fail and must be fixed before CI can pass.
-
-The testing roadmap remains **Vitest and React Testing Library** for TypeScript and React, **pytest and HTTPX** for the Python service, and **Playwright** for browser workflows, with **Ruff** for Python quality checks. Add those CI jobs when their configurations, dependencies, and meaningful tests exist. A successful build does not replace automated tests, human review, or QA approval.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-<!-- CONTRIBUTING -->
+Use `feature/*` branches from `development`, propose pull requests back to `development`, and require passing CI, QA review and at least one approval before merge. `release/*` branches stage approved releases, while `hotfix/*` handles urgent mainline fixes. Never push directly to the protected `main` or `development` branches. CI checks lint, formatting, web/API types, unit tests, Python checks and the web build; configure branch protections in GitHub separately.
 
 ## Contributing
 
-Development is coordinated through STSWENG Group 18. Authorized contributors should:
-
-1. Create a feature branch from `development` (for example, `feature/product-search`).
-2. Make focused changes and add or update relevant tests.
-3. Run the applicable lint, format, type-check, and test commands defined by the repository.
-4. Push the branch and open a pull request targeting `development`.
-5. Address CI failures and reviewer/QA feedback; merge only after all required checks and approvals pass.
-
-For bug fixes during release preparation, follow the release-branch QA process. For production-critical bugs, follow the hotfix workflow.
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+Work in small vertical feature slices, validate inputs and RBAC on every server boundary, never commit credentials, model weights or customer images, and document tests and integration limitations in PR descriptions. Review database migrations against the targeted database before applying.
 
 <!-- TEAM -->
 
