@@ -71,7 +71,7 @@ Prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3**, Docker Compo
 
 1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`).
 2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL`, `WEB_ORIGIN` and `AI_SERVICE_URL` consistent with your services. The example MinIO credentials are local-development defaults only.
-3. Run `docker compose up -d`. This starts PostgreSQL on port **5432** and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. Set production passwords and persistent storage separately.
+3. Run `docker compose up -d`. This starts PostgreSQL on port **5433** (chosen to avoid a host-installed PostgreSQL on 5432) and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. Set production passwords and persistent storage separately.
 4. Run `bun run db:generate` followed by `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; verify `DATABASE_URL` first.
 5. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
 6. Run the AI service with `cd services && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000`.

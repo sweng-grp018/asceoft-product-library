@@ -11,9 +11,9 @@ services:
       POSTGRES_PASSWORD: lensistry
       POSTGRES_DB: lensistry
     ports:
-      # Bind to loopback only. Override POSTGRES_PORT when 5432 is taken and
-      # keep DATABASE_URL in .env in sync.
-      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+      # Bind to loopback only. 5433 avoids collisions with a host-installed
+      # PostgreSQL; override POSTGRES_PORT if needed and keep DATABASE_URL in .env in sync.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       # PostgreSQL 18 images keep PGDATA under /var/lib/postgresql.
       - postgres_data:/var/lib/postgresql
