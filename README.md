@@ -77,7 +77,9 @@ Prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3**, Docker Compo
 6. Run the AI service with `cd services && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000`.
 7. In separate terminals from the repository root, start the Express API with `bun run dev:api` (port **4000**) and the Next.js web app with `bun run dev` (port **3000**). Open `http://localhost:3000` or `/sign-in`.
 
-The API loads the root `.env`; Prisma CLI configuration reads the same file. API and AI health endpoints are `GET /health` on ports 4000 and 8000 respectively. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration.
+The API loads the root `.env`; Prisma CLI configuration reads the same file. API and AI health endpoints are `GET /health` on ports 4000 and 8000 respectively. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration. All published ports bind to `127.0.0.1` only.
+
+The Compose stack pins a Bitnami legacy MinIO build (`2025.7.23`) because MinIO withdrew its public container images; replace it with a maintained S3-compatible service before any hosted deployment. `docker compose down` stops the services and keeps data; `docker compose down -v` also deletes the PostgreSQL and MinIO volumes.
 
 **Environment summary:** `DATABASE_URL`, `API_PORT`, `API_URL`, `WEB_ORIGIN`, `AUTH_SECRET`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` and `AI_SERVICE_URL`. Set optional `YOLO_WEIGHTS` in the AI service to use your own compatible detector weights.
 
