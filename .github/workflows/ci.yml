@@ -116,6 +116,7 @@ jobs:
         with:
           bun-version-file: package.json
       - run: bun install --frozen-lockfile
+      - run: bun run db:generate
       - run: bun run build
 
   ci-gate:
