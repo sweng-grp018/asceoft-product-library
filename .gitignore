@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/api/node_modules
+/api/src/generated
 /.pnp
 .pnp.*
 .yarn/*
@@ -40,3 +42,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/

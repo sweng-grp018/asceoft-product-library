@@ -1,25 +1,72 @@
 name: lensistry
 
+# Local development fixtures only. Never reuse these credentials in a
+# shared, staging or production environment.
 services:
-  db:
-    image: pgvector/pgvector:pg17
+  postgres:
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: lensistry
       POSTGRES_USER: lensistry
-      # Local development only. Never reuse this password elsewhere.
       POSTGRES_PASSWORD: lensistry
+      POSTGRES_DB: lensistry
     ports:
-      # 5433 avoids collisions with a host-installed PostgreSQL on 5432.
-      # Override with DB_PORT if 5433 is also taken, and update DATABASE_URL to match.
-      - "127.0.0.1:${DB_PORT:-5433}:5432"
+      # Bind to loopback only. 5433 avoids collisions with a host-installed
+      # PostgreSQL; override POSTGRES_PORT if needed and keep DATABASE_URL in .env in sync.
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      # PostgreSQL 18 images keep PGDATA under /var/lib/postgresql.
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U lensistry -d lensistry"]
       interval: 5s
       timeout: 5s
       retries: 10
 
+  # MinIO's public images were withdrawn from Docker Hub and quay.io, so this
+  # pinned Bitnami legacy build (MinIO 2025.7.23) is a temporary local fixture.
+  # Replace with a maintained S3-compatible service before hosted deployments.
+  # The named volume is prepared for the image's unprivileged user first.
+  minio-permissions:
+    image: alpine:3.21
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 1001:1001 /data"]
+    volumes:
+      - minio_data:/data
+
+  minio:
+    image: bitnamilegacy/minio:2025.7.23-debian-12-r5
+    restart: unless-stopped
+    depends_on:
+      minio-permissions:
+        condition: service_completed_successfully
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+
+  # Provisions the local bucket once MinIO accepts S3 requests. The retry loop
+  # is the readiness check, since the storage image ships no health probe.
+  create-bucket:
+    image: amazon/aws-cli:2.31.4
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: minioadmin
+      AWS_SECRET_ACCESS_KEY: minioadmin
+      AWS_DEFAULT_REGION: us-east-1
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        until aws --endpoint-url http://minio:9000 s3api head-bucket --bucket lensistry 2>/dev/null; do
+          aws --endpoint-url http://minio:9000 s3 mb s3://lensistry >/dev/null 2>&1 || sleep 1
+        done
+
 volumes:
-  db_data:
+  postgres_data:
+  minio_data:
