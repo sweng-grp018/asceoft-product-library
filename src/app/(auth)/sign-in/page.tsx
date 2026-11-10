@@ -16,35 +16,33 @@ export default async function SignIn({
   return (
     <main className="grid min-h-svh lg:grid-cols-[42%_58%]">
       {/* LEFT */}
-      <section className="flex min-h-[600px] flex-col bg-[#E8f3ec] px-5 py-8 text-[#1C352A] sm:px-8 md:px-12 lg:min-h-svh lg:px-10 xl:px-16">
+      <section className="flex min-h-[600px] flex-col bg-[#2e2c9c] px-5 py-8 text-[#1C352A] sm:px-8 md:px-12 lg:min-h-svh lg:px-10 xl:px-16">
 
         <Link href="/search" className="flex items-center gap-4">
-          <div className="size-10 flex items-center justify-center rounded-xl bg-[#235946] text-white"> 
+          <div className="size-10 flex items-center justify-center rounded-xl bg-[#232254] text-white"> 
             <Box size={22}/>
           </div>
 
           <div>
-            <p className="text-lg font-bold text-[#1a2421] sm:text-xl">Lensistry</p>
-            <p className="text-xs text-[#364d46] sm:text-sm">Product Library</p>
+            <p className="text-lg font-bold text-white sm:text-xl">Lensistry</p>
+            <p className="text-xs text-white sm:text-sm">Product Library</p>
           </div>
         </Link>
 
 
         <div className="my-auto py-16">
-          <p className="mb-6 text-[11px] font-medium text-[#176b4b] sm:text-xs">YOUR TEAM'S PRODUCT KNOWLEDGE</p>
+          <p className="mb-6 text-[11px] font-medium text-white sm:text-xs">YOUR TEAM'S PRODUCT KNOWLEDGE</p>
           
-          <h1 className="max-w-lg text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">Every product.<br/>One shared library.</h1>
-          <p className="mt-5 max-w-xs text-sm leading-relaxed text-[#68816d] sm:text-base">Keep your catalog organized.<br/>Help your team find and recognize<br/>the right product.</p>
+          <h1 className="max-w-lg text-4xl text-white font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">Every product.<br/>One shared library.</h1>
+          <p className="mt-5 max-w-xs text-white text-sm leading-relaxed sm:text-base">Keep your catalog organized.<br/>Help your team find and recognize<br/>the right product.</p>
         
 
           <div className="mt-6 flex items-center gap-3">
-            <Image src="/images/orangeChips.png" alt="Orange Chips" width={100} height={140} className="h-28 w-16 shrink-0 object-contain sm:h-36 sm:w-24 lg:h-40 lg:w-28"/>
-            <Image src="/images/redChips.png" alt="Red Chips" width={100} height={140} className="h-28 w-16 shrink-0 object-contain sm:h-36 sm:w-24 lg:h-40 lg:w-28"/>
-            <Image src="/images/yellowChips.png" alt="Yellow Chips" width={100} height={140} className="h-28 w-16 shrink-0 object-contain sm:h-36 sm:w-24 lg:h-40 lg:w-28"/>
+            <Image src="/images/colorfulChips.png" alt="Colorful Chips" width={2000} height={1000} className="h-auto w-full shrink-0 max-w-[360px] object-contain"/>
           </div>
         </div>
 
-        <div className="text-sm leading-relaxed text-[#68816D] sm:text-base">A product catalog<br/>Find with confidence</div>
+        <div className="text-sm leading-relaxed text-white sm:text-base">A product catalog<br/>Find with confidence</div>
 
       </section>
 
@@ -53,16 +51,16 @@ export default async function SignIn({
       <section className="flex min-h-[650px] items-center justify-center bg-white px-6 py-12 md:px-12 lg:min-h-svh">
         <div className="w-full max-w-md">
 
-          <Link href="/search" className="mb-12 flex items-center gap-2 text-xs text-[#176b4b] hover:underline sm:text-sm"><MoveLeft size={18}/>Back to public search</Link>
+          <Link href="/signup" className="mb-12 flex items-center gap-2 text-xs text-[#232254] hover:underline sm:text-sm"><MoveLeft size={18}/>No account? Sign up here.</Link>
 
           <div className="mb-7">
-            <h2 className="text-3xl font-bold text-[#1c352a]">Welcome back.</h2>
-            <p className="mt-3 text-sm text-[#788b7d] sm:text-base">Sign in to your company workspace.</p>
+            <h2 className="text-5xl font-bold text-[#232254]">Welcome back.</h2>
+            <p className="mt-3 text-sm text-[#788b7d] sm:text-base">Sign in to your account to continue.</p>
           </div>
 
           <form action={login} className="flex flex-col gap-5">
             <label className="flex flex-col gap-2 text-xs font-medium text-[#1c352a] sm:text-sm">
-              Email address
+              Work Email
               <Input name="email" type="email" placeholder="you@company.com" required autoComplete="username" className="h-12 text-sm sm:h-12" />
             </label>
 
@@ -81,10 +79,10 @@ export default async function SignIn({
                 Remember this device
               </label>
 
-              <span className="font-semibold text-[#176b4b]">Forgot password?</span>
+              <span className="font-semibold text-[#4542bd]">Forgot password?</span>
             </div>
 
-            <Button type="submit" className="h-12 w-full bg-[#176b4b] text-sm text-white hover:bg-[#12583e] sm:h-12">Sign in to workspace</Button>
+            <Button type="submit" className="h-12 w-full bg-[#4542bd] text-sm text-white hover:bg-[#12583e] sm:h-12">Sign in to workspace</Button>
 
           </form>
 
