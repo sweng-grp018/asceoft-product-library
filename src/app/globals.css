@@ -34,6 +34,9 @@
     --color-status-failed-bg: var(--status-failed-bg);
     --color-status-failed-fg: var(--status-failed-fg);
     --color-status-failed-dot: var(--status-failed-dot);
+    --color-notice-bg: var(--notice-bg);
+    --color-notice-fg: var(--notice-fg);
+    --color-notice-dot: var(--notice-dot);
     --font-sans: var(--font-sans);
     --font-heading: var(--font-sans);
     --font-mono:
@@ -103,6 +106,12 @@
     --status-failed-bg: #fef2f2;
     --status-failed-fg: #b91c1c;
     --status-failed-dot: #ef4444;
+
+    /* Ambiguous result that needs a human decision: below the confidence
+       threshold, or an object with no catalog match. */
+    --notice-bg: #fffbeb;
+    --notice-fg: #b45309;
+    --notice-dot: #f59e0b;
 }
 
 :root {

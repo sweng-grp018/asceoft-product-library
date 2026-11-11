@@ -3,14 +3,23 @@
 import { useEffect } from "react";
 import { CheckIcon, Trash2Icon } from "lucide-react";
 import { cn } from "cn";
-import type { CatalogToast } from "./list-products.types";
 
 const TOAST_DURATION_MS = 3200;
 
-type ListProductsToastProps = {
-  toast: CatalogToast | null;
+export type ToastTone = "success" | "danger";
+
+export type ToastMessage = {
+  message: string;
+  tone: ToastTone;
+};
+
+type StatusToastProps = {
+  toast: ToastMessage | null;
   onDismiss: () => void;
-  /** Lift the toast clear of the drawer's sticky footer while it is open. */
+  /**
+   * Lift the toast clear of a drawer or sheet footer. Screens with a sticky
+   * bottom bar pass `true` while it is open.
+   */
   raised?: boolean;
 };
 
@@ -18,7 +27,7 @@ type ListProductsToastProps = {
  * Hand-rolled status toast: no toast primitive is installed in this project.
  * The timer lives here so callers only set and clear the message.
  */
-export function ListProductsToast({ toast, onDismiss, raised }: ListProductsToastProps) {
+export function StatusToast({ toast, onDismiss, raised }: StatusToastProps) {
   useEffect(() => {
     if (!toast) return;
 

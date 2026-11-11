@@ -2,14 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box, MoveRight, LogOut, LayoutDashboard, Package, ScanSearch, Image, History, Search,} from "lucide-react";
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,} from "@/components/ui/sidebar";
+import { Box, LogOut, LayoutDashboard, Package, ScanSearch } from "lucide-react";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
 // nav menus
 const links = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Product Catalog", href: "/products", icon: Package },
-  { label: "AI Detection and Search", href: "/training", icon: ScanSearch },
+  { label: "AI Detection and Search", href: "/detection", icon: ScanSearch },
 ];
 
 type AppSidebarProps = {
@@ -23,7 +33,6 @@ export function AppSidebar({ email, role, logout }: AppSidebarProps) {
 
   return (
     <Sidebar className="border-r-0 text-[#3c6340]">
-
       <SidebarHeader className="px-6 py-8 mb-6">
         <Link href="/dashboard" className="flex items-center gap-4">
           <div className="flex size-12 items-center justify-center rounded-xl bg-[#4542bd] text-lg font-bold text-white">
@@ -49,7 +58,12 @@ export function AppSidebar({ email, role, logout }: AppSidebarProps) {
 
                 return (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={isActive} tooltip={item.label} className="gap-5 h-11 rounded-lg px-3 text-[#232254] hover:bg-[#e3e3ff] data-[active=true]:bg-[#4542bd] data-[active=true]:text-white data-[active=true]:hover:bg-[#e3e3ff] data-[active=true]:hover:text-[#232254]">
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                      className="gap-5 h-11 rounded-lg px-3 text-[#232254] hover:bg-[#e3e3ff] data-[active=true]:bg-[#4542bd] data-[active=true]:text-white data-[active=true]:hover:bg-[#e3e3ff] data-[active=true]:hover:text-[#232254]"
+                    >
                       <Link href={item.href}>
                         <Icon />
                         <span>{item.label}</span>
@@ -64,13 +78,15 @@ export function AppSidebar({ email, role, logout }: AppSidebarProps) {
       </SidebarContent>
 
       <SidebarFooter className="px-6 py-4">
-
-        <Link href="/profile" className="flex items-center py-2 text-sm text-[#232254] hover:text-[#235946]">
+        <Link
+          href="/profile"
+          className="flex items-center py-2 text-sm text-[#232254] hover:text-[#235946]"
+        >
           Settings & Profile
         </Link>
 
         <div className="flex items-center gap-3 px-1 py-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-[#e3e3ff] text-lg font-semibold text-[#232254]">
+          <div className="flex size-10 items-center justify-center rounded-full bg-[#e3e3ff] text-lg font-semibold text-[#232254]">
             {email.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -78,7 +94,7 @@ export function AppSidebar({ email, role, logout }: AppSidebarProps) {
             <p className="text-xs text-[#232254]">{role}</p>
           </div>
         </div>
-        
+
         {/* FOR TESTING : Don't mind the placement of this muna */}
         <form action={logout}>
           <SidebarMenuButton className="h-10 text-[#232254] hover:bg-[#DCE8D9]">
@@ -87,8 +103,6 @@ export function AppSidebar({ email, role, logout }: AppSidebarProps) {
           </SidebarMenuButton>
         </form>
       </SidebarFooter>
-
-      
     </Sidebar>
   );
 }

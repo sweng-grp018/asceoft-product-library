@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
+import { StatusToast, type ToastMessage } from "@/components/ui/status-toast";
 import {
   PLACEHOLDER_PAGE,
   PLACEHOLDER_PAGE_COUNT,
@@ -12,9 +13,8 @@ import { ListProductsDeleteDialog } from "./list-products-delete-dialog";
 import { ListProductsEditorSheet } from "./list-products-editor-sheet";
 import { ListProductsPagination } from "./list-products-pagination";
 import { ListProductsTable } from "./list-products-table";
-import { ListProductsToast } from "./list-products-toast";
 import { ListProductsToolbar } from "./list-products-toolbar";
-import type { CatalogDraft, CatalogEditor, CatalogRow, CatalogToast } from "./list-products.types";
+import type { CatalogDraft, CatalogEditor, CatalogRow } from "./list-products.types";
 import { useListProducts } from "./use-list-products";
 
 /**
@@ -31,7 +31,7 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
 
   const [editor, setEditor] = useState<CatalogEditor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CatalogRow | null>(null);
-  const [toast, setToast] = useState<CatalogToast | null>(null);
+  const [toast, setToast] = useState<ToastMessage | null>(null);
   const sessionRef = useRef(0);
 
   function openCreate() {
@@ -151,7 +151,7 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
         onClose={closeDelete}
         onConfirm={confirmDelete}
       />
-      <ListProductsToast toast={toast} onDismiss={dismissToast} raised={editor !== null} />
+      <StatusToast toast={toast} onDismiss={dismissToast} raised={editor !== null} />
     </div>
   );
 }

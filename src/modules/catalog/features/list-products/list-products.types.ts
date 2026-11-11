@@ -37,8 +37,3 @@ export type CatalogPhoto = {
   /** `URL.createObjectURL` handle; revoked when the photo is removed or the drawer closes. */
   previewUrl: string;
 };
-
-export type CatalogToast = {
-  message: string;
-  tone: "success" | "danger";
-};
