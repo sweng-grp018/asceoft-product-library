@@ -12,6 +12,28 @@
 @theme inline {
     --color-background: var(--background);
     --color-foreground: var(--foreground);
+    --color-brand: var(--brand);
+    --color-brand-strong: var(--brand-strong);
+    --color-brand-ink: var(--brand-ink);
+    --color-brand-tint: var(--brand-tint);
+    --color-page: var(--page);
+    --color-ink-muted: var(--ink-muted);
+    --color-ink-placeholder: var(--ink-placeholder);
+    --color-line: var(--line);
+    --color-line-subtle: var(--line-subtle);
+    --color-toast-surface: var(--toast-surface);
+    --color-status-ready-bg: var(--status-ready-bg);
+    --color-status-ready-fg: var(--status-ready-fg);
+    --color-status-ready-dot: var(--status-ready-dot);
+    --color-status-processing-bg: var(--status-processing-bg);
+    --color-status-processing-fg: var(--status-processing-fg);
+    --color-status-processing-dot: var(--status-processing-dot);
+    --color-status-pending-bg: var(--status-pending-bg);
+    --color-status-pending-fg: var(--status-pending-fg);
+    --color-status-pending-dot: var(--status-pending-dot);
+    --color-status-failed-bg: var(--status-failed-bg);
+    --color-status-failed-fg: var(--status-failed-fg);
+    --color-status-failed-dot: var(--status-failed-dot);
     --font-sans: var(--font-sans);
     --font-heading: var(--font-sans);
     --font-mono:
@@ -52,6 +74,35 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    /* Lensistry brand palette. Shared by the workspace surfaces; not derived
+       from the neutral shadcn tokens so the product indigo stays intentional. */
+    --brand: #4542bd;
+    --brand-strong: #3a37a0;
+    --brand-ink: #232254;
+    --brand-tint: #eef2ff;
+    --page: #f7f8ff;
+    --ink-muted: #5b627f;
+    --ink-placeholder: #666e8c;
+    --line: #e6e9f5;
+    --line-subtle: #edeff8;
+    --toast-surface: #1f2440;
+
+    /* Indexing status roles. Labels live in the catalog feature, colours here. */
+    --status-ready-bg: #ecfdf5;
+    --status-ready-fg: #047857;
+    --status-ready-dot: #10b981;
+    --status-processing-bg: #eef2ff;
+    --status-processing-fg: #4338ca;
+    --status-processing-dot: #6366f1;
+    --status-pending-bg: #f1f3f9;
+    --status-pending-fg: #4b5563;
+    --status-pending-dot: #94a3b8;
+    --status-failed-bg: #fef2f2;
+    --status-failed-fg: #b91c1c;
+    --status-failed-dot: #ef4444;
 }
 
 :root {
