@@ -10,13 +10,15 @@ const TOAST_DURATION_MS = 3200;
 type ListProductsToastProps = {
   toast: CatalogToast | null;
   onDismiss: () => void;
+  /** Lift the toast clear of the drawer's sticky footer while it is open. */
+  raised?: boolean;
 };
 
 /**
  * Hand-rolled status toast: no toast primitive is installed in this project.
  * The timer lives here so callers only set and clear the message.
  */
-export function ListProductsToast({ toast, onDismiss }: ListProductsToastProps) {
+export function ListProductsToast({ toast, onDismiss, raised }: ListProductsToastProps) {
   useEffect(() => {
     if (!toast) return;
 
@@ -30,7 +32,10 @@ export function ListProductsToast({ toast, onDismiss }: ListProductsToastProps) 
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed right-6 bottom-6 z-[60]"
+      className={cn(
+        "pointer-events-none fixed inset-x-4 z-[60] sm:inset-x-auto sm:right-6",
+        raised ? "bottom-24" : "bottom-6",
+      )}
     >
       <div
         className={cn(

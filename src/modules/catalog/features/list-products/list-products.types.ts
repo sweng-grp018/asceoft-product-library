@@ -23,6 +23,21 @@ export type CatalogEditor =
   | { mode: "create"; row: null; session: number }
   | { mode: "edit"; row: CatalogRow; session: number };
 
+/** Fields the create step validates before it lets the draft advance. */
+export type CatalogDraftErrors = Partial<Record<keyof CatalogDraft, string>>;
+
+/**
+ * A file the operator picked in the create drawer. It never leaves the browser:
+ * uploads need a stored product id and a presigned URL from the API.
+ */
+export type CatalogPhoto = {
+  id: string;
+  name: string;
+  size: number;
+  /** `URL.createObjectURL` handle; revoked when the photo is removed or the drawer closes. */
+  previewUrl: string;
+};
+
 export type CatalogToast = {
   message: string;
   tone: "success" | "danger";

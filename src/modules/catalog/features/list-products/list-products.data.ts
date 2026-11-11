@@ -107,3 +107,48 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
 export const PLACEHOLDER_TOTAL = 1248;
 export const PLACEHOLDER_PAGE_COUNT = 208;
 export const PLACEHOLDER_PAGE = 1;
+
+/* -------------------------------------------------------------------------- */
+/* Editor limits                                                              */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Field limits mirror the `productInput` schema in `api/src/modules/catalog`.
+ * The description cap is deliberately tighter than the API's 5000: the drawer
+ * is an identification hint, not a marketing page.
+ */
+export const SKU_MAX_LENGTH = 100;
+export const BRAND_MAX_LENGTH = 100;
+export const NAME_MAX_LENGTH = 200;
+export const CATEGORY_MAX_LENGTH = 100;
+export const DESCRIPTION_LIMIT = 500;
+
+/** Mirrors `IMAGE_TYPES` and the presigned-upload `maxBytes` in the API. */
+export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const PHOTO_MAX_BYTES = 10 * 1024 * 1024;
+export const PHOTO_LIMIT = 5;
+
+/* -------------------------------------------------------------------------- */
+/* Create wizard                                                              */
+/* -------------------------------------------------------------------------- */
+
+export const CREATE_STEPS = [
+  { key: "metadata", label: "SKU & specs" },
+  { key: "photos", label: "Visual photos" },
+  { key: "review", label: "Review" },
+] as const;
+
+/** Suggested captures. Guidance only: the API requires one photo, not angles. */
+export const SUGGESTED_ANGLES = ["Front view", "Side profile", "Spec label", "Packaging"] as const;
+
+/**
+ * Suggestions for the brand and category comboboxes, seeded from the fixtures
+ * so a new SKU reuses an existing spelling instead of splitting the catalogue.
+ */
+export const BRAND_SUGGESTIONS = Array.from(
+  new Set([...PLACEHOLDER_ROWS.map((row) => row.brand), "Makita", "Hilti"]),
+).sort((a, b) => a.localeCompare(b));
+
+export const CATEGORY_SUGGESTIONS = Array.from(
+  new Set(PLACEHOLDER_ROWS.map((row) => row.category)),
+).sort((a, b) => a.localeCompare(b));

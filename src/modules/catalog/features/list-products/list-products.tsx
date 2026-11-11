@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   PLACEHOLDER_PAGE,
   PLACEHOLDER_PAGE_COUNT,
@@ -26,7 +26,7 @@ import { useListProducts } from "./use-list-products";
  * toolbar, table, card list, pagination and dialogs stay as they are.
  */
 export function ListProducts({ canEdit }: { canEdit: boolean }) {
-  const { visibleRows, query, setQuery, createRow, updateRow, removeRow } =
+  const { rows, visibleRows, query, setQuery, createRow, updateRow, removeRow } =
     useListProducts(PLACEHOLDER_ROWS);
 
   const [editor, setEditor] = useState<CatalogEditor | null>(null);
@@ -49,15 +49,25 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
   const dismissToast = useCallback(() => setToast(null), []);
   const clearSearch = useCallback(() => setQuery(""), [setQuery]);
 
-  function saveDraft(draft: CatalogDraft) {
-    if (editor?.mode === "edit") {
-      updateRow(editor.row.id, draft);
-      setToast({ message: `${draft.sku} updated.`, tone: "success" });
-    } else {
-      createRow(draft);
-      setToast({ message: `${draft.sku} added to the catalog.`, tone: "success" });
-    }
+  /** Stable identity: the create wizard checks SKU uniqueness against this list. */
+  const existingSkus = useMemo(() => rows.map((row) => row.sku), [rows]);
 
+  function updateProduct(id: string, draft: CatalogDraft) {
+    updateRow(id, draft);
+    setToast({ message: `${draft.sku} updated.`, tone: "success" });
+    setEditor(null);
+  }
+
+  function createProduct(draft: CatalogDraft, photoCount: number) {
+    createRow(draft);
+
+    const photos = `${photoCount} photo${photoCount === 1 ? "" : "s"}`;
+    setToast({
+      message: photoCount
+        ? `${draft.sku} added as unindexed. ${photos} stayed on this device — upload them from the product page.`
+        : `${draft.sku} added as unindexed — add reference photos to enable visual matching.`,
+      tone: "success",
+    });
     setEditor(null);
   }
 
@@ -130,8 +140,10 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
 
       <ListProductsEditorSheet
         editor={editor}
+        existingSkus={existingSkus}
         onClose={closeEditor}
-        onSave={saveDraft}
+        onUpdate={updateProduct}
+        onCreate={createProduct}
         onOpenProductPage={announceProductPage}
       />
       <ListProductsDeleteDialog
@@ -139,7 +151,7 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
         onClose={closeDelete}
         onConfirm={confirmDelete}
       />
-      <ListProductsToast toast={toast} onDismiss={dismissToast} />
+      <ListProductsToast toast={toast} onDismiss={dismissToast} raised={editor !== null} />
     </div>
   );
 }
