@@ -202,7 +202,7 @@ export function CreatePhotosStep({
           Suggested angles
         </p>
         <p className="text-xs leading-relaxed text-ink-muted">
-          Guidance only — any clear photo of the item works. Indexing needs at least one photo.
+          Guidance only - any clear photo of the item works. Indexing needs at least one photo.
         </p>
         <div className="flex flex-wrap gap-1.5">
           {SUGGESTED_ANGLES.map((angle) => (
