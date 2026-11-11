@@ -11,6 +11,7 @@ export type CatalogRow = {
   name: string;
   brand: string;
   category: string;
+  description: string;
   status: IndexStatus;
   indexError?: string;
 };

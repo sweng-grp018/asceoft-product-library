@@ -30,7 +30,7 @@ export function ListProductsToast({ toast, onDismiss }: ListProductsToastProps) 
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed right-6 bottom-6 z-50"
+      className="pointer-events-none fixed right-6 bottom-6 z-[60]"
     >
       <div
         className={cn(

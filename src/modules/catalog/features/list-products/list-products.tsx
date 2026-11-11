@@ -9,7 +9,7 @@ import {
 } from "./list-products.data";
 import { ListProductsCardList } from "./list-products-card-list";
 import { ListProductsDeleteDialog } from "./list-products-delete-dialog";
-import { ListProductsEditorDialog } from "./list-products-editor-dialog";
+import { ListProductsEditorSheet } from "./list-products-editor-sheet";
 import { ListProductsPagination } from "./list-products-pagination";
 import { ListProductsTable } from "./list-products-table";
 import { ListProductsToast } from "./list-products-toast";
@@ -73,6 +73,13 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
     setToast({ message: "Pagination is not wired to the API yet.", tone: "success" });
   }
 
+  function announceProductPage() {
+    setToast({
+      message: "Reference photos live on the product page — not wired in this preview.",
+      tone: "success",
+    });
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
@@ -121,7 +128,12 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
         />
       </div>
 
-      <ListProductsEditorDialog editor={editor} onClose={closeEditor} onSave={saveDraft} />
+      <ListProductsEditorSheet
+        editor={editor}
+        onClose={closeEditor}
+        onSave={saveDraft}
+        onOpenProductPage={announceProductPage}
+      />
       <ListProductsDeleteDialog
         target={deleteTarget}
         onClose={closeDelete}

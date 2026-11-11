@@ -10,6 +10,7 @@ function normalizeDraft(draft: CatalogDraft): CatalogDraft {
     name: draft.name.trim(),
     brand: draft.brand.trim(),
     category: draft.category.trim() || "Uncategorized",
+    description: draft.description.trim(),
     status: draft.status,
   };
 }

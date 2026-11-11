@@ -34,6 +34,7 @@ export const EMPTY_DRAFT: CatalogDraft = {
   name: "",
   brand: "",
   category: "",
+  description: "",
   status: "PENDING",
 };
 
@@ -45,6 +46,8 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
     name: "Heavy-Duty Cordless Drill 20V",
     brand: "DeWalt",
     category: "Power tools",
+    description:
+      "Brushless 20V drill with a two-speed transmission and LED work light. The compact body fits between shelf uprights where a full-size drill will not.",
     status: "INDEXED",
   },
   {
@@ -53,6 +56,8 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
     name: "Industrial Impact Socket Set (32-pc)",
     brand: "Milwaukee",
     category: "Hand tools",
+    description:
+      "32 impact-rated sockets in a labelled case, sized 8–32 mm. Case artwork is the most reliable visual marker on a shelf photo.",
     status: "INDEXED",
   },
   {
@@ -61,6 +66,8 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
     name: "Laser Distance Measure 165ft",
     brand: "Bosch",
     category: "Measuring tools",
+    description:
+      "Class 2 laser measure rated to 50 m with a backlit display. Reference photos are still being captured from the vendor sheet.",
     status: "PROCESSING",
   },
   {
@@ -69,6 +76,8 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
     name: "ANSI Z87.1 Safety Eyewear (Smoke)",
     brand: "3M Safety",
     category: "Safety equipment",
+    description:
+      "Smoke-lens safety glasses with a wraparound frame. No reference photos submitted yet, so the SKU cannot be matched by sight.",
     status: "PENDING",
   },
   {
@@ -77,6 +86,8 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
     name: "Thermal Imaging Camera FLIR E4",
     brand: "FLIR Systems",
     category: "Imaging equipment",
+    description:
+      "Handheld thermal camera, 80 × 60 IR resolution. Submitted photos were rejected before indexing completed.",
     status: "FAILED",
     indexError: "Image resolution too low",
   },
@@ -86,6 +97,8 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
     name: "Waterproof Inspection Borescope HD",
     brand: "Klein Tools",
     category: "Inspection equipment",
+    description:
+      "IP67 borescope with a 9 mm camera head and a 6 ft probe. Awaiting its first reference photo set.",
     status: "PENDING",
   },
 ];
