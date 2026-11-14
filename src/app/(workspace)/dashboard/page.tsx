@@ -1,14 +1,8 @@
-import { Dot, Package, CheckCircle2, Clock3, RefreshCw } from "lucide-react";
+import { Package, CheckCircle2, Clock3 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DashboardRecentActivity } from "@/modules/dashboard/features/overview/dashboard-recent-activity";
+import { DASHBOARD_ACTIVITIES } from "@/modules/dashboard/features/overview/dashboard-activity.data";
 
 /* Placeholders for now */
 const stats = [
@@ -35,57 +29,6 @@ const stats = [
     badgeClass: "bg-indigo-100 text-indigo-700",
   },
 ];
-
-const activities = [
-  {
-    sku: "SKU-90214",
-    name: "Heavy-Duty Cordless Drill 20V",
-    status: "Ready",
-    date: "Today, 10:42 AM",
-  },
-  {
-    sku: "SKU-88412",
-    name: "Industrial Impact Socket Set (32-pc)",
-    status: "Ready",
-    date: "Today, 09:15 AM",
-  },
-  {
-    sku: "SKU-77291",
-    name: "Laser Distance Measure 165ft",
-    status: "Processing",
-    date: "Yesterday, 4:30 PM",
-  },
-  {
-    sku: "SKU-65103",
-    name: "ANSI Z87.1 Safety Eyewear (Smoke)",
-    status: "Needs Indexing",
-    date: "Yesterday, 2:15 PM",
-  },
-  {
-    sku: "SKU-44029",
-    name: "Waterproof Inspection Borescope HD",
-    status: "Needs Indexing",
-    date: "Oct 24, 2023",
-  },
-];
-
-function StatusBadge({ status }: { status: string }) {
-  /* For placeholder statuses */
-  const styles: Record<string, string> = {
-    Ready: "bg-emerald-100 text-emerald-700",
-    Processing: "bg-indigo-100 text-indigo-700",
-    "Needs Indexing": "bg-blue-100 text-blue-700",
-  };
-
-  return (
-    <Badge variant="secondary" className={`rounded-full px-2.5 py-1 font-medium ${styles[status]}`}>
-      <span className="mr-1">
-        <Dot />
-      </span>
-      {status}
-    </Badge>
-  );
-}
 
 export default function Dashboard() {
   return (
@@ -136,69 +79,7 @@ export default function Dashboard() {
         })}
       </div>
 
-      {/* Recent Activity / Table*/}
-      <Card className="gap-0 overflow-hidden border-slate-100 bg-white py-0 shadow-sm">
-        <CardHeader className="px-5 py-5">
-          <CardTitle className="text-sm font-bold text-[#232254]">Recent Activity</CardTitle>
-          <CardDescription className="text-xs">
-            Latest 5 products ingested into the library
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-0 bg-[#eef2ff] hover:bg-[#eef2ff]">
-                  <TableHead className="px-5 py-3 text-[10px] font-semibold tracking-wider text-[#232254]">
-                    SKU
-                  </TableHead>
-                  <TableHead className="py-3 text-[10px] font-semibold tracking-wider text-[#232254]">
-                    PRODUCT NAME
-                  </TableHead>
-                  <TableHead className="py-3 text-[10px] font-semibold tracking-wider text-[#232254]">
-                    STATUS
-                  </TableHead>
-                  <TableHead className="px-5 py-3 text-right text-[10px] font-semibold tracking-wider text-[#232254]">
-                    DATE
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {activities.map((item) => (
-                  <TableRow key={item.sku} className="h-13 border-slate-100">
-                    <TableCell className="px-5 text-xs font-medium text-[#232254]">
-                      {item.sku}
-                    </TableCell>
-
-                    <TableCell className="whitespace-nowrap text-xs text-[#232254]">
-                      {item.name}
-                    </TableCell>
-
-                    <TableCell>
-                      <StatusBadge status={item.status} />
-                    </TableCell>
-
-                    <TableCell className="whitespace-nowrap px-5 text-right text-[10px] text-[#232254]">
-                      {item.date}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-
-        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-          <p className="text-[10px] text-slate-600">Showing 5 of 1,248 items</p>
-
-          <div className="flex items-center gap-2 text-xs">
-            <span className="rounded-lg bg-indigo-50 px-4 py-2 text-slate-700">Previous</span>
-            <span className="rounded-lg bg-[#4542bd] px-4 py-2 font-medium text-white">Next</span>
-          </div>
-        </div>
-      </Card>
+      <DashboardRecentActivity activities={DASHBOARD_ACTIVITIES} />
     </div>
   );
 }
