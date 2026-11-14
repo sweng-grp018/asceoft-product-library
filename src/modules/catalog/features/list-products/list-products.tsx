@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useRef, useState } from "react";
-import {
-  PLACEHOLDER_PAGE,
-  PLACEHOLDER_PAGE_COUNT,
-  PLACEHOLDER_ROWS,
-  PLACEHOLDER_TOTAL,
-} from "./list-products.data";
+import { PLACEHOLDER_ROWS } from "./list-products.data";
 import { ListProductsCardList } from "./list-products-card-list";
 import { ListProductsDeleteDialog } from "./list-products-delete-dialog";
 import { ListProductsEditorSheet } from "./list-products-editor-sheet";
@@ -22,12 +17,26 @@ import { useListProducts } from "./use-list-products";
  *
  * Static preview: rows come from `PLACEHOLDER_ROWS` and every mutation is local
  * state, so a reload restores the fixtures. Wiring the screen to the API means
- * replacing the `useListProducts` mutators and the placeholder totals here; the
+ * replacing the `useListProducts` data source and mutators; the
  * toolbar, table, card list, pagination and dialogs stay as they are.
  */
 export function ListProducts({ canEdit }: { canEdit: boolean }) {
-  const { rows, visibleRows, query, setQuery, createRow, updateRow, removeRow } =
-    useListProducts(PLACEHOLDER_ROWS);
+  const {
+    rows,
+    visibleRows,
+    query,
+    setQuery,
+    createRow,
+    updateRow,
+    removeRow,
+    total,
+    page,
+    pageCount,
+    start,
+    end,
+    previousPage,
+    nextPage,
+  } = useListProducts(PLACEHOLDER_ROWS);
 
   const [editor, setEditor] = useState<CatalogEditor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CatalogRow | null>(null);
@@ -79,10 +88,6 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
     setDeleteTarget(null);
   }
 
-  function announcePaging() {
-    setToast({ message: "Pagination is not wired to the API yet.", tone: "success" });
-  }
-
   function announceProductPage() {
     setToast({
       message: "Reference photos live on the product page — not wired in this preview.",
@@ -130,11 +135,13 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
         </div>
 
         <ListProductsPagination
-          shownCount={visibleRows.length}
-          total={PLACEHOLDER_TOTAL}
-          page={PLACEHOLDER_PAGE}
-          pageCount={PLACEHOLDER_PAGE_COUNT}
-          onNext={announcePaging}
+          start={start}
+          end={end}
+          total={total}
+          page={page}
+          pageCount={pageCount}
+          onPrevious={previousPage}
+          onNext={nextPage}
         />
       </div>
 
