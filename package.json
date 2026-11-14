@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:api": "bun run --cwd api dev",
-    "build": "next build --webpack",
+    "build": "bun run db:generate && next build --webpack",
     "start": "next start",
     "typecheck": "tsrs --noEmit",
     "typecheck:api": "bun run --cwd api typecheck",
