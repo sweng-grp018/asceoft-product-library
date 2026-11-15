@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 export default async function ProductDetails({
   params,
@@ -61,17 +62,22 @@ export default async function ProductDetails({
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            <form
-              action={uploadReference.bind(null, productId)}
-              className="flex flex-wrap items-end gap-3"
-            >
-              <label className="flex flex-1 flex-col gap-1.5 text-sm">
-                Image
-                <Input type="file" name="image" accept="image/png,image/jpeg,image/webp" required />
-              </label>
-              <Button type="submit" variant="outline">
-                Upload
-              </Button>
+            <form action={uploadReference.bind(null, productId)}>
+              <FieldGroup className="flex-row flex-wrap items-end gap-3">
+                <Field className="flex-1 gap-1.5">
+                  <FieldLabel htmlFor="reference-image">Image</FieldLabel>
+                  <Input
+                    id="reference-image"
+                    type="file"
+                    name="image"
+                    accept="image/png,image/jpeg,image/webp"
+                    required
+                  />
+                </Field>
+                <Button type="submit" variant="outline">
+                  Upload
+                </Button>
+              </FieldGroup>
             </form>
             <form action={indexProduct.bind(null, productId)}>
               <Button disabled={!product.images.length || product.indexStatus === "PROCESSING"}>

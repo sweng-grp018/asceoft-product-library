@@ -2,16 +2,23 @@ import Link from "next/link";
 import { login } from "@/modules/auth/features/sign-in/actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { MoveLeft, Box, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { Suspense } from "react";
 
-export default async function SignIn({
-  searchParams,
-}: {
-  searchParams: Promise<{ error?: string }>;
-}) {
+async function SignInError({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { error } = await searchParams;
 
+  return error ? (
+    <p role="alert" className="text-sm text-destructive">
+      Invalid email or password.
+    </p>
+  ) : null;
+}
+
+export default function SignIn({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   return (
     <main className="grid min-h-svh lg:grid-cols-[42%_58%]">
       {/* LEFT */}
@@ -67,11 +74,11 @@ export default async function SignIn({
       <section className="flex min-h-[650px] items-center justify-center bg-white px-6 py-12 md:px-12 lg:min-h-svh">
         <div className="w-full max-w-md">
           <Link
-            href="/signup"
+            href="/search"
             className="mb-12 flex items-center gap-2 text-xs text-[#232254] hover:underline sm:text-sm"
           >
             <MoveLeft size={18} />
-            No account? Sign up here.
+            Explore the public catalog
           </Link>
 
           <div className="mb-7">
@@ -81,52 +88,56 @@ export default async function SignIn({
             </p>
           </div>
 
-          <form action={login} className="flex flex-col gap-5">
-            <label className="flex flex-col gap-2 text-xs font-medium text-[#1c352a] sm:text-sm">
-              Work Email
-              <Input
-                name="email"
-                type="email"
-                placeholder="you@company.com"
-                required
-                autoComplete="username"
-                className="h-12 text-sm sm:h-12"
-              />
-            </label>
+          <form action={login}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="sign-in-email">Work Email</FieldLabel>
+                <Input
+                  id="sign-in-email"
+                  name="email"
+                  type="email"
+                  placeholder="you@company.com"
+                  required
+                  autoComplete="username"
+                  className="h-12 text-sm sm:h-12"
+                />
+              </Field>
 
-            <label className="flex flex-col gap-2 text-xs font-medium text-[#1c352a] sm:text-sm">
-              Password
-              <Input
-                name="password"
-                type="password"
-                placeholder="Enter your password"
-                required
-                autoComplete="current-password"
-                className="h-12 text-sm sm:h-12"
-              />
-            </label>
+              <Field>
+                <FieldLabel htmlFor="sign-in-password">Password</FieldLabel>
+                <Input
+                  id="sign-in-password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  required
+                  autoComplete="current-password"
+                  className="h-12 text-sm sm:h-12"
+                />
+              </Field>
 
-            {error && (
-              <p role="alert" className="text-sm text-destructive">
-                Invalid email or password.
-              </p>
-            )}
+              <Suspense fallback={null}>
+                <SignInError searchParams={searchParams} />
+              </Suspense>
 
-            <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
-              <label className="flex items-center gap-2 text-[#788b7d]">
-                <input type="checkbox" className="accent-[#176b4b]" />
-                Remember this device
-              </label>
+              <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
+                <Field orientation="horizontal" className="w-auto">
+                  <Checkbox id="remember-device" />
+                  <FieldLabel htmlFor="remember-device" className="text-muted-foreground">
+                    Remember this device
+                  </FieldLabel>
+                </Field>
 
-              <span className="font-semibold text-[#4542bd]">Forgot password?</span>
-            </div>
+                <span className="font-semibold text-[#4542bd]">Forgot password?</span>
+              </div>
 
-            <Button
-              type="submit"
-              className="h-12 w-full bg-[#4542bd] text-sm text-white hover:bg-[#12583e] sm:h-12"
-            >
-              Sign in to workspace
-            </Button>
+              <Button
+                type="submit"
+                className="h-12 w-full bg-[#4542bd] text-sm text-white hover:bg-[#12583e] sm:h-12"
+              >
+                Sign in to workspace
+              </Button>
+            </FieldGroup>
           </form>
 
           <div className="mt-5 flex gap-3 rounded-xl bg-[#edf3ff] p-4 text-[#315e9b] sm:p-5">

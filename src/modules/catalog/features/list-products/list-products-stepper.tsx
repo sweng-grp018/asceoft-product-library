@@ -2,6 +2,7 @@
 
 import { CheckIcon } from "lucide-react";
 import { cn } from "cn";
+import { Button } from "@/components/ui/button";
 import { CREATE_STEPS } from "./list-products.data";
 
 type ListProductsStepperProps = {
@@ -29,13 +30,15 @@ export function ListProductsStepper({ current, onSelect }: ListProductsStepperPr
               aria-hidden
               className={cn("h-1 rounded-full", isDone || isCurrent ? "bg-brand" : "bg-line")}
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="xs"
               disabled={!isNavigable}
               onClick={() => onSelect(index)}
               aria-current={isCurrent ? "step" : undefined}
               className={cn(
-                "flex items-center gap-1 text-left text-[11px] font-semibold transition-colors",
+                "h-auto justify-start gap-1 p-0 text-left text-[11px] font-semibold transition-colors disabled:opacity-100",
                 isCurrent && "text-brand",
                 isDone && "text-brand hover:text-brand-strong",
                 !isDone && !isCurrent && "text-ink-muted",
@@ -52,7 +55,7 @@ export function ListProductsStepper({ current, onSelect }: ListProductsStepperPr
                 {isDone ? <CheckIcon className="size-2.5" strokeWidth={3} /> : index + 1}
               </span>
               {step.label}
-            </button>
+            </Button>
           </li>
         );
       })}

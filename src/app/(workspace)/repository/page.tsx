@@ -3,6 +3,7 @@ import { uploadShelf, analyzeShelf } from "@/modules/repository/features/shelf-a
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 type Shelf = { id: string; store: string | null; campaign: string | null; createdAt: string };
 export default async function Repository({
@@ -33,20 +34,33 @@ export default async function Repository({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={uploadShelf} className="grid gap-3 md:grid-cols-2">
-            <label className="flex flex-col gap-1.5 text-sm">
-              Store
-              <Input name="store" maxLength={100} placeholder="Store location" />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm">
-              Campaign
-              <Input name="campaign" maxLength={100} placeholder="Optional campaign" />
-            </label>
-            <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
-              Photo
-              <Input name="image" type="file" accept="image/png,image/jpeg,image/webp" required />
-            </label>
-            <Button type="submit">Upload photo</Button>
+          <form action={uploadShelf}>
+            <FieldGroup className="grid gap-3 md:grid-cols-2">
+              <Field className="gap-1.5">
+                <FieldLabel htmlFor="shelf-store">Store</FieldLabel>
+                <Input id="shelf-store" name="store" maxLength={100} placeholder="Store location" />
+              </Field>
+              <Field className="gap-1.5">
+                <FieldLabel htmlFor="shelf-campaign">Campaign</FieldLabel>
+                <Input
+                  id="shelf-campaign"
+                  name="campaign"
+                  maxLength={100}
+                  placeholder="Optional campaign"
+                />
+              </Field>
+              <Field className="gap-1.5 md:col-span-2">
+                <FieldLabel htmlFor="shelf-image">Photo</FieldLabel>
+                <Input
+                  id="shelf-image"
+                  name="image"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  required
+                />
+              </Field>
+              <Button type="submit">Upload photo</Button>
+            </FieldGroup>
           </form>
         </CardContent>
       </Card>

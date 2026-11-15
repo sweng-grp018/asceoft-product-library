@@ -4,6 +4,8 @@ import { createStaffUser } from "@/modules/auth/features/manage-users/actions";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 
 export default async function Users() {
   if ((await auth())?.user.role !== "ADMIN") redirect("/dashboard");
@@ -16,26 +18,31 @@ export default async function Users() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form action={createStaffUser} className="flex flex-col gap-4">
-          {(["name", "email", "password"] as const).map((field) => (
-            <label className="flex flex-col gap-1.5 text-sm capitalize" key={field}>
-              {field}
-              <Input
-                name={field}
-                type={field === "password" ? "password" : field === "email" ? "email" : "text"}
-                minLength={field === "password" ? 12 : 1}
-                required
-              />
-            </label>
-          ))}
-          <label className="flex flex-col gap-1.5 text-sm">
-            Role
-            <select name="role" className="h-9 rounded-lg border border-input bg-background px-2">
-              <option value="STAFF">Staff</option>
-              <option value="ADMIN">Administrator</option>
-            </select>
-          </label>
-          <Button type="submit">Create user</Button>
+        <form action={createStaffUser}>
+          <FieldGroup className="gap-4">
+            {(["name", "email", "password"] as const).map((field) => (
+              <Field className="gap-1.5" key={field}>
+                <FieldLabel htmlFor={`staff-${field}`} className="capitalize">
+                  {field}
+                </FieldLabel>
+                <Input
+                  id={`staff-${field}`}
+                  name={field}
+                  type={field === "password" ? "password" : field === "email" ? "email" : "text"}
+                  minLength={field === "password" ? 12 : 1}
+                  required
+                />
+              </Field>
+            ))}
+            <Field className="gap-1.5">
+              <FieldLabel htmlFor="staff-role">Role</FieldLabel>
+              <NativeSelect id="staff-role" name="role" defaultValue="STAFF" className="w-full">
+                <NativeSelectOption value="STAFF">Staff</NativeSelectOption>
+                <NativeSelectOption value="ADMIN">Administrator</NativeSelectOption>
+              </NativeSelect>
+            </Field>
+            <Button type="submit">Create user</Button>
+          </FieldGroup>
         </form>
       </CardContent>
     </Card>

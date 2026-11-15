@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { PHOTO_LIMIT, PHOTO_MAX_BYTES, PHOTO_TYPES, SUGGESTED_ANGLES } from "./list-products.data";
 import {
   BrandField,
@@ -58,14 +60,16 @@ export function CreateMetadataStep({
           error={errors.sku}
           required
           action={
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="xs"
               onClick={onGenerateSku}
-              className="flex items-center gap-1 text-[11px] font-semibold text-brand hover:underline"
+              className="h-auto gap-1 p-0 text-[11px] font-semibold text-brand"
             >
-              <RefreshCwIcon aria-hidden className="size-3" />
+              <RefreshCwIcon aria-hidden data-icon="inline-start" />
               Auto-generate
-            </button>
+            </Button>
           }
         />
 
@@ -166,14 +170,16 @@ export function CreatePhotosStep({
                 unoptimized
                 className="aspect-square w-full object-cover"
               />
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon-xs"
                 onClick={() => onRemovePhoto(photo.id)}
                 aria-label={`Remove ${photo.name}`}
                 className="absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-toast-surface/80 text-white transition-opacity focus-visible:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
               >
-                <XIcon aria-hidden className="size-3.5" />
-              </button>
+                <XIcon aria-hidden />
+              </Button>
               <p className="truncate px-2 py-1.5 text-[11px] text-ink-muted" title={photo.name}>
                 {photo.name}
               </p>
@@ -229,7 +235,7 @@ function PhotoDropzone({
   const [isDragging, setIsDragging] = useState(false);
 
   return (
-    <label
+    <Label
       onDragOver={(event) => {
         event.preventDefault();
         if (!isFull) setIsDragging(true);
@@ -257,7 +263,7 @@ function PhotoDropzone({
           {isFull ? "Remove one to make room." : "Pick up to 5 photos of the item."}
         </span>
       </span>
-      <input
+      <Input
         type="file"
         multiple
         accept={PHOTO_TYPES.join(",")}
@@ -268,7 +274,7 @@ function PhotoDropzone({
           event.target.value = "";
         }}
       />
-    </label>
+    </Label>
   );
 }
 

@@ -3,6 +3,7 @@
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useRef } from "react";
 import { SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { Field as FormField, FieldLabel } from "@/components/ui/field";
 import { cn } from "cn";
 
 /**
@@ -151,9 +152,9 @@ export function Field({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <FormField data-invalid={Boolean(error)} className="gap-1.5">
       <div className="flex items-baseline justify-between gap-2">
-        <label
+        <FieldLabel
           htmlFor={htmlFor}
           className="text-[11px] font-semibold tracking-[0.06em] text-ink-muted uppercase"
         >
@@ -163,7 +164,7 @@ export function Field({
               *
             </span>
           ) : null}
-        </label>
+        </FieldLabel>
         <div className="flex items-center gap-2">
           {hint ? <span className="text-[11px] text-ink-muted tabular-nums">{hint}</span> : null}
           {action}
@@ -175,6 +176,6 @@ export function Field({
           {error}
         </p>
       ) : null}
-    </div>
+    </FormField>
   );
 }

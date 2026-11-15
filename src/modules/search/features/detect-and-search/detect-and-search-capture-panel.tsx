@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { IMAGE_MAX_BYTES, IMAGE_MIME_TYPES, describeBytes } from "@/lib/image";
 import { CAPTURE_GUIDELINES } from "./detect-and-search.data";
 import { frameSize } from "./detect-and-search.logic";
@@ -69,7 +71,7 @@ export function DetectAndSearchCapturePanel({
         </span>
       </header>
 
-      <label
+      <Label
         onDragOver={(event) => {
           event.preventDefault();
           setIsDragging(true);
@@ -95,13 +97,13 @@ export function DetectAndSearchCapturePanel({
         <span className="rounded-md bg-card px-2.5 py-1 text-[11px] font-semibold text-brand ring-1 ring-brand/20">
           Browse files
         </span>
-        <input
+        <Input
           type="file"
           accept={IMAGE_MIME_TYPES.join(",")}
           className="sr-only"
           onChange={handleChange}
         />
-      </label>
+      </Label>
 
       <Button
         type="button"
@@ -113,7 +115,7 @@ export function DetectAndSearchCapturePanel({
         <CameraIcon data-icon="inline-start" />
         Take photo
       </Button>
-      <input
+      <Input
         ref={cameraRef}
         type="file"
         accept={IMAGE_MIME_TYPES.join(",")}
