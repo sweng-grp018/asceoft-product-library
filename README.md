@@ -83,6 +83,20 @@ The Compose stack pins a Bitnami legacy MinIO build (`2025.7.23`) because MinIO 
 
 **Environment summary:** `DATABASE_URL`, `API_PORT`, `API_URL`, `WEB_ORIGIN`, `AUTH_SECRET`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` and `AI_SERVICE_URL`. Set optional `YOLO_WEIGHTS` in the AI service to use your own compatible detector weights.
 
+### Hosted database setup
+
+The Prisma schema and initial migration are already in `development`. Confirm that the deployed revision contains `api/prisma/schema.prisma`: the older `main` branch uses the previous Drizzle stack. Release changes to `main` through the team's reviewed Gitflow process.
+
+For a new, empty PostgreSQL database, set `DATABASE_URL` as a server-side secret in the environment that runs the Express API. From a trusted environment with that same database connection and the project dependencies installed, verify the target, then apply the existing migration once:
+
+```bash
+bun run --cwd api db:deploy
+```
+
+This runs `prisma migrate deploy`; it does not create the database. For a database that already contains tables or application data, review its migration history and take a backup before applying anything. Do not run the development migration or admin seed against an unverified database.
+
+The Next.js deployment also needs `API_URL` pointing to a reachable hosted Express API; `localhost:4000` refers to the deployment itself, not a developer's computer. Configure the API's JWT and S3 variables and the web app's authentication secret as described above. Image analysis additionally requires the AI service and object storage. A successful Next.js build alone does not verify these connections.
+
 ## API contracts
 
 Express provides JSON endpoints, with Zod validation and role checks at the backend:
