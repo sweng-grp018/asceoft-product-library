@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import type { ReactNode } from "react";
 import { auth } from "@/modules/auth/server/session";
 import { logout } from "@/modules/auth/features/sign-in/actions";
@@ -8,6 +9,7 @@ import { AppSidebar } from "@/components/layout/app-sidebar";
 export const instant = false;
 
 export default async function WorkspaceLayout({ children }: { children: ReactNode }) {
+  await connection();
   const session = await auth();
 
   if (!session?.user) {
