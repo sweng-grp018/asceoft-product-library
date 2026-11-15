@@ -8,6 +8,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:api": "bun run --cwd api dev",
+    "dev:ai": "cd services && uv run uvicorn app.main:app --reload --port 8000",
+    "dev:all": "uv --version && docker compose up -d && bun run db:generate && concurrently --kill-others --names web,api,ai \"bun run dev\" \"bun run dev:api\" \"bun run dev:ai\"",
     "dev:vercel": "node scripts/vercel-dev.mjs",
     "build": "next build --webpack",
     "start": "next start",
@@ -45,6 +47,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
+    "concurrently": "^10.0.7",
     "oxfmt": "^0.75.0",
     "oxlint": "^1.90.0",
     "postcss": "^8.5.32",

@@ -71,11 +71,13 @@ Prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3**, Docker Compo
 
 1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`).
 2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL`, `WEB_ORIGIN` and `AI_SERVICE_URL` consistent with your services. The example MinIO credentials are local-development defaults only.
-3. Run `docker compose up -d`. This starts PostgreSQL on port **5433** (chosen to avoid a host-installed PostgreSQL on 5432) and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. Set production passwords and persistent storage separately.
-4. Run `bun run db:generate` followed by `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; verify `DATABASE_URL` first.
-5. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
-6. Run the AI service with `cd services && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000`.
-7. In separate terminals from the repository root, start the Express API with `bun run dev:api` (port **4000**) and the Next.js web app with `bun run dev` (port **3000**). Open `http://localhost:3000` or `/sign-in`.
+3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; do not run them against an unverified database.
+4. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
+5. Run `bun run dev:all` from the repository root. It starts the Compose services, generates the Prisma client, and runs the web app, Express API and AI service together. Open `http://localhost:3000` or `/sign-in`. The first AI startup may need to install Python dependencies; model weights may download on first inference.
+
+Press Ctrl+C to stop the web, Express API and AI processes. The Docker containers keep running; use `docker compose down` to stop them. If any of the three application processes exits, the command stops the others. The command does not run migrations or seed data. For individual processes use `bun run dev`, `bun run dev:api`, or `bun run dev:ai`.
+
+Compose starts PostgreSQL on port **5433** (chosen to avoid a host-installed PostgreSQL on 5432) and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. PostgreSQL and bucket provisioning may take a short time to become ready after Compose starts. Set production passwords and persistent storage separately.
 
 The API loads the root `.env`; Prisma CLI configuration reads the same file. API and AI health endpoints are `GET /health` on ports 4000 and 8000 respectively. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration. All published ports bind to `127.0.0.1` only.
 
