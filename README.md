@@ -95,7 +95,15 @@ bun run --cwd api db:deploy
 
 This runs `prisma migrate deploy`; it does not create the database. For a database that already contains tables or application data, review its migration history and take a backup before applying anything. Do not run the development migration or admin seed against an unverified database.
 
-The Next.js deployment also needs `API_URL` pointing to a reachable hosted Express API; `localhost:4000` refers to the deployment itself, not a developer's computer. Configure the API's JWT and S3 variables and the web app's authentication secret as described above. Image analysis additionally requires the AI service and object storage. A successful Next.js build alone does not verify these connections.
+### Vercel Services configuration
+
+The root `vercel.json` defines three services: public Next.js `app`, private Express `api`, and private FastAPI `ai`. Next.js owns all public paths, including NextAuth's `/api/auth/*`. The `app` → `api` and `api` → `ai` bindings inject `API_INTERNAL_URL` and `AI_INTERNAL_URL` at function runtime; do not define these binding variables yourself. Outside Vercel Services, the existing `API_URL` and `AI_SERVICE_URL` settings continue to support local development and separately hosted services.
+
+Configure the database, S3, authentication and JWT settings in the Vercel project for each deployment environment. The API build generates the Prisma client and therefore also needs `DATABASE_URL` available at build time; generation does not apply migrations. Use hosted PostgreSQL and S3 endpoints, not the local Compose addresses. Configure S3 CORS for browser-accessible presigned URLs and set `WEB_ORIGIN` appropriately. Vercel Services is a beta feature.
+
+For local testing, create the Python environment with a supported interpreter first, for example `python3.12 -m venv services/.venv`, then run `bun run dev:vercel -L` from the repository root. This invokes the installed Vercel CLI in local-only mode. It installs the Bun workspace once before starting Vercel because concurrent per-service installs can otherwise race while linking workspace binaries; the production configuration still installs each service normally. Omit `-L` to use a linked Vercel project. Vercel installs the Python service dependencies on first startup; model inference itself remains unverified.
+
+The Python service's PyTorch and model dependencies can exceed Vercel's standard Python function bundle limit; confirm the installed bundle fits and enable Large Functions on Fluid compute if needed. Model downloads, writable cache locations, cold starts and resource requirements also need verification on the target deployment. Vercel Functions have a 4.5 MB request-body limit, while the current image workflows accept up to 10 MiB and forward base64-encoded images to inference. Larger uploads or inference requests can therefore fail; moving image bytes directly through object storage would require additional application changes. A successful Next.js build does not verify the Python bundle, model inference, service bindings or these image flows.
 
 ## API contracts
 

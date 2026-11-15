@@ -2,12 +2,15 @@
 // and indexed images can be retried from the CMS.
 export async function aiRequest<T>(route: "/embed" | "/detect", image: Buffer): Promise<T> {
   const { config } = await import("./config.js");
-  const response = await fetch(new URL(route, config.AI_SERVICE_URL), {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ imageBase64: image.toString("base64") }),
-    signal: AbortSignal.timeout(120_000),
-  });
+  const response = await fetch(
+    new URL(route, process.env.AI_INTERNAL_URL ?? config.AI_SERVICE_URL),
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ imageBase64: image.toString("base64") }),
+      signal: AbortSignal.timeout(120_000),
+    },
+  );
   if (!response.ok) throw Object.assign(new Error("AI inference unavailable"), { status: 502 });
   return (await response.json()) as T;
 }

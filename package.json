@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:api": "bun run --cwd api dev",
+    "dev:vercel": "node scripts/vercel-dev.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsrs --noEmit",
@@ -49,7 +50,8 @@
     "postcss": "^8.5.32",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.20.6",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vercel": "62.4.0"
   },
   "packageManager": "bun@1.4.3",
   "ignoreScripts": [
