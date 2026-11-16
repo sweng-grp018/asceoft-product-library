@@ -17,10 +17,13 @@ export function EmptyCatalogState({ query, onClearSearch }: EmptyCatalogStatePro
       </span>
       <p className="text-base font-semibold text-brand-ink">No products found</p>
       <p className="text-sm text-ink-muted">
-        Nothing matches “{query.trim()}”. Check the SKU format or try another keyword.
+        {query.trim()
+          ? `Nothing matches "${query.trim()}" with the current filters.`
+          : "No products match the selected indexing status."}{" "}
+        Try changing or clearing the filters.
       </p>
       <Button type="button" variant="brand-ghost" size="sm" onClick={onClearSearch}>
-        Clear search
+        Clear filters
       </Button>
     </div>
   );

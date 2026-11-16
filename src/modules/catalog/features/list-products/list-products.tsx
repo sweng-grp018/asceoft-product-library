@@ -26,6 +26,9 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
     visibleRows,
     query,
     setQuery,
+    statusFilter,
+    setStatusFilter,
+    clearFilters,
     createRow,
     updateRow,
     removeRow,
@@ -56,7 +59,6 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
   const closeEditor = useCallback(() => setEditor(null), []);
   const closeDelete = useCallback(() => setDeleteTarget(null), []);
   const dismissToast = useCallback(() => setToast(null), []);
-  const clearSearch = useCallback(() => setQuery(""), [setQuery]);
 
   /** Stable identity: the create wizard checks SKU uniqueness against this list. */
   const existingSkus = useMemo(() => rows.map((row) => row.sku), [rows]);
@@ -109,6 +111,9 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
         canCreate={canEdit}
         onQueryChange={setQuery}
         onCreate={openCreate}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        onClearFilters={clearFilters}
       />
 
       <div className="overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-line">
@@ -119,7 +124,7 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
             query={query}
             onEdit={openEdit}
             onDelete={setDeleteTarget}
-            onClearSearch={clearSearch}
+            onClearSearch={clearFilters}
           />
         </div>
 
@@ -130,7 +135,7 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
             query={query}
             onEdit={openEdit}
             onDelete={setDeleteTarget}
-            onClearSearch={clearSearch}
+            onClearSearch={clearFilters}
           />
         </div>
 

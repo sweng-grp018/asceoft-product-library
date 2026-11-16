@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { filterCatalogRows } from "./list-products.search";
+import { filterCatalogRows, type CatalogStatusFilter } from "./list-products.search";
 import { paginateCatalogRows } from "./list-products.paging";
 import type { CatalogDraft, CatalogRow } from "./list-products.types";
 
@@ -23,9 +23,13 @@ function normalizeDraft(draft: CatalogDraft): CatalogDraft {
 export function useListProducts(initialRows: CatalogRow[]) {
   const [rows, setRows] = useState<CatalogRow[]>(initialRows);
   const [query, setSearchQuery] = useState("");
+  const [statusFilter, setStatus] = useState<CatalogStatusFilter>("all");
   const [requestedPage, setPage] = useState(1);
 
-  const filteredRows = useMemo(() => filterCatalogRows(rows, query), [rows, query]);
+  const filteredRows = useMemo(
+    () => filterCatalogRows(rows, query, statusFilter),
+    [rows, query, statusFilter],
+  );
   const pagination = paginateCatalogRows(filteredRows, requestedPage);
 
   // Persist the clamped page when deletion or editing removes the last page.
@@ -36,10 +40,22 @@ export function useListProducts(initialRows: CatalogRow[]) {
     setPage(1);
   }, []);
 
+  const setStatusFilter = useCallback((value: CatalogStatusFilter) => {
+    setStatus(value);
+    setPage(1);
+  }, []);
+
+  const clearFilters = useCallback(() => {
+    setSearchQuery("");
+    setStatus("all");
+    setPage(1);
+  }, []);
+
   const createRow = useCallback((draft: CatalogDraft) => {
     const row: CatalogRow = { id: crypto.randomUUID(), ...normalizeDraft(draft) };
     setRows((current) => [row, ...current]);
     setSearchQuery("");
+    setStatus("all");
     setPage(1);
     return row;
   }, []);
@@ -67,6 +83,9 @@ export function useListProducts(initialRows: CatalogRow[]) {
     ...pagination,
     query,
     setQuery,
+    statusFilter,
+    setStatusFilter,
+    clearFilters,
     previousPage: () => setPage(Math.max(1, pagination.page - 1)),
     nextPage: () => setPage(Math.min(pagination.pageCount, pagination.page + 1)),
     createRow,
