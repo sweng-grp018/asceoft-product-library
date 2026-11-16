@@ -67,7 +67,7 @@ export default async function SignIn({
       <section className="flex min-h-[650px] items-center justify-center bg-white px-6 py-12 md:px-12 lg:min-h-svh">
         <div className="w-full max-w-md">
           <Link
-            href="/signup"
+            href="/sign-up"
             className="mb-12 flex items-center gap-2 text-xs text-[#232254] hover:underline sm:text-sm"
           >
             <MoveLeft size={18} />
@@ -133,10 +133,9 @@ export default async function SignIn({
             <Sparkles size={18} className="mt-0.5 shrink-0" />
 
             <div>
-              <p className="text-xs font-semibold sm:text-sm">Need access?</p>
+              <p className="text-xs font-semibold sm:text-sm">Explore the catalog</p>
               <p className="mt-1 text-[10px] leading-relaxed sm:text-xs">
-                Ask your company administrator for a staff account. You can explore products without
-                signing in.
+                You can explore products without signing in, or create an account to get started.
               </p>
             </div>
           </div>
