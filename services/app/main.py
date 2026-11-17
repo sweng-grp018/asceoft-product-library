@@ -5,18 +5,18 @@ and fine-tuned. Visual SKU matching comes from OpenCLIP embeddings, not YOLO cla
 Models download their weights on first inference if not already cached.
 """
 
+import logging # Added to log errors in endpoints
 import io
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
 from pydantic import BaseModel
 from PIL import Image, UnidentifiedImageError
 
 from app.config import (MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, CLIP_MODEL_NAME, CLIP_PRETRAINED)
 from app.pipeline import run_detection
 from app.embeddings.encoder import embed_image
+from app.api.auth import verify_ai_service_secret
 
-# Added to log errors in endpoints
-import logging
 logger = logging.getLogger(__name__)
 
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
@@ -79,7 +79,11 @@ def health() -> dict:
     return {"status": "ok"}
 
 
-@app.post("/embed", response_model=EmbedResponse)
+@app.post(
+        "/embed", 
+        response_model=EmbedResponse,
+        dependencies=[Depends(verify_ai_service_secret)]
+)
 async def embed(file: UploadFile = File(...)) -> EmbedResponse:
     image = await read_image(file)
 
@@ -93,7 +97,11 @@ async def embed(file: UploadFile = File(...)) -> EmbedResponse:
         raise HTTPException(status_code=500, detail="Image embedding failed") from exc
 
 
-@app.post("/detect", response_model=DetectResponse)
+@app.post(
+        "/detect", 
+        response_model=DetectResponse,
+        dependencies=[Depends(verify_ai_service_secret)]
+)
 async def detect(file: UploadFile = File(...)) -> DetectResponse:
     image = await read_image(file)
 
