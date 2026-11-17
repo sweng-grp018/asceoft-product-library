@@ -1,17 +1,14 @@
-"""Standalone, synchronous POC inference API.
+"""Standalone POC inference API.
 
 Detection uses a general-purpose YOLO26 nano model until a product dataset is labeled
 and fine-tuned. Visual SKU matching comes from OpenCLIP embeddings, not YOLO classes.
 Models download their weights on first inference if not already cached.
 """
 
-import base64
-import binascii
 import io
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from PIL import Image, UnidentifiedImageError
-from pydantic import BaseModel, Field
 
 from app.config import (MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, CLIP_MODEL_NAME, CLIP_PRETRAINED)
 from app.pipeline import run_detection
@@ -21,13 +18,8 @@ Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 app = FastAPI(title="Lensistry AI", version="0.1.0")
 
 
-class ImagePayload(BaseModel):
-    imageBase64: str = Field(min_length=1, max_length=14_000_000)
-
-
-def decode_image(value: str) -> Image.Image:
+def decode_image(data: bytes) -> Image.Image:
     try:
-        data = base64.b64decode(value, validate=True)
         if not 0 < len(data) <= MAX_IMAGE_BYTES:
             raise ValueError("Invalid image size")
         
@@ -40,8 +32,21 @@ def decode_image(value: str) -> Image.Image:
         
         image.load()
         return image.convert("RGB")
-    except (binascii.Error, ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError) as exc:
+    except (ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError) as exc:
         raise HTTPException(status_code=422, detail="Invalid image") from exc
+
+
+async def read_image(file: UploadFile) -> Image.Image:
+    try:
+        image_bytes = await file.read(MAX_IMAGE_BYTES + 1)
+
+        if len(image_bytes) > MAX_IMAGE_BYTES:
+            raise HTTPException(status_code=413, detail="Image too large")
+
+        return decode_image(image_bytes)
+
+    finally:
+        await file.close()
 
 
 @app.get("/health")
@@ -50,12 +55,16 @@ def health() -> dict:
 
 
 @app.post("/embed")
-def embed(body: ImagePayload) -> dict:
-    image = decode_image(body.imageBase64)
-    return {"embedding": embed_image(image), "model": f"openclip-{CLIP_MODEL_NAME}-{CLIP_PRETRAINED}"}
+async def embed(file: UploadFile = File(...)) -> dict:
+    image = await read_image(file)
+    return {
+        "embedding": embed_image(image), 
+        "model": f"openclip-{CLIP_MODEL_NAME}-{CLIP_PRETRAINED}"
+    }
 
 
 @app.post("/detect")
-def detect(body: ImagePayload) -> dict:
-    image = decode_image(body.imageBase64)
+async def detect(file: UploadFile = File(...)) -> dict:
+    image = await read_image(file)
     return run_detection(image)
+    
