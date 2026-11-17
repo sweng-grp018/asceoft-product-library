@@ -7,11 +7,12 @@ dependencies = [
   "fastapi>=0.115,<1",
   "uvicorn[standard]>=0.34,<1",
   "pydantic>=2.11,<3",
-  "pillow>=11,<13",
+  "pillow>=13,<14",
   "numpy>=2,<3",
   "torch>=2.6,<3",
   "ultralytics>=8.3,<9",
-  "open-clip-torch>=3,<4",
+  "open-clip-torch>=4,<5",
+  "python-multipart>=0.0.20,<1",
 ]
 
 [project.optional-dependencies]
@@ -24,3 +25,7 @@ line-length = 100
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
