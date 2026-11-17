@@ -8,14 +8,39 @@ Models download their weights on first inference if not already cached.
 import io
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from pydantic import BaseModel
 from PIL import Image, UnidentifiedImageError
 
 from app.config import (MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, CLIP_MODEL_NAME, CLIP_PRETRAINED)
 from app.pipeline import run_detection
 from app.embeddings.encoder import embed_image
 
+# Added to log errors in endpoints
+import logging
+logger = logging.getLogger(__name__)
+
 Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 app = FastAPI(title="Lensistry AI", version="0.1.0")
+
+
+class EmbedResponse(BaseModel):
+    embedding: list[float]
+    model: str
+
+
+# Describes one detected object
+class DetectionResponse(BaseModel):
+    boundingBox: list[int]
+    detectorScore: float
+    embedding: list[float]
+
+
+# Describes the image-processing result
+class DetectResponse(BaseModel):
+    width: int
+    height: int
+    detectorModel: str
+    detections: list[DetectionResponse]
 
 
 def decode_image(data: bytes) -> Image.Image:
@@ -54,17 +79,26 @@ def health() -> dict:
     return {"status": "ok"}
 
 
-@app.post("/embed")
-async def embed(file: UploadFile = File(...)) -> dict:
+@app.post("/embed", response_model=EmbedResponse)
+async def embed(file: UploadFile = File(...)) -> EmbedResponse:
     image = await read_image(file)
-    return {
-        "embedding": embed_image(image), 
-        "model": f"openclip-{CLIP_MODEL_NAME}-{CLIP_PRETRAINED}"
-    }
+
+    try:
+        return {
+                "embedding": embed_image(image), 
+                "model": f"openclip-{CLIP_MODEL_NAME}-{CLIP_PRETRAINED}"
+        }
+    except Exception as exc:
+        logger.exception("Image embedding failed")
+        raise HTTPException(status_code=500, detail="Image embedding failed") from exc
 
 
-@app.post("/detect")
-async def detect(file: UploadFile = File(...)) -> dict:
+@app.post("/detect", response_model=DetectResponse)
+async def detect(file: UploadFile = File(...)) -> DetectResponse:
     image = await read_image(file)
-    return run_detection(image)
-    
+
+    try: 
+        return run_detection(image)
+    except Exception as exc:
+        logger.exception("Image detection failed")
+        raise HTTPException(status_code=500, detail="Image detection failed") from exc
