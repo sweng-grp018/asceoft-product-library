@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+Pillow
+numpy
+ultralytics
+open-clip-torch
