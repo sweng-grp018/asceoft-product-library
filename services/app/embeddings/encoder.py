@@ -2,12 +2,16 @@ from functools import lru_cache
 
 from PIL import Image
 
+from app.config import CLIP_MODEL_NAME, CLIP_PRETRAINED, CLIP_DEVICE
+
 @lru_cache(maxsize=1)
 def clip_model():
     import open_clip
 
     model, _, transform = open_clip.create_model_and_transforms(
-        "ViT-B-32", pretrained="openai", device="cpu"
+        CLIP_MODEL_NAME, 
+        pretrained=CLIP_PRETRAINED, 
+        device=CLIP_DEVICE
     )
     model.eval()
     return model, transform

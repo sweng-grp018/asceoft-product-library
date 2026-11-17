@@ -8,16 +8,16 @@ Models download their weights on first inference if not already cached.
 import base64
 import binascii
 import io
-import os
 
 from fastapi import FastAPI, HTTPException
 from PIL import Image, UnidentifiedImageError
 from pydantic import BaseModel, Field
 
+from app.config import (MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, CLIP_MODEL_NAME, CLIP_PRETRAINED)
 from app.pipeline import run_detection
+from app.embeddings.encoder import embed_image
 
-MAX_BYTES = 10 * 1024 * 1024
-Image.MAX_IMAGE_PIXELS = 20_000_000
+Image.MAX_IMAGE_PIXELS = MAX_IMAGE_PIXELS
 app = FastAPI(title="Lensistry AI", version="0.1.0")
 
 
@@ -28,14 +28,19 @@ class ImagePayload(BaseModel):
 def decode_image(value: str) -> Image.Image:
     try:
         data = base64.b64decode(value, validate=True)
-        if not 0 < len(data) <= MAX_BYTES:
+        if not 0 < len(data) <= MAX_IMAGE_BYTES:
             raise ValueError("Invalid image size")
+        
         image = Image.open(io.BytesIO(data))
         if image.format not in {"JPEG", "PNG", "WEBP"}:
             raise ValueError("Unsupported image format")
+        width, height = image.size
+        if width * height > MAX_IMAGE_PIXELS:
+            raise ValueError("Image exceeds pixel limit")
+        
         image.load()
         return image.convert("RGB")
-    except (binascii.Error, ValueError, UnidentifiedImageError, OSError) as exc:
+    except (binascii.Error, ValueError, UnidentifiedImageError, Image.DecompressionBombError, OSError) as exc:
         raise HTTPException(status_code=422, detail="Invalid image") from exc
 
 
@@ -47,7 +52,7 @@ def health() -> dict:
 @app.post("/embed")
 def embed(body: ImagePayload) -> dict:
     image = decode_image(body.imageBase64)
-    return {"embedding": embed_image(image), "model": "openclip-ViT-B-32-openai"}
+    return {"embedding": embed_image(image), "model": f"openclip-{CLIP_MODEL_NAME}-{CLIP_PRETRAINED}"}
 
 
 @app.post("/detect")

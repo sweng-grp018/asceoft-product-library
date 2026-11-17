@@ -1,0 +1,15 @@
+import os
+
+# Image validation
+MAX_IMAGE_BYTES = 10 * 1024 * 1024
+MAX_IMAGE_PIXELS = 20_000_000
+
+# YOLO
+YOLO_WEIGHTS = os.getenv("YOLO_WEIGHTS", "yolo26n.pt")
+YOLO_CONFIDENCE = 0.25
+YOLO_MAX_DETECTIONS = 100
+
+# OpenCLIP
+CLIP_MODEL_NAME = "ViT-B-32"
+CLIP_PRETRAINED = "openai"
+CLIP_DEVICE = "cpu"

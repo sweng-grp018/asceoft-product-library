@@ -1,6 +1,7 @@
 from PIL import Image
 
-from app.detection.detector import yolo_model, get_yolo_weights
+from app.config import YOLO_CONFIDENCE, YOLO_MAX_DETECTIONS, YOLO_WEIGHTS
+from app.detection.detector import yolo_model
 from app.detection.cropping import bounded_box, crop_image
 from app.embeddings.encoder import embed_image
 
@@ -10,8 +11,8 @@ def run_detection(image: Image.Image) -> dict:
 
     result = yolo_model().predict(
         image,
-        conf=0.25,
-        max_det=100,
+        conf=YOLO_CONFIDENCE,
+        max_det=YOLO_MAX_DETECTIONS,
         verbose=False
     )[0]
 
@@ -38,6 +39,6 @@ def run_detection(image: Image.Image) -> dict:
     return {
         "width": width,
         "height": height,
-        "detectorModel": get_yolo_weights(),
+        "detectorModel": YOLO_WEIGHTS,
         "detections": detections,
     }
