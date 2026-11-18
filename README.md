@@ -12,7 +12,7 @@ Standalone AI-powered product/SKU catalog and shelf-photo identification proof o
 
 </div>
 
-> **Development status (October 2026):** The repository contains a working implementation of web/API routes and a model inference scaffold, but deployment, live database/S3 integration, model quality and full end-to-end behavior still require environment-dependent verification. The client-requested stack is implemented independently of Skaffld CORE; integration is future work.
+> **Development status (November 2026):** The web application deploys independently of AI tooling. Training and model export are separate workflows; inference with the team’s fine-tuned YOLO model is intended to run directly in the user’s browser and is not implemented yet. The existing detection screen uses simulated results. Live database/S3 integration and full end-to-end behavior still require environment-dependent verification.
 
 ## Overview
 
@@ -23,7 +23,9 @@ Lensistry helps administrators maintain a SKU catalog with reference photos; sta
 | Public catalog search by name, brand or SKU                                            | Implemented through Express and Next.js                                                         |
 | Staff/CMS sign-in and admin-managed staff users                                        | NextAuth credentials with Express-issued JWT and database-backed role checks                    |
 | Product CRUD, reference photos and indexing states                                     | Implemented; admin only                                                                         |
-| Shelf photo uploads, detection, similarity matching and history                        | Implemented as synchronous POC workflow; requires running AI models and object storage          |
+| Shelf photo uploads and history                                                        | Web/API routes implemented; require object storage and database integration                     |
+| Browser inference using the team’s fine-tuned YOLO model                               | Planned; requires an exported model, its input/output contract and class-to-SKU mapping         |
+| Legacy server detection, similarity matching and indexing                              | Optional standalone prototype; disabled unless `AI_SERVICE_URL` is configured                   |
 | Unknown detections, bounding-box coordinates, similarity scores and manual corrections | Implemented in API/history UI; image overlay and calibrated probabilities are not yet available |
 | Text embeddings / semantic natural-language search                                     | Not implemented; text search is database substring matching                                     |
 | Object-detector training/fine-tuning, asynchronous jobs, batch evaluation              | Not implemented; next phase                                                                     |
@@ -33,16 +35,17 @@ Lensistry helps administrators maintain a SKU catalog with reference photos; sta
 
 The client-aligned technology stack is:
 
-| Layer                 | Technology                                                                                                       |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                               |
-| Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                      |
-| Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                  |
-| Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**  |
-| Images                | **S3-compatible storage** with presigned uploads (MinIO in development; other compatible providers configurable) |
-| AI                    | Python 3.11–3.13, **FastAPI**, **PyTorch**, **Ultralytics YOLO11**, **OpenCLIP ViT-B/32**                        |
-| Dependency management | Bun for JavaScript workspace; uv for Python                                                                      |
-| Tests/quality         | Node test runner, Python pytest/HTTPX, Oxlint, Oxfmt, Ruff                                                       |
+| Layer                 | Technology                                                                                                                       |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                                               |
+| Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                                      |
+| Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                                  |
+| Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**                  |
+| Images                | **S3-compatible storage** with presigned uploads (MinIO in development; other compatible providers configurable)                 |
+| Standalone AI tooling | Optional Python 3.11–3.13, **FastAPI**, **PyTorch**, **Ultralytics YOLO11**, **OpenCLIP ViT-B/32**; excluded from web deployment |
+| Browser inference     | Planned: exported **YOLO11 ONNX** model and **ONNX Runtime Web** on the user’s device                                            |
+| Dependency management | Bun for JavaScript workspace; uv for Python                                                                                      |
+| Tests/quality         | Node test runner, Python pytest/HTTPX, Oxlint, Oxfmt, Ruff                                                                       |
 
 ```mermaid
 flowchart LR
@@ -50,40 +53,44 @@ flowchart LR
   W --> E[Express API + RBAC]
   E --> P[(PostgreSQL / Prisma)]
   E --> S[(S3-compatible bucket)]
-  E --> A[FastAPI]
+  E -. Optional legacy development only .-> A[Standalone FastAPI prototype]
   A --> Y[YOLO11 detection]
   A --> C[OpenCLIP embeddings]
+  W -. Planned .-> B[Browser inference on user device]
+  M[Independent training and ONNX export] -. Versioned model and SKU map .-> B
 ```
 
-Express owns data, credential checks, privileged operations and access to storage. Next.js routes and Server Actions are the browser-facing entry points; Python is a separate inference runtime. Feature code is grouped in `src/modules/` and `api/src/modules/`; the API, web app and AI service communicate across explicit HTTP boundaries. No Skaffld CORE dependencies are required. Future synchronization should use stable SKU identifiers and versioned APIs, with deliberate identity mapping.
+Express owns data, credential checks, privileged operations and access to storage. Next.js routes and Server Actions are the browser-facing entry points. Neither the web build nor normal web startup installs or runs Python. `services/` is a self-contained legacy inference prototype retained for independent experimentation; its dependencies and model files are excluded from Vercel. No Skaffld CORE dependencies are required.
 
-### Image indexing versus training
+The intended AI workflow is independent training → ONNX export plus class-to-SKU manifest → browser download/cache → local image inference. Model artifacts should be published separately from server function bundles. No model runner, trained artifact or real browser detections are shipped yet. See [the browser inference handoff](docs/browser-inference.md) and [standalone tooling setup](services/README.md).
+
+### Legacy image indexing versus independent training
 
 **Indexing** does not fine-tune a neural network. Administrators upload JPEG/PNG/WebP reference photos (10 MiB each), then request indexing. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. The current 512-dimensional vectors are kept as PostgreSQL float arrays and compared in the API for this small POC; a vector index should be considered only when catalog size warrants it.
 
 **Detection** runs a general-purpose `yolo11n.pt` detector on a shelf photo. Each bounding-box crop is embedded with the same OpenCLIP model and compared using cosine similarity to indexed reference embeddings. Similarity below `0.78` yields **Unknown**. This threshold is an **uncalibrated heuristic** and similarity is not a probability. YOLO11n has not been trained on the project's SKU labels, so detection coverage can be poor for packaging, crowded shelves or uncommon products. Manual SKU corrections are stored separately from the AI prediction. Annotated product-specific images and detector fine-tuning are the future **training** phase, distinct from indexing.
 
-Requests currently run synchronously for simplicity. A queue (Celery/Redis or a simpler durable worker) should be introduced only after measurements show that inference latency, retry behavior or batch volume require it.
+These legacy requests run synchronously only when an operator explicitly configures `AI_SERVICE_URL`. With no endpoint, indexing and analysis controls are disabled and the API returns 503 before reading image bytes or changing indexing state. Catalog, sign-in, uploads and history do not require AI. A class-specific YOLO detector may replace OpenCLIP matching; its class IDs must map to catalog SKUs explicitly.
 
 ## Local development
 
-Prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3**, Docker Compose (Postgres/MinIO), **Python 3.11–3.13** and [uv](https://docs.astral.sh/uv/). Python inference models require significant disk space and CPU/GPU memory; weights may download on first inference. Do not put live secrets in version control.
+Web prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3** and Docker Compose (Postgres/MinIO). Python and uv are needed only for optional standalone tooling. Do not put live secrets in version control.
 
 1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`). Installation generates the Prisma client; this step does not connect to a database or require `DATABASE_URL`.
-2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL`, `WEB_ORIGIN` and `AI_SERVICE_URL` consistent with your services. The example MinIO credentials are local-development defaults only.
+2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL` and `WEB_ORIGIN` consistent with your services. Leave `AI_SERVICE_URL` unset for normal web development. The example MinIO credentials are local-development defaults only.
 3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; do not run them against an unverified database.
 4. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
-5. Run `bun run dev:all` from the repository root. It starts the Compose services, generates the Prisma client, and runs the web app, Express API and AI service together. Open `http://localhost:3000` or `/sign-in`. The first AI startup may need to install Python dependencies; model weights may download on first inference.
+5. Run `bun run dev:all` from the repository root. It starts Compose, generates the Prisma client, and runs the web app and Express API. Open `http://localhost:3000` or `/sign-in`. No Python dependencies or model weights are installed.
 
-Press Ctrl+C to stop the web, Express API and AI processes. The Docker containers keep running; use `docker compose down` to stop them. If any of the three application processes exits, the command stops the others. The command does not run migrations or seed data. For individual processes use `bun run dev`, `bun run dev:api`, or `bun run dev:ai`.
+Press Ctrl+C to stop the web and API processes. The Docker containers keep running; use `docker compose down` to stop them. If either application process exits, the command stops the other. The command does not run migrations or seed data. For individual processes use `bun run dev` or `bun run dev:api`.
 
 Compose starts PostgreSQL on port **5433** (chosen to avoid a host-installed PostgreSQL on 5432) and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. PostgreSQL and bucket provisioning may take a short time to become ready after Compose starts. Set production passwords and persistent storage separately.
 
-The API loads the root `.env`; Prisma CLI configuration reads the same file. API and AI health endpoints are `GET /health` on ports 4000 and 8000 respectively. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration. All published ports bind to `127.0.0.1` only.
+The API loads the root `.env`; Prisma CLI configuration reads the same file. The API health endpoint is `GET /health` on port 4000. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration. All published ports bind to `127.0.0.1` only.
 
 The Compose stack pins a Bitnami legacy MinIO build (`2025.7.23`) because MinIO withdrew its public container images; replace it with a maintained S3-compatible service before any hosted deployment. `docker compose down` stops the services and keeps data; `docker compose down -v` also deletes the PostgreSQL and MinIO volumes.
 
-**Environment summary:** `DATABASE_URL`, `API_PORT`, `API_URL`, `WEB_ORIGIN`, `AUTH_SECRET`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` and `AI_SERVICE_URL`. Set optional `YOLO_WEIGHTS` in the AI service to use your own compatible detector weights.
+**Web environment:** `DATABASE_URL`, `API_PORT`, `API_URL`, `WEB_ORIGIN`, `AUTH_SECRET`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY`. `AI_SERVICE_URL` is optional and enables legacy server inference only; it cannot point a hosted API at a user’s browser or local computer.
 
 ### Hosted database setup
 
@@ -99,13 +106,13 @@ This runs `prisma migrate deploy`; it does not create the database. For a databa
 
 ### Vercel Services configuration
 
-The root `vercel.json` defines three services: public Next.js `app`, private Express `api`, and private FastAPI `ai`. Next.js owns all public paths, including NextAuth's `/api/auth/*`. The `app` → `api` and `api` → `ai` bindings inject `API_INTERNAL_URL` and `AI_INTERNAL_URL` at function runtime; do not define these binding variables yourself. Outside Vercel Services, the existing `API_URL` and `AI_SERVICE_URL` settings continue to support local development and separately hosted services.
+The root `vercel.json` defines two services: public Next.js `app` and private Express `api`. Next.js owns all public paths, including NextAuth’s `/api/auth/*`. The `app` → `api` binding injects `API_INTERNAL_URL` at function runtime; do not define it yourself. The Python `ai` service and its binding have been removed, and `.vercelignore` excludes standalone tooling and model artifacts. PyTorch, Ultralytics and OpenCLIP are no longer part of a deployed Python function. Vercel Services is in beta.
 
-Configure the database, S3, authentication and JWT settings in the Vercel project for each deployment environment. The API build generates the Prisma client without connecting to the database or applying migrations; the running API still requires `DATABASE_URL`. Use hosted PostgreSQL and S3 endpoints, not the local Compose addresses. Configure S3 CORS for browser-accessible presigned URLs and set `WEB_ORIGIN` appropriately. Vercel Services is a beta feature.
+Configure the database, S3, authentication and JWT settings in Vercel for each environment. Prisma client generation does not connect to the database or apply migrations; the running API still requires `DATABASE_URL`. Use hosted PostgreSQL and S3 endpoints and configure S3 CORS, private bucket access and `WEB_ORIGIN` for the deployed domain.
 
-For local testing, create the Python environment with a supported interpreter first, for example `python3.12 -m venv services/.venv`, then run `bun run dev:vercel -L` from the repository root. This invokes the installed Vercel CLI in local-only mode. It installs the Bun workspace once before starting Vercel because concurrent per-service installs can otherwise race while linking workspace binaries; the production configuration still installs each service normally. Omit `-L` to use a linked Vercel project. Vercel installs the Python service dependencies on first startup; model inference itself remains unverified.
+Run `bun run dev:vercel -L` from the repository root for local-only Vercel testing. It installs the Bun workspace once before starting the two Node services, avoiding concurrent installers racing on `node_modules`. Omit `-L` to use a linked Vercel project. Python is not required.
 
-The Python service's PyTorch and model dependencies can exceed Vercel's standard Python function bundle limit; confirm the installed bundle fits and enable Large Functions on Fluid compute if needed. Model downloads, writable cache locations, cold starts and resource requirements also need verification on the target deployment. Vercel Functions have a 4.5 MB request-body limit, while the current image workflows accept up to 10 MiB and forward base64-encoded images to inference. Larger uploads or inference requests can therefore fail; moving image bytes directly through object storage would require additional application changes. A successful Next.js build does not verify the Python bundle, model inference, service bindings or these image flows.
+Remove any previously configured `AI_SERVICE_URL` from the hosted project to keep legacy server inference disabled, then redeploy this configuration. Existing deployments do not change until redeployed. Removing the Python service addresses its oversized bundle; the web deployment still needs verification. Existing server-action uploads accept up to 10 MiB but remain subject to Vercel’s 4.5 MB request-body limit; direct browser-to-storage uploads are a separate follow-up.
 
 ## API contracts
 
@@ -141,17 +148,17 @@ bun run test:api
 bun run build
 ```
 
-API type checking also generates the Prisma client, including after an install that skipped lifecycle scripts. Python's lightweight API validation tests run with `cd services && uv run --extra dev pytest -q` after installing dependencies. `uv run --extra dev ruff check .` checks Python style. Full detector and embedding inference must also be verified with actual weights and representative product images. There are currently no configured Playwright browser tests or measured accuracy benchmarks; a passing static build or mocked unit tests do **not** prove production readiness.
+API type checking also generates the Prisma client, including after an install that skipped lifecycle scripts. Web CI has no Python job. Standalone Python tooling has its own path-filtered workflow, `.github/workflows/ai-tools.yml`; see `services/README.md` for its commands. Model export and browser inference need separate validation with the team’s weights and representative product images. There are currently no configured Playwright browser tests or measured accuracy benchmarks; a passing static build or mocked unit tests do **not** prove production readiness.
 
 **Proposed POC acceptance gates (to confirm with client; none measured yet):** evaluate a held-out, SKU-stratified set of annotated shelf photos including lookalike packaging, occlusion, varying angles and lighting; target detector `mAP@0.5 ≥ 0.75` and recall `≥ 0.80`; top-1 SKU identification accuracy `≥ 0.90` on correctly detected known objects; unknown-product false acceptance `≤ 5%`. Also report end-to-end precision/recall, error by SKU and camera-angle subgroup, latency p50/p95, and manual-correction rate. Calibrate the matching threshold only on a validation split, then freeze it for test data.
 
 ## Roadmap and limitations
 
-Near term: live smoke tests against PostgreSQL/MinIO and downloaded AI weights; bounding-box overlays and reference-image previews; meaningful integration and browser tests; measured detection/matching benchmarks; file lifecycle cleanup and batch job durability. Later: train a product-specific detector using labeled data (e.g. CVAT), add a scalable vector index and natural-language retrieval, design API versioning / SKU mapping for optional Skaffld integration, and add deployment-specific security and monitoring. Avoid claiming these as shipped until implemented and verified.
+Near term: live PostgreSQL/MinIO smoke tests, independently fine-tune/evaluate the product detector, export the validated model and SKU manifest, implement browser inference and measure device-specific performance. The detection screen remains a simulated review UI until that runtime is connected. Keep reference-image indexing and model training distinct. Later: browser-result persistence with backend validation, file lifecycle cleanup, natural-language retrieval and versioned Skaffld integration. See `docs/browser-inference.md` for the model handoff. Avoid claiming these as shipped until implemented and verified.
 
 ## Gitflow
 
-Use `feature/*` branches from `development`, propose pull requests back to `development`, and require passing CI, QA review and at least one approval before merge. `release/*` branches stage approved releases, while `hotfix/*` handles urgent mainline fixes. Never push directly to the protected `main` or `development` branches. CI checks lint, formatting, web/API types, unit tests, Python checks and the web build; configure branch protections in GitHub separately.
+Use `feature/*` branches from `development`, propose pull requests back to `development`, and require passing CI, QA review and at least one approval before merge. `release/*` branches stage approved releases, while `hotfix/*` handles urgent mainline fixes. Never push directly to the protected `main` or `development` branches. Web CI checks lint, formatting, web/API types, unit tests and the web build; standalone Python tooling is checked separately; configure branch protections in GitHub separately.
 
 ## Contributing
 

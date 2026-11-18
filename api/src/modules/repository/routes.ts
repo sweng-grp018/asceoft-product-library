@@ -4,7 +4,8 @@ import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
 import { authenticate, requireRole, type AuthenticatedRequest } from "../../lib/auth.js";
 import { IMAGE_TYPES, newImageKey, uploadUrl, readImage } from "../../lib/storage.js";
-import { aiRequest, bestMatch, type DetectionResult } from "../../lib/ai.js";
+import { createAiClient, bestMatch, type DetectionResult } from "../../lib/ai.js";
+import { config } from "../../lib/config.js";
 
 export const repositoryRoutes = Router();
 repositoryRoutes.use(authenticate, requireRole("STAFF", "ADMIN"));
@@ -18,6 +19,7 @@ const inputSchema = z.object({
 
 repositoryRoutes.get("/", async (_req, res) => {
   res.json({
+    serverInferenceEnabled: Boolean(config.AI_SERVICE_URL),
     images: await db.repositoryImage.findMany({ take: 50, orderBy: { createdAt: "desc" } }),
   });
 });
@@ -53,6 +55,7 @@ repositoryRoutes.post("/:id/analyze", async (req: AuthenticatedRequest, res) => 
     res.status(400).json({ error: "Invalid ID" });
     return;
   }
+  const aiRequest = createAiClient(config.AI_SERVICE_URL);
   const image = await db.repositoryImage.findUnique({ where: { id: parsed.data } });
   if (!image) {
     res.status(404).json({ error: "Image not found" });

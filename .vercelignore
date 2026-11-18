@@ -1,0 +1,6 @@
+# Standalone Python tooling and model artifacts do not belong in the web deployment.
+services/**
+**/*.pt
+**/*.pth
+**/*.onnx
+**/.venv/**

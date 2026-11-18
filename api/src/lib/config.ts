@@ -15,7 +15,7 @@ const configSchema = z.object({
   S3_BUCKET: z.string().min(1),
   S3_ACCESS_KEY_ID: z.string().min(1),
   S3_SECRET_ACCESS_KEY: z.string().min(1),
-  AI_SERVICE_URL: z.url().default("http://localhost:8000"),
+  AI_SERVICE_URL: z.url().optional(),
 });
 
 export const config = configSchema.parse(process.env);

@@ -4,7 +4,8 @@ import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
 import { authenticate, requireRole } from "../../lib/auth.js";
 import { IMAGE_TYPES, newImageKey, uploadUrl, readImage } from "../../lib/storage.js";
-import { aiRequest, type EmbeddingResult } from "../../lib/ai.js";
+import { createAiClient, type EmbeddingResult } from "../../lib/ai.js";
+import { config } from "../../lib/config.js";
 
 export const catalogRoutes = Router();
 const id = z.uuid();
@@ -67,7 +68,7 @@ catalogRoutes.get("/:id", async (req, res) => {
     res.status(404).json({ error: "Product not found" });
     return;
   }
-  res.json({ product });
+  res.json({ product, serverInferenceEnabled: Boolean(config.AI_SERVICE_URL) });
 });
 
 catalogRoutes.post("/", authenticate, requireRole("ADMIN"), async (req, res) => {
@@ -150,6 +151,7 @@ catalogRoutes.post("/:id/index", authenticate, requireRole("ADMIN"), async (req,
     res.status(400).json({ error: "Invalid ID" });
     return;
   }
+  const aiRequest = createAiClient(config.AI_SERVICE_URL);
   const product = await db.product.findUnique({
     where: { id: productId.data },
     include: { images: true },

@@ -12,15 +12,7 @@
       "root": "api",
       "framework": "express",
       "entrypoint": "src/app.ts",
-      "buildCommand": "bun run db:generate",
-      "bindings": [
-        { "type": "service", "service": "ai", "format": "url", "env": "AI_INTERNAL_URL" }
-      ]
-    },
-    "ai": {
-      "root": "services",
-      "framework": "fastapi",
-      "entrypoint": "app.main:app"
+      "buildCommand": "bun run db:generate"
     }
   },
   "rewrites": [{ "source": "/(.*)", "destination": { "service": "app" } }]

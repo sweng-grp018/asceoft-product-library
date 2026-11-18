@@ -24,7 +24,7 @@ Lensistry is a standalone product/SKU library POC. Future Skaffld CORE integrati
 - `api/src/modules/`: Express 5 API routes by capability.
 - `api/src/lib/`: generic Prisma, S3, signed JWT and Python service clients.
 - `api/prisma/`: Prisma 7 schema and PostgreSQL migrations.
-- `services/app/`: separate FastAPI, PyTorch, YOLO and OpenCLIP runtime.
+- `services/app/`: optional standalone FastAPI, PyTorch, YOLO and OpenCLIP prototype; excluded from the web deployment and normal web startup. Training/export is an independent workflow; browser inference using the team's exported model is planned.
 - `docker-compose.yml`: local Postgres and MinIO.
 - `.github/workflows/ci.yml`: quality gates.
 
@@ -38,8 +38,8 @@ Keep cohesive business vertical slices and thin framework entry points. Apply SO
 4. Use PostgreSQL via **Prisma ORM** and reviewed migrations. No Drizzle. Check `DATABASE_URL` before any migration or seeding command.
 5. **JWT** issuer, audience and expiry validation plus database role rechecks are required. NextAuth manages CMS sessions; Express enforces ADMIN/STAFF/PUBLIC RBAC. Protect catalog modifications, staff provisioning, analysis and search history appropriately.
 6. Store private images in **S3-compatible object storage**, not database bytes. Validate media signatures and sizes, generate short-lived presigned upload URLs and keep credentials server-side.
-7. **YOLO11** finds candidate objects; **OpenCLIP** embeds crops and reference images. Indexing is not model training. Version embeddings, reject incompatible model IDs, support unknown matches and manual correction. Never equate cosine similarity with a calibrated probability.
-8. Synchronous inference is intentional for the POC. Training and durable queues are not implemented. Assess queue needs using real measurements before adding Celery or Redis.
+7. Train/fine-tune **YOLO11** independently of the web app. The target is inference on the user's device directly in the browser using an exported model and a versioned class-to-SKU manifest. This browser runtime is not implemented yet. The optional legacy Python prototype uses **OpenCLIP** embeddings; indexing is not model training. Never equate cosine similarity with a calibrated probability.
+8. The web app must start and deploy without Python, model weights or an inference server. Legacy synchronous server inference is enabled only by an explicit `AI_SERVICE_URL`; keep it disabled by default. Training and durable queues are not implemented in the web app.
 9. The standalone catalog, database, auth and object storage should not require Skaffld CORE to run.
 
 ## Tests and commands
