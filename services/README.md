@@ -2,7 +2,7 @@
 
 This directory is an independent Python project. It is excluded from the Vercel web deployment, is not started by `bun run dev:all`, and has its own CI workflow. You can install and run it without the Next.js app, Express API, PostgreSQL or S3.
 
-The existing FastAPI code is a legacy inference prototype: generic YOLO11 detection plus OpenCLIP embeddings. It does not train or fine-tune models. The intended product path is independent training/export followed by inference in the user's browser. See [the browser inference handoff](../docs/browser-inference.md).
+The existing FastAPI code is a legacy inference prototype: generic YOLO11 detection plus OpenCLIP embeddings. It does not train or fine-tune models. The team's YOLO26n detector is trained independently on SKU-110K; the intended browser workflow detects objects, crops them and identifies SKUs in a separate step. This prototype still defaults to YOLO11. See [the browser inference handoff](../docs/browser-inference.md).
 
 ## Optional local prototype
 

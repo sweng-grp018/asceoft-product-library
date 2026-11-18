@@ -12,26 +12,28 @@ Standalone AI-powered product/SKU catalog and shelf-photo identification proof o
 
 </div>
 
-> **Development status (November 2026):** The web deployment is configured separately from AI tooling, but deployment and live database/S3 integration still need verification. Browser inference using the team’s fine-tuned YOLO model is planned, not implemented; the detection screen uses simulated results. The main product catalog and dashboard also use preview data.
+> **Implementation status:** The web deployment is configured separately from AI tooling, but deployment and live database/S3 integration still need verification. The team's YOLO26n detector has been trained independently on SKU-110K; browser integration and crop-based SKU identification are not implemented in this repository. The detection screen uses simulated results, and the main product catalog and dashboard use preview data.
 
 ## Overview
 
 Lensistry is intended to help administrators maintain a SKU catalog and staff identify products in shelf photos. Public visitors can search catalog metadata without authentication. The API and several web routes are implemented, while the main catalog screen and browser detection workflow remain previews.
 
-| Capability                                                                | Current state                                                                                                |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| Public catalog search by name, brand or SKU                               | Implemented through Express and Next.js                                                                      |
-| Staff/CMS sign-in and admin-managed staff users                           | NextAuth credentials with Express-issued JWT and database-backed role checks                                 |
-| Product CRUD, reference photos and indexing states                        | API routes and separate product pages implemented; admin modifications require authorization                 |
-| Main product catalog (`/products`)                                        | Static preview; create, edit and delete change local state only and reset on reload                          |
-| Dashboard                                                                 | Placeholder statistics and activity; not connected to live catalog data                                      |
-| Shelf photo uploads and history                                           | Web/API routes implemented; require object storage and database integration                                  |
-| Browser inference using the team’s fine-tuned YOLO model                  | Planned; requires an exported model, its input/output contract and class-to-SKU mapping                      |
-| Legacy server detection, similarity matching and indexing                 | Optional standalone prototype; disabled unless `AI_SERVICE_URL` is configured                                |
-| Legacy detection results and manual corrections                           | API/history UI implemented for server analysis; image overlay and calibrated probabilities are not available |
-| Text embeddings / semantic natural-language search                        | Not implemented; text search is database substring matching                                                  |
-| Object-detector training/fine-tuning, asynchronous jobs, batch evaluation | Not implemented; next phase                                                                                  |
-| Skaffld CORE sync / migration                                             | Not implemented; application owns its catalog, identity and database                                         |
+| Capability                                                | Current state                                                                                                  |
+| --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Public catalog search by name, brand or SKU               | Implemented through Express and Next.js                                                                        |
+| Staff/CMS sign-in and admin-managed staff users           | NextAuth credentials with Express-issued JWT and database-backed role checks                                   |
+| Product CRUD, reference photos and indexing states        | API routes and separate product pages implemented; admin modifications require authorization                   |
+| Main product catalog (`/products`)                        | Static preview; create, edit and delete change local state only and reset on reload                            |
+| Dashboard                                                 | Placeholder statistics and activity; not connected to live catalog data                                        |
+| Shelf photo uploads and history                           | Web/API routes implemented; require object storage and database integration                                    |
+| Browser inference using the team's YOLO26n detector       | Planned; requires an exported model and its input/output contract                                              |
+| SKU identification from detected object crops             | Separate stage from detection; the browser workflow is not implemented                                         |
+| Legacy server detection, similarity matching and indexing | Optional standalone prototype; disabled unless `AI_SERVICE_URL` is configured                                  |
+| Legacy detection results and manual corrections           | API/history UI implemented for server analysis; image overlay and calibrated probabilities are not available   |
+| Text embeddings / semantic natural-language search        | Not implemented; text search is database substring matching                                                    |
+| Object-detector training                                  | YOLO26n trained independently on SKU-110K; training and model artifacts are maintained outside this repository |
+| Asynchronous jobs and batch evaluation                    | Not implemented                                                                                                |
+| Skaffld CORE sync / migration                             | Not implemented; application owns its catalog, identity and database                                           |
 
 ## Architecture
 
@@ -44,8 +46,9 @@ The client-aligned technology stack is:
 | Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                                  |
 | Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**                  |
 | Images                | **S3-compatible storage** with presigned uploads (MinIO in development; other compatible providers configurable)                 |
+| Product detector      | **YOLO26n**, trained independently on **SKU-110K**; browser integration is pending                                               |
 | Standalone AI tooling | Optional Python 3.11–3.13, **FastAPI**, **PyTorch**, **Ultralytics YOLO11**, **OpenCLIP ViT-B/32**; excluded from web deployment |
-| Browser inference     | Planned: exported **YOLO11 ONNX** model and **ONNX Runtime Web** on the user’s device                                            |
+| Browser inference     | Planned: exported **YOLO26n ONNX** detector with **ONNX Runtime Web**, followed by SKU identification from crops                 |
 | Dependency management | Bun for JavaScript workspace; uv for Python                                                                                      |
 | Tests/quality         | Node test runner, Python pytest/HTTPX, Oxlint, Oxfmt, Ruff                                                                       |
 
@@ -58,23 +61,30 @@ flowchart LR
   E -. Optional legacy development only .-> A[Standalone FastAPI prototype]
   A --> Y[YOLO11 detection]
   A --> C[OpenCLIP embeddings]
-  W -. Planned .-> B[Browser inference on user device]
-  M[Independent training and ONNX export] -. Versioned model and SKU map .-> B
+  W -. Planned .-> B[YOLO26n browser detection]
+  M[Independent training and ONNX export] -. Versioned detector .-> B
+  B -. Object crops .-> I[Separate SKU identification]
 ```
 
 Express owns data, credential checks, privileged operations and access to storage. Next.js routes and Server Actions are the browser-facing entry points. The `/products` catalog screen currently uses fixture rows and local-only mutations; its create drawer stages photos without uploading them. Separate product creation, detail and edit routes call the API. The dashboard uses placeholder values. Neither the web build nor normal web startup installs or runs Python. `services/` is a self-contained legacy inference prototype retained for independent experimentation; the Vercel configuration excludes it and model files. No Skaffld CORE dependencies are required.
 
 Web and Express application code share the root `src/` directory. The Express workspace is `src/api/`, with `app.ts` for deployment, `index.ts` for local startup, `modules/` for routes, `lib/` for service clients, and `prisma/` for the schema and migrations. It has no nested `src/` directory. The optional Python prototype stays in `services/` as an independent project.
 
-The intended AI workflow is independent training → ONNX export plus class-to-SKU manifest → browser download/cache → local image inference. Model artifacts should be published separately from server function bundles. No model runner, trained artifact or real browser detections are shipped yet. See [the browser inference handoff](docs/browser-inference.md) and [standalone tooling setup](services/README.md).
+The intended AI workflow is independent training → ONNX export → browser download/cache → object detection → image crops → SKU identification. Publish versioned model artifacts separately from server function bundles. The team's training work is external to this repository; no trained artifact or browser model runner is shipped here. See [the browser inference handoff](docs/browser-inference.md) and [standalone tooling setup](services/README.md).
+
+### Detection and SKU identification
+
+The team's **YOLO26n** model is trained on **SKU-110K** to locate products in shelf images. [SKU-110K](https://docs.ultralytics.com/datasets/detect/sku-110k/) provides bounding boxes for a single generic object class, without per-SKU labels. Detector class IDs therefore do not identify catalog SKUs.
+
+Each detected object is cropped from the original image and passed to a separate SKU-identification step. That step must resolve a crop to a stable catalog SKU or return **Unknown** when no reliable match is available. The legacy OpenCLIP prototype demonstrates embedding-based matching; the browser identification implementation is still pending. Training a detector, indexing reference images and integrating inference are separate tasks.
 
 ### Legacy image indexing versus independent training
 
 **Indexing** does not fine-tune a neural network. In the separate product detail flow, administrators can upload JPEG/PNG/WebP reference photos (10 MiB each) and request indexing when the legacy service is configured. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. The current 512-dimensional vectors are kept as PostgreSQL float arrays and compared in the API for this small POC; a vector index should be considered only when catalog size warrants it.
 
-**Legacy server detection** runs a general-purpose `yolo11n.pt` detector on a shelf photo. Each bounding-box crop is embedded with the same OpenCLIP model and compared using cosine similarity to indexed reference embeddings. Similarity below `0.78` yields **Unknown**. This threshold is an **uncalibrated heuristic** and similarity is not a probability. YOLO11n has not been trained on the project's SKU labels, so detection coverage can be poor for packaging, crowded shelves or uncommon products. Manual corrections update the stored match and mark it as manually corrected. Annotated product-specific images and detector fine-tuning are the future **training** phase, distinct from indexing.
+**Legacy server detection** defaults to the general-purpose `yolo11n.pt` detector, independently of the team's trained YOLO26n model. Each bounding-box crop is embedded with the same OpenCLIP model and compared using cosine similarity to indexed reference embeddings. Similarity below `0.78` yields **Unknown**. This threshold is an **uncalibrated heuristic** and similarity is not a probability. The default YOLO11n has not been trained on the project's SKU labels, so detection coverage can be poor for packaging, crowded shelves or uncommon products. Manual corrections update the stored match and mark it as manually corrected.
 
-These legacy requests run synchronously only when an operator explicitly configures `AI_SERVICE_URL`. With no endpoint, indexing and analysis controls are disabled and the API returns 503 before reading image bytes or changing indexing state. Catalog, sign-in, uploads and history do not require AI. A class-specific YOLO detector may replace OpenCLIP matching; its class IDs must map to catalog SKUs explicitly.
+These legacy requests run synchronously only when an operator explicitly configures `AI_SERVICE_URL`. With no endpoint, indexing and analysis controls are disabled and the API returns 503 before reading image bytes or changing indexing state. Catalog, sign-in, uploads and history do not require AI.
 
 ## Local development
 
@@ -158,7 +168,7 @@ API type checking also generates the Prisma client, including after an install t
 
 ## Roadmap and limitations
 
-Near term: connect the main product catalog and dashboard to live data, run PostgreSQL/MinIO smoke tests, independently fine-tune/evaluate the product detector, export the validated model and SKU manifest, implement browser inference and measure device-specific performance. The detection screen remains a simulated review UI until that runtime is connected. Keep reference-image indexing and model training distinct. Later: browser-result persistence with backend validation, file lifecycle cleanup, natural-language retrieval and versioned Skaffld integration. See `docs/browser-inference.md` for the model handoff. Avoid claiming these as shipped until implemented and verified.
+Remaining integration work includes connecting the main product catalog and dashboard to live data, verifying PostgreSQL/S3 flows, validating and exporting the trained detector, implementing browser detection and crop-based SKU identification, and measuring device performance. The detection screen remains a simulated review UI until those stages are connected. Browser-result persistence needs backend validation. File lifecycle cleanup, natural-language retrieval and versioned Skaffld integration remain outside the implemented scope. See `docs/browser-inference.md` for the model handoff. Avoid claiming these as shipped until implemented and verified.
 
 ## Gitflow
 
