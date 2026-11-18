@@ -1,7 +1,7 @@
 /**
  * Image rules shared by every upload surface in the app.
  *
- * These mirror the authoritative checks in `api/src/modules/catalog` and
+ * These mirror the authoritative checks in `src/api/modules/catalog` and
  * `services/app/main.py`: the API issues presigned URLs for these types, and the
  * inference service re-decodes the bytes and rejects anything else.
  */

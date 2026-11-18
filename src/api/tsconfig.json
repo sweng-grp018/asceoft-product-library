@@ -12,6 +12,6 @@
     "types": ["node"],
     "verbatimModuleSyntax": true
   },
-  "include": ["src", "scripts", "prisma.config.ts"],
-  "exclude": ["node_modules", "src/generated"]
+  "include": ["*.ts", "lib", "modules", "scripts"],
+  "exclude": ["node_modules", "generated"]
 }

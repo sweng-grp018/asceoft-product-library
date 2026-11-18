@@ -1,9 +1,6 @@
-import { config as loadDotenv } from "dotenv";
 import { hash } from "bcryptjs";
 import { z } from "zod";
-import { db } from "../src/lib/db.js";
-
-loadDotenv({ path: new URL("../../.env", import.meta.url), quiet: true });
+import { db } from "../lib/db.js";
 
 const seed = z
   .object({

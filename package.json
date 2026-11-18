@@ -3,26 +3,26 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "api"
+    "src/api"
   ],
   "scripts": {
     "dev": "next dev",
-    "dev:api": "bun run --cwd api dev",
+    "dev:api": "bun run --cwd src/api dev",
     "dev:all": "docker compose up -d && bun run db:generate && concurrently --kill-others --names web,api \"bun run dev\" \"bun run dev:api\"",
     "dev:vercel": "node scripts/vercel-dev.mjs",
     "build": "next build --webpack",
     "start": "next start",
     "typecheck": "tsrs --noEmit",
-    "typecheck:api": "bun run --cwd api typecheck",
+    "typecheck:api": "bun run --cwd src/api typecheck",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
-    "test:api": "bun run --cwd api test",
-    "db:generate": "bun run --cwd api db:generate",
-    "db:migrate": "bun run --cwd api db:migrate",
-    "db:studio": "bun run --cwd api db:studio",
-    "db:seed-admin": "bun run --cwd api seed:admin"
+    "test:api": "bun run --cwd src/api test",
+    "db:generate": "bun run --cwd src/api db:generate",
+    "db:migrate": "bun run --cwd src/api db:migrate",
+    "db:studio": "bun run --cwd src/api db:studio",
+    "db:seed-admin": "bun run --cwd src/api seed:admin"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",

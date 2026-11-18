@@ -113,7 +113,7 @@ export const PLACEHOLDER_PAGE = 1;
 /* -------------------------------------------------------------------------- */
 
 /**
- * Field limits mirror the `productInput` schema in `api/src/modules/catalog`.
+ * Field limits mirror the `productInput` schema in `src/api/modules/catalog`.
  * The description cap is deliberately tighter than the API's 5000: the drawer
  * is an identification hint, not a marketing page.
  */

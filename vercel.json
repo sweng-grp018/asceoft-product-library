@@ -9,9 +9,9 @@
       ]
     },
     "api": {
-      "root": "api",
+      "root": "src/api",
       "framework": "express",
-      "entrypoint": "src/app.ts",
+      "entrypoint": "app.ts",
       "buildCommand": "bun run db:generate"
     }
   },
