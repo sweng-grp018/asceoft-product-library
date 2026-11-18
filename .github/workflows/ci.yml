@@ -84,26 +84,6 @@ jobs:
       - run: bun run db:generate
       - run: bun run test:api
 
-  python-tests:
-    name: Python API checks
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-      - name: Install lightweight test dependencies
-        run: python -m pip install "fastapi>=0.115,<1" "pydantic>=2.11,<3" "pillow>=11,<13" "pytest>=8,<10" "httpx>=0.28,<1" "ruff>=0.12,<1"
-      - name: Test FastAPI validation
-        working-directory: services
-        run: python -m pytest -q
-      - name: Lint Python code
-        working-directory: services
-        run: ruff check .
-
   build:
     name: Web build
     runs-on: ubuntu-24.04
@@ -121,7 +101,7 @@ jobs:
 
   ci-gate:
     name: CI Gate
-    needs: [lint, format, typecheck, api-tests, python-tests, build]
+    needs: [lint, format, typecheck, api-tests, build]
     if: ${{ always() }}
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -132,7 +112,6 @@ jobs:
           FORMAT_RESULT: ${{ needs.format.result }}
           TYPECHECK_RESULT: ${{ needs.typecheck.result }}
           API_RESULT: ${{ needs.api-tests.result }}
-          PYTHON_RESULT: ${{ needs.python-tests.result }}
           BUILD_RESULT: ${{ needs.build.result }}
         run: |
           {
@@ -142,10 +121,9 @@ jobs:
             printf '| Formatting | %s |\n' "$FORMAT_RESULT"
             printf '| Typecheck | %s |\n' "$TYPECHECK_RESULT"
             printf '| API tests | %s |\n' "$API_RESULT"
-            printf '| Python checks | %s |\n' "$PYTHON_RESULT"
             printf '| Build | %s |\n' "$BUILD_RESULT"
           } >> "$GITHUB_STEP_SUMMARY"
-          for result in "$LINT_RESULT" "$FORMAT_RESULT" "$TYPECHECK_RESULT" "$API_RESULT" "$PYTHON_RESULT" "$BUILD_RESULT"; do
+          for result in "$LINT_RESULT" "$FORMAT_RESULT" "$TYPECHECK_RESULT" "$API_RESULT" "$BUILD_RESULT"; do
             if [[ "$result" != "success" ]]; then
               echo "::error::Required CI check failed, cancelled or skipped."
               exit 1

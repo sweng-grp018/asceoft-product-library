@@ -1,18 +1,26 @@
-// This synchronous POC contract deliberately avoids a queue; timeout failures are surfaced
-// and indexed images can be retried from the CMS.
-export async function aiRequest<T>(route: "/embed" | "/detect", image: Buffer): Promise<T> {
-  const { config } = await import("./config.js");
-  const response = await fetch(
-    new URL(route, process.env.AI_INTERNAL_URL ?? config.AI_SERVICE_URL),
-    {
+export class ServerInferenceUnavailableError extends Error {
+  constructor() {
+    super("Server inference is disabled. The web app does not host an AI runtime.");
+    this.name = "ServerInferenceUnavailableError";
+  }
+}
+
+// Compatibility client for explicitly configured standalone Python tooling.
+// Browser inference will run independently of this server-side HTTP client.
+export function createAiClient(serviceUrl: string | undefined) {
+  if (!serviceUrl) throw new ServerInferenceUnavailableError();
+  const base = new URL(serviceUrl);
+
+  return async function aiRequest<T>(route: "/embed" | "/detect", image: Buffer): Promise<T> {
+    const response = await fetch(new URL(route, base), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ imageBase64: image.toString("base64") }),
       signal: AbortSignal.timeout(120_000),
-    },
-  );
-  if (!response.ok) throw Object.assign(new Error("AI inference unavailable"), { status: 502 });
-  return (await response.json()) as T;
+    });
+    if (!response.ok) throw Object.assign(new Error("AI inference unavailable"), { status: 502 });
+    return (await response.json()) as T;
+  };
 }
 
 export type EmbeddingResult = { embedding: number[]; model: string };

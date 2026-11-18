@@ -18,11 +18,10 @@ export default async function ProductDetails({
   params: Promise<{ productId: string }>;
 }) {
   const { productId } = await params;
-  const { product } = await api<{ product: Product }>(
-    `/products/${encodeURIComponent(productId)}`,
-    {},
-    false,
-  );
+  const { product, serverInferenceEnabled } = await api<{
+    product: Product;
+    serverInferenceEnabled: boolean;
+  }>(`/products/${encodeURIComponent(productId)}`, {}, false);
   const admin = (await auth())?.user.role === "ADMIN";
   return (
     <div className="flex flex-col gap-6">
@@ -80,10 +79,22 @@ export default async function ProductDetails({
               </FieldGroup>
             </form>
             <form action={indexProduct.bind(null, productId)}>
-              <Button disabled={!product.images.length || product.indexStatus === "PROCESSING"}>
+              <Button
+                disabled={
+                  !serverInferenceEnabled ||
+                  !product.images.length ||
+                  product.indexStatus === "PROCESSING"
+                }
+              >
                 {product.indexStatus === "FAILED" ? "Retry indexing" : "Generate embeddings"}
               </Button>
             </form>
+            {!serverInferenceEnabled && (
+              <p className="text-sm text-muted-foreground">
+                Server indexing is disabled. Model training is managed separately; browser inference
+                with an exported model is planned.
+              </p>
+            )}
             <div className="flex flex-wrap gap-3">
               <Button asChild variant="outline">
                 <Link href={`/products/${productId}/edit`}>Edit</Link>
