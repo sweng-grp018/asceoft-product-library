@@ -2,8 +2,8 @@
 
 # dependencies
 /node_modules
-/api/node_modules
-/api/src/generated
+/src/api/node_modules
+/src/api/generated
 /.pnp
 .pnp.*
 .yarn/*
