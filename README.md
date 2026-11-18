@@ -41,7 +41,7 @@ The client-aligned technology stack is:
 
 | Layer                 | Technology                                                                                                                       |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Frontend/CMS          | **Next.js 16.4.6**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                                           |
+| Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                                               |
 | Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                                      |
 | Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                                  |
 | Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**                  |
