@@ -11,6 +11,7 @@ import io
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from PIL import Image, UnidentifiedImageError
+from starlette.conurrency import run_in_threadpool
 
 from app.config import (MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, CLIP_MODEL_NAME, CLIP_PRETRAINED)
 from app.pipeline import run_detection
@@ -83,8 +84,10 @@ async def embed(file: UploadFile = File(...)) -> EmbedResponse:
     image = await read_image(file)
 
     try:
+        embedding = await run_in_threadpool(embed_image, image)
+
         return {
-                "embedding": embed_image(image), 
+                "embedding": embedding, 
                 "model": f"openclip-{CLIP_MODEL_NAME}-{CLIP_PRETRAINED}"
         }
     except Exception as exc:
@@ -97,7 +100,7 @@ async def detect(file: UploadFile = File(...)) -> DetectResponse:
     image = await read_image(file)
 
     try: 
-        return run_detection(image)
+        return run_in_threadpool(run_detection, image)
     except Exception as exc:
         logger.exception("Image detection failed")
         raise HTTPException(status_code=500, detail="Image detection failed") from exc
