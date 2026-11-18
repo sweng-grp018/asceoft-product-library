@@ -8,8 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "dev:api": "bun run --cwd api dev",
-    "dev:ai": "cd services && uv run uvicorn app.main:app --reload --port 8000",
-    "dev:all": "uv --version && docker compose up -d && bun run db:generate && concurrently --kill-others --names web,api,ai \"bun run dev\" \"bun run dev:api\" \"bun run dev:ai\"",
+    "dev:all": "docker compose up -d && bun run db:generate && concurrently --kill-others --names web,api \"bun run dev\" \"bun run dev:api\"",
     "dev:vercel": "node scripts/vercel-dev.mjs",
     "build": "next build --webpack",
     "start": "next start",

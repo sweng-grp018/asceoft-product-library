@@ -11,26 +11,29 @@ export default async function Repository({
 }: {
   searchParams: Promise<{ uploaded?: string }>;
 }) {
-  const { images } = await api<{ images: Shelf[] }>("/repository");
+  const { images, serverInferenceEnabled } = await api<{
+    images: Shelf[];
+    serverInferenceEnabled: boolean;
+  }>("/repository");
   const { uploaded } = await searchParams;
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-3xl font-semibold">Shelf images</h1>
-        <p className="text-muted-foreground">
-          Upload a store photo, then detect multiple items and match against indexed references.
-        </p>
+        <p className="text-muted-foreground">Store and organize shelf photos for later review.</p>
       </div>
       {uploaded && (
         <p role="status" className="rounded-lg bg-muted p-3">
-          Image uploaded. Select Analyze to run detection.
+          {serverInferenceEnabled
+            ? "Image uploaded. Select Analyze to run detection."
+            : "Image uploaded. Server analysis is disabled."}
         </p>
       )}
       <Card>
         <CardHeader>
           <CardTitle>Upload shelf photo</CardTitle>
           <CardDescription>
-            JPEG, PNG or WebP, maximum 10 MiB. The AI service must be running to analyze photos.
+            JPEG, PNG or WebP, maximum 10 MiB. Uploads are saved to your image repository.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -64,6 +67,11 @@ export default async function Repository({
           </form>
         </CardContent>
       </Card>
+      {!serverInferenceEnabled && (
+        <p className="text-sm text-muted-foreground">
+          Server analysis is disabled. Local browser inference with an exported model is planned.
+        </p>
+      )}
       <h2 className="text-xl font-semibold">Recent shelf photos</h2>
       {images.map((image) => (
         <Card key={image.id}>
@@ -75,7 +83,7 @@ export default async function Repository({
               </p>
             </div>
             <form action={analyzeShelf.bind(null, image.id)}>
-              <Button type="submit" variant="outline">
+              <Button type="submit" variant="outline" disabled={!serverInferenceEnabled}>
                 Analyze
               </Button>
             </form>

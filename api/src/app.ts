@@ -3,6 +3,7 @@ import helmet from "helmet";
 import cors from "cors";
 import { Prisma } from "./generated/prisma/client.js";
 import { config } from "./lib/config.js";
+import { ServerInferenceUnavailableError } from "./lib/ai.js";
 import { authRoutes } from "./modules/auth/routes.js";
 import { catalogRoutes } from "./modules/catalog/routes.js";
 import { repositoryRoutes } from "./modules/repository/routes.js";
@@ -20,6 +21,10 @@ app.use("/repository", repositoryRoutes);
 app.use((_req, res) => res.status(404).json({ error: "Route not found" }));
 
 const onError: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
+  if (error instanceof ServerInferenceUnavailableError) {
+    res.status(503).json({ error: error.message });
+    return;
+  }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
     res.status(409).json({ error: "A record with this unique value already exists" });
     return;
