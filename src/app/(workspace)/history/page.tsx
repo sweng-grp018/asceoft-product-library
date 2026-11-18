@@ -3,6 +3,8 @@ import { correctMatch } from "@/modules/repository/features/shelf-analysis/actio
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 
 type Search = { id: string; createdAt: string; matches: Match[] };
 export default async function History() {
@@ -39,28 +41,28 @@ export default async function History() {
                   {(match.detectorScore * 100).toFixed(1)}% · cosine similarity{" "}
                   {match.similarityScore === null ? "N/A" : match.similarityScore.toFixed(3)}
                 </p>
-                <form
-                  action={correctMatch.bind(null, s.id, match.id)}
-                  className="flex flex-wrap gap-2"
-                >
-                  <label className="min-w-52 flex-1 text-sm">
-                    Correct SKU
-                    <select
-                      name="productId"
-                      defaultValue={match.productId ?? ""}
-                      className="mt-1 block h-9 w-full rounded-lg border border-input bg-background px-2"
-                    >
-                      <option value="">Unknown / no match</option>
-                      {products.map((p) => (
-                        <option value={p.id} key={p.id}>
-                          {p.sku} — {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <Button type="submit" variant="outline" className="self-end">
-                    Save correction
-                  </Button>
+                <form action={correctMatch.bind(null, s.id, match.id)}>
+                  <FieldGroup className="flex-row flex-wrap gap-2">
+                    <Field className="min-w-52 flex-1 gap-1">
+                      <FieldLabel htmlFor={`correction-${match.id}`}>Correct SKU</FieldLabel>
+                      <NativeSelect
+                        id={`correction-${match.id}`}
+                        name="productId"
+                        defaultValue={match.productId ?? ""}
+                        className="w-full"
+                      >
+                        <NativeSelectOption value="">Unknown / no match</NativeSelectOption>
+                        {products.map((p) => (
+                          <NativeSelectOption value={p.id} key={p.id}>
+                            {p.sku} — {p.name}
+                          </NativeSelectOption>
+                        ))}
+                      </NativeSelect>
+                    </Field>
+                    <Button type="submit" variant="outline" className="self-end">
+                      Save correction
+                    </Button>
+                  </FieldGroup>
                 </form>
               </div>
             ))}

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 
 export function ProductForm({
   title,
@@ -20,27 +21,33 @@ export function ProductForm({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={action} className="flex flex-col gap-4">
-            {(["sku", "name", "brand", "category"] as const).map((key) => (
-              <label className="flex flex-col gap-1.5 text-sm" key={key}>
-                <span className="capitalize">{key}</span>
-                <Input
-                  name={key}
-                  required={key === "sku" || key === "name"}
-                  maxLength={200}
-                  defaultValue={product?.[key] ?? ""}
+          <form action={action}>
+            <FieldGroup className="gap-4">
+              {(["sku", "name", "brand", "category"] as const).map((key) => (
+                <Field className="gap-1.5" key={key}>
+                  <FieldLabel htmlFor={`product-${key}`} className="capitalize">
+                    {key}
+                  </FieldLabel>
+                  <Input
+                    id={`product-${key}`}
+                    name={key}
+                    required={key === "sku" || key === "name"}
+                    maxLength={200}
+                    defaultValue={product?.[key] ?? ""}
+                  />
+                </Field>
+              ))}
+              <Field className="gap-1.5">
+                <FieldLabel htmlFor="product-description">Description</FieldLabel>
+                <Textarea
+                  id="product-description"
+                  name="description"
+                  maxLength={5000}
+                  defaultValue={product?.description ?? ""}
                 />
-              </label>
-            ))}
-            <label className="flex flex-col gap-1.5 text-sm">
-              Description
-              <Textarea
-                name="description"
-                maxLength={5000}
-                defaultValue={product?.description ?? ""}
-              />
-            </label>
-            <Button type="submit">Save product</Button>
+              </Field>
+              <Button type="submit">Save product</Button>
+            </FieldGroup>
           </form>
         </CardContent>
       </Card>

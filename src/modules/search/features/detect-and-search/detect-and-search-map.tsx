@@ -161,15 +161,16 @@ function DetectionOutline({
   const isReview = band === "review";
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onSelect}
       aria-pressed={active}
       aria-label={`Detection ${detection.index}: ${formatConfidence(detection.confidence)} match${
         assignment ? `, assigned ${assignment.sku}` : ", still unassigned"
       }`}
       className={cn(
-        "absolute rounded-[3px] border-2 text-left transition-shadow focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:outline-none",
+        "absolute rounded-[3px] border-2 p-0 text-left transition-shadow focus-visible:ring-2 focus-visible:ring-white/90 focus-visible:outline-none active:translate-y-0",
         isReview ? "border-notice-fg bg-notice-dot/15" : "border-brand bg-brand/10",
         active ? "shadow-[0_0_0_2px_rgba(255,255,255,0.9)]" : "hover:border-brand-strong",
       )}
@@ -189,7 +190,7 @@ function DetectionOutline({
         {isReview ? <AlertTriangleIcon aria-hidden className="size-2.5" /> : null}#{detection.index}{" "}
         · {formatConfidence(detection.confidence)} match
       </span>
-    </button>
+    </Button>
   );
 }
 

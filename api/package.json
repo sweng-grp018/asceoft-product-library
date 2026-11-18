@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "postinstall": "prisma generate",
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "pretypecheck": "prisma generate",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/**/*.test.ts",
     "db:generate": "prisma generate",

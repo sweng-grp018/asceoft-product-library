@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -92,14 +93,16 @@ export function DetectAndSearchDetectionCard({
       )}
     >
       <div className="flex items-start gap-3">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onSelect}
           aria-label={`Highlight detection ${detection.index} on the map`}
-          className="shrink-0 rounded-lg focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
+          className="size-20 shrink-0 rounded-lg p-0 focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:outline-none"
         >
           <DetectionCrop capture={capture} frame={frame} box={detection.box} className="size-20" />
-        </button>
+        </Button>
 
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
@@ -189,14 +192,16 @@ export function DetectAndSearchDetectionCard({
                 <SelectValue placeholder="Select a catalog SKU…" />
               </SelectTrigger>
               <SelectContent>
-                {catalog.map((option) => (
-                  <SelectItem key={option.sku} value={option.sku}>
-                    <span className="font-mono text-[11px] font-semibold text-brand">
-                      {option.sku}
-                    </span>
-                    <span className="truncate">{option.name}</span>
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {catalog.map((option) => (
+                    <SelectItem key={option.sku} value={option.sku}>
+                      <span className="font-mono text-[11px] font-semibold text-brand">
+                        {option.sku}
+                      </span>
+                      <span className="truncate">{option.name}</span>
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
 
@@ -230,19 +235,21 @@ export function DetectAndSearchDetectionCard({
                 Common nearby
               </span>
               {nearby.map((option) => (
-                <button
+                <Button
                   key={option.sku}
                   type="button"
+                  variant="ghost"
+                  size="xs"
                   onClick={() => setSelection(option.sku)}
                   className={cn(
-                    "rounded bg-page px-2 py-0.5 text-[11px] ring-1 transition-colors",
+                    "h-auto rounded bg-page px-2 py-0.5 text-[11px] ring-1 transition-colors",
                     selection === option.sku
                       ? "bg-brand-tint text-brand ring-brand/30"
                       : "ring-line hover:bg-brand-tint hover:text-brand",
                   )}
                 >
                   {option.sku} · {option.name}
-                </button>
+                </Button>
               ))}
             </div>
           ) : null}

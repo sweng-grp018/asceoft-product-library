@@ -176,7 +176,8 @@ catalogRoutes.post("/:id/index", authenticate, requireRole("ADMIN"), async (req,
       const { bytes } = await readImage(image.objectKey);
       const detectedType = await fileTypeFromBuffer(bytes);
       if (
-        detectedType?.mime !== image.contentType ||
+        !detectedType ||
+        detectedType.mime !== image.contentType ||
         !IMAGE_TYPES.includes(detectedType.mime as (typeof IMAGE_TYPES)[number])
       ) {
         throw Object.assign(new Error("Invalid reference image type"), { status: 422 });
