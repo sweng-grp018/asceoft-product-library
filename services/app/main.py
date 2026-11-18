@@ -11,7 +11,7 @@ import io
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from PIL import Image, UnidentifiedImageError
-from starlette.conurrency import run_in_threadpool
+from starlette.concurrency import run_in_threadpool
 
 from app.config import (MAX_IMAGE_BYTES, MAX_IMAGE_PIXELS, CLIP_MODEL_NAME, CLIP_PRETRAINED)
 from app.pipeline import run_detection
