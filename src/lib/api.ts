@@ -1,7 +1,6 @@
 import "server-only";
 import { auth } from "@/modules/auth/server/session";
-
-const base = process.env.API_URL ?? "http://localhost:4000";
+import { apiUrl } from "@/lib/api-url";
 
 export async function api<T>(
   path: string,
@@ -10,7 +9,7 @@ export async function api<T>(
 ): Promise<T> {
   const session = protectedRoute ? await auth() : null;
   if (protectedRoute && !session?.accessToken) throw new Error("Sign in required");
-  const response = await fetch(`${base}${path}`, {
+  const response = await fetch(apiUrl(path), {
     ...options,
     cache: "no-store",
     headers: {

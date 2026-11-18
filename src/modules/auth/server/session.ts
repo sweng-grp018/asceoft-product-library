@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
+import { apiUrl } from "@/lib/api-url";
 
 const credentials = z.object({ email: z.email(), password: z.string().min(1) });
 
@@ -15,15 +16,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const input = credentials.safeParse(raw);
         if (!input.success) return null;
         try {
-          const response = await fetch(
-            `${process.env.API_URL ?? "http://localhost:4000"}/auth/login`,
-            {
-              method: "POST",
-              cache: "no-store",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify(input.data),
-            },
-          );
+          const response = await fetch(apiUrl("/auth/login"), {
+            method: "POST",
+            cache: "no-store",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(input.data),
+          });
           if (!response.ok) return null;
           const result = (await response.json()) as {
             accessToken: string;

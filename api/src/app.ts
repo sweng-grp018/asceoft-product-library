@@ -8,6 +8,7 @@ import { catalogRoutes } from "./modules/catalog/routes.js";
 import { repositoryRoutes } from "./modules/repository/routes.js";
 
 export const app = express();
+export default app;
 app.disable("x-powered-by");
 app.use(helmet());
 app.use(cors({ origin: config.WEB_ORIGIN }));

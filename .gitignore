@@ -38,6 +38,7 @@ yarn-error.log*
 
 # vercel
 .vercel
+/.vercel-local-*.json
 
 # typescript
 *.tsbuildinfo
@@ -49,3 +50,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+/services/build/
+/services/*.egg-info/
+.neon

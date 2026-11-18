@@ -71,17 +71,41 @@ Prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3**, Docker Compo
 
 1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`).
 2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL`, `WEB_ORIGIN` and `AI_SERVICE_URL` consistent with your services. The example MinIO credentials are local-development defaults only.
-3. Run `docker compose up -d`. This starts PostgreSQL on port **5433** (chosen to avoid a host-installed PostgreSQL on 5432) and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. Set production passwords and persistent storage separately.
-4. Run `bun run db:generate` followed by `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; verify `DATABASE_URL` first.
-5. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
-6. Run the AI service with `cd services && uv sync --extra dev && uv run uvicorn app.main:app --reload --port 8000`.
-7. In separate terminals from the repository root, start the Express API with `bun run dev:api` (port **4000**) and the Next.js web app with `bun run dev` (port **3000**). Open `http://localhost:3000` or `/sign-in`.
+3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The initial reviewed SQL is in `api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; do not run them against an unverified database.
+4. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
+5. Run `bun run dev:all` from the repository root. It starts the Compose services, generates the Prisma client, and runs the web app, Express API and AI service together. Open `http://localhost:3000` or `/sign-in`. The first AI startup may need to install Python dependencies; model weights may download on first inference.
+
+Press Ctrl+C to stop the web, Express API and AI processes. The Docker containers keep running; use `docker compose down` to stop them. If any of the three application processes exits, the command stops the others. The command does not run migrations or seed data. For individual processes use `bun run dev`, `bun run dev:api`, or `bun run dev:ai`.
+
+Compose starts PostgreSQL on port **5433** (chosen to avoid a host-installed PostgreSQL on 5432) and MinIO API/console on **9000/9001**, and provisions the `lensistry` bucket. PostgreSQL and bucket provisioning may take a short time to become ready after Compose starts. Set production passwords and persistent storage separately.
 
 The API loads the root `.env`; Prisma CLI configuration reads the same file. API and AI health endpoints are `GET /health` on ports 4000 and 8000 respectively. S3 presigned URLs are generated using the configured `S3_ENDPOINT`; browser uploads must be able to reach that endpoint. In hosted deployments configure S3 CORS, private bucket permissions, TLS and actual domain origins. The initial local services are development fixtures, not hardened production configuration. All published ports bind to `127.0.0.1` only.
 
 The Compose stack pins a Bitnami legacy MinIO build (`2025.7.23`) because MinIO withdrew its public container images; replace it with a maintained S3-compatible service before any hosted deployment. `docker compose down` stops the services and keeps data; `docker compose down -v` also deletes the PostgreSQL and MinIO volumes.
 
 **Environment summary:** `DATABASE_URL`, `API_PORT`, `API_URL`, `WEB_ORIGIN`, `AUTH_SECRET`, `JWT_SECRET`, `JWT_ISSUER`, `JWT_AUDIENCE`, `S3_ENDPOINT`, `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` and `AI_SERVICE_URL`. Set optional `YOLO_WEIGHTS` in the AI service to use your own compatible detector weights.
+
+### Hosted database setup
+
+The Prisma schema and initial migration are already in `development`. Confirm that the deployed revision contains `api/prisma/schema.prisma`: the older `main` branch uses the previous Drizzle stack. Release changes to `main` through the team's reviewed Gitflow process.
+
+For a new, empty PostgreSQL database, set `DATABASE_URL` as a server-side secret in the environment that runs the Express API. From a trusted environment with that same database connection and the project dependencies installed, verify the target, then apply the existing migration once:
+
+```bash
+bun run --cwd api db:deploy
+```
+
+This runs `prisma migrate deploy`; it does not create the database. For a database that already contains tables or application data, review its migration history and take a backup before applying anything. Do not run the development migration or admin seed against an unverified database.
+
+### Vercel Services configuration
+
+The root `vercel.json` defines three services: public Next.js `app`, private Express `api`, and private FastAPI `ai`. Next.js owns all public paths, including NextAuth's `/api/auth/*`. The `app` → `api` and `api` → `ai` bindings inject `API_INTERNAL_URL` and `AI_INTERNAL_URL` at function runtime; do not define these binding variables yourself. Outside Vercel Services, the existing `API_URL` and `AI_SERVICE_URL` settings continue to support local development and separately hosted services.
+
+Configure the database, S3, authentication and JWT settings in the Vercel project for each deployment environment. The API build generates the Prisma client and therefore also needs `DATABASE_URL` available at build time; generation does not apply migrations. Use hosted PostgreSQL and S3 endpoints, not the local Compose addresses. Configure S3 CORS for browser-accessible presigned URLs and set `WEB_ORIGIN` appropriately. Vercel Services is a beta feature.
+
+For local testing, create the Python environment with a supported interpreter first, for example `python3.12 -m venv services/.venv`, then run `bun run dev:vercel -L` from the repository root. This invokes the installed Vercel CLI in local-only mode. It installs the Bun workspace once before starting Vercel because concurrent per-service installs can otherwise race while linking workspace binaries; the production configuration still installs each service normally. Omit `-L` to use a linked Vercel project. Vercel installs the Python service dependencies on first startup; model inference itself remains unverified.
+
+The Python service's PyTorch and model dependencies can exceed Vercel's standard Python function bundle limit; confirm the installed bundle fits and enable Large Functions on Fluid compute if needed. Model downloads, writable cache locations, cold starts and resource requirements also need verification on the target deployment. Vercel Functions have a 4.5 MB request-body limit, while the current image workflows accept up to 10 MiB and forward base64-encoded images to inference. Larger uploads or inference requests can therefore fail; moving image bytes directly through object storage would require additional application changes. A successful Next.js build does not verify the Python bundle, model inference, service bindings or these image flows.
 
 ## API contracts
 
