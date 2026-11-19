@@ -7,12 +7,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Product Library",
-    template: "%s | Product Library",
+    default: "Lensistry | Product Library",
+    template: "%s | Lensistry",
   },
   description:
     "An AI-powered product library for intelligent product search, image recognition, product detection, and catalog management.",
-  applicationName: "Product Library",
+  applicationName: "Lensistry",
 };
 
 export default function RootLayout({
