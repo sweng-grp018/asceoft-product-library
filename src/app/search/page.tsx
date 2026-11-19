@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PublicCatalog } from "@/modules/catalog/features/frontend-preview/public-catalog";
 
 type SearchParams = Promise<{ q?: string | string[] }>;
 
@@ -55,6 +57,8 @@ async function SearchResults({ searchParams }: { searchParams: SearchParams }) {
   const query = (await searchParams).q;
   const q = (Array.isArray(query) ? query[0] : query)?.slice(0, 150) ?? "";
 
+  if (frontendPreview) return <PublicCatalog initialQuery={q} />;
+
   return (
     <>
       <form>
@@ -82,6 +86,12 @@ async function SearchResults({ searchParams }: { searchParams: SearchParams }) {
 }
 
 export default function Search({ searchParams }: { searchParams: SearchParams }) {
+  if (frontendPreview)
+    return (
+      <Suspense fallback={<p className="p-8">Loading catalog…</p>}>
+        <SearchResults searchParams={searchParams} />
+      </Suspense>
+    );
   return (
     <main className="mx-auto flex w-full max-w-4xl flex-col gap-7 px-5 py-14">
       <header className="flex flex-wrap items-center justify-between gap-2">

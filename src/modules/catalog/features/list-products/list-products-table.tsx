@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -117,7 +119,12 @@ function CatalogRowItem({
             <Icon aria-hidden className="size-[18px]" strokeWidth={1.9} />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-medium text-brand-ink">{row.name}</p>
+            <Link
+              href={`/products/${row.id}`}
+              className="block truncate text-[15px] font-medium text-brand-ink hover:text-brand hover:underline"
+            >
+              {row.name}
+            </Link>
             <p className="truncate text-xs text-ink-muted">{row.category}</p>
           </div>
         </div>

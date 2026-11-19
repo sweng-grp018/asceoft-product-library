@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { categoryIcon } from "./list-products.icons";
@@ -49,7 +51,12 @@ export function ListProductsCardList({
                 <Icon aria-hidden className="size-[18px]" strokeWidth={1.9} />
               </span>
               <div className="min-w-0 flex-1">
-                <p className="text-[15px] leading-snug font-medium text-brand-ink">{row.name}</p>
+                <Link
+                  href={`/products/${row.id}`}
+                  className="text-[15px] leading-snug font-medium text-brand-ink hover:text-brand hover:underline"
+                >
+                  {row.name}
+                </Link>
                 <p className="truncate text-xs text-ink-muted">
                   {row.category} · {row.brand}
                 </p>

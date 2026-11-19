@@ -103,11 +103,6 @@ export const PLACEHOLDER_ROWS: CatalogRow[] = [
   },
 ];
 
-/** Placeholder library totals, consistent with the dashboard's fixtures. */
-export const PLACEHOLDER_TOTAL = 1248;
-export const PLACEHOLDER_PAGE_COUNT = 208;
-export const PLACEHOLDER_PAGE = 1;
-
 /* -------------------------------------------------------------------------- */
 /* Editor limits                                                              */
 /* -------------------------------------------------------------------------- */

@@ -5,9 +5,12 @@ import { api, type Product } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PreviewProductDetails } from "@/modules/catalog/features/frontend-preview/preview-product";
 
 async function ProductDetails({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = await params;
+  if (frontendPreview) return <PreviewProductDetails productId={productId} publicView />;
   let product: Product;
   try {
     ({ product } = await api<{ product: Product }>(

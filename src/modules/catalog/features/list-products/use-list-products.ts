@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { filterCatalogRows } from "./list-products.search";
 import type { CatalogDraft, CatalogRow } from "./list-products.types";
+import { catalogPreview } from "./catalog-preview-store";
 
 function normalizeDraft(draft: CatalogDraft): CatalogDraft {
   return {
@@ -19,8 +20,9 @@ function normalizeDraft(draft: CatalogDraft): CatalogDraft {
  * Owns catalog rows for the static preview. Replace the four mutators with
  * server calls; the presentational components stay unchanged.
  */
-export function useListProducts(initialRows: CatalogRow[]) {
-  const [rows, setRows] = useState<CatalogRow[]>(initialRows);
+export function useListProducts() {
+  const rows = catalogPreview.useValue();
+  const setRows = catalogPreview.setValue;
   const [query, setQuery] = useState("");
 
   const visibleRows = useMemo(() => filterCatalogRows(rows, query), [rows, query]);

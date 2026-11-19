@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { PageLoading } from "@/components/layout/page-loading";
 import { api, type Product } from "@/lib/api";
 import { auth } from "@/modules/auth/server/session";
 import {
@@ -11,13 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PreviewProductDetails } from "@/modules/catalog/features/frontend-preview/preview-product";
 
-export default async function ProductDetails({
-  params,
-}: {
-  params: Promise<{ productId: string }>;
-}) {
+async function ProductDetailsContent({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = await params;
+  if (frontendPreview) return <PreviewProductDetails productId={productId} />;
   const { product, serverInferenceEnabled } = await api<{
     product: Product;
     serverInferenceEnabled: boolean;
@@ -109,5 +110,13 @@ export default async function ProductDetails({
         </Card>
       )}
     </div>
+  );
+}
+
+export default function ProductDetails(props: { params: Promise<{ productId: string }> }) {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <ProductDetailsContent {...props} />
+    </Suspense>
   );
 }

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -185,11 +186,13 @@ function CatalogEditForm({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {STATUS_OPTIONS.map((status) => (
-                    <SelectItem key={status} value={status}>
-                      {STATUS_META[status].label}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {STATUS_OPTIONS.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {STATUS_META[status].label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </Field>
@@ -216,12 +219,10 @@ function CatalogEditForm({
               <ImageIcon aria-hidden className="size-5" />
             </span>
             <div className="flex flex-col gap-1">
-              <p className="text-sm font-semibold text-brand-ink">
-                Reference photos live on the product page
-              </p>
+              <p className="text-sm font-semibold text-brand-ink">Explore the product details</p>
               <p className="mx-auto max-w-xs text-xs leading-relaxed text-ink-muted">
-                Uploading, choosing the primary photo and re-indexing all happen there, against
-                stored images.
+                View this product’s details and sample index status. Photo uploads and indexing are
+                not connected in this preview.
               </p>
             </div>
             <Button type="button" variant="brand-ghost" size="sm" onClick={onOpenProductPage}>

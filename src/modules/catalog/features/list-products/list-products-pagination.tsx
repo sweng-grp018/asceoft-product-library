@@ -11,19 +11,16 @@ type ListProductsPaginationProps = {
   total: number;
   page: number;
   pageCount: number;
-  onNext: () => void;
 };
 
 /**
- * Footer for the catalog table. The range and totals are placeholders; `onNext`
- * reports that paging is not implemented yet rather than pretending to navigate.
+ * Footer for the local catalog. Paging is disabled while all rows fit one page.
  */
 export function ListProductsPagination({
   shownCount,
   total,
   page,
   pageCount,
-  onNext,
 }: ListProductsPaginationProps) {
   return (
     <div className="flex flex-col items-center justify-between gap-3 border-t border-line-subtle px-6 py-4 lg:flex-row">
@@ -59,7 +56,7 @@ export function ListProductsPagination({
           </PaginationItem>
 
           <PaginationItem>
-            <Button type="button" variant="secondary" size="xl" onClick={onNext}>
+            <Button type="button" variant="secondary" size="xl" disabled={page >= pageCount}>
               Next
               <ChevronRightIcon data-icon="inline-end" />
             </Button>

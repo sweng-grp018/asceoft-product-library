@@ -268,7 +268,7 @@ function PhotoDropzone({
         multiple
         accept={PHOTO_TYPES.join(",")}
         disabled={isFull}
-        className="sr-only"
+        className="sr-only max-w-px"
         onChange={(event) => {
           onAddFiles(event.target.files);
           event.target.value = "";
