@@ -21,16 +21,16 @@ export function AuthShell({ children }: { children: ReactNode }) {
         </div>
         <div className="relative my-auto flex min-h-0 flex-col gap-5 py-8">
           <span className="text-[10px] font-semibold tracking-[0.22em] text-white/65">
-            A LITTLE ORDER. A LOT OF POSSIBILITIES.
+            YOUR STORE’S EVERYDAY ESSENTIALS.
           </span>
           <h2 className="max-w-md text-[clamp(2rem,3.8vw,4rem)] leading-[1.08] font-semibold tracking-tight">
-            Every product.
+            Every grocery product.
             <br />
-            One shared library.
+            One shared list.
           </h2>
           <p className="max-w-xs text-sm leading-relaxed text-white/75">
-            A home for your product knowledge. Organize your catalog and help your team find the
-            right thing, faster.
+            Keep rice, canned goods, drinks, and household essentials easy to find across your
+            store.
           </p>
           <div className="auth-art relative my-3 flex items-center justify-center">
             <div
@@ -68,11 +68,11 @@ export function AuthShell({ children }: { children: ReactNode }) {
           <Brand href="/search" />
           <Link
             href="/search"
-            aria-label="Explore the public catalog"
+            aria-label="Browse grocery products"
             className="inline-flex items-center gap-2 rounded-lg p-2 text-xs font-medium text-brand"
           >
             <Library className="size-4" aria-hidden />
-            Public catalog
+            Browse products
           </Link>
         </div>
         <div className="auth-content mx-auto my-auto flex w-full max-w-[400px] flex-col gap-6 py-2">
@@ -81,13 +81,13 @@ export function AuthShell({ children }: { children: ReactNode }) {
             className="hidden w-fit items-center gap-2 text-xs font-medium text-ink-muted transition-colors hover:text-brand lg:inline-flex"
           >
             <Library className="size-4" aria-hidden />
-            Explore the public catalog
+            Browse grocery products
             <ArrowUpRight className="size-3.5" aria-hidden />
           </Link>
           {children}
         </div>
         <p className="mt-5 shrink-0 text-center text-[11px] text-ink-muted">
-          Lensistry · Your team’s product knowledge, together.
+          Lensistry · Your grocery products, all in one place.
         </p>
       </section>
     </main>

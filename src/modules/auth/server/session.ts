@@ -19,9 +19,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const { data: result } = await axios.post<{
             accessToken: string;
-            user: { id: string; email: string; role: "ADMIN" | "STAFF" | "PUBLIC" };
-          }>(apiUrl("/auth/login").toString(), input.data);
-          return { ...result.user, name: result.user.email, accessToken: result.accessToken };
+            user: { id: string; name: string; email: string; role: "ADMIN" | "STAFF" | "PUBLIC" };
+          }>(apiUrl("/auth/login").toString(), input.data, { timeout: 15000 });
+          return { ...result.user, accessToken: result.accessToken };
         } catch {
           return null;
         }

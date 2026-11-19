@@ -1,12 +1,10 @@
 "use server";
 
 import { AuthError } from "next-auth";
-import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/modules/auth/server/session";
-import { frontendPreview } from "@/lib/frontend-preview";
+import type { ActionResult } from "@/lib/action-result";
 
-export async function login(data: FormData) {
-  if (frontendPreview) redirect("/dashboard");
+export async function login(data: FormData): Promise<ActionResult> {
   try {
     await signIn("credentials", {
       email: data.get("email"),
@@ -15,11 +13,11 @@ export async function login(data: FormData) {
     });
   } catch (error) {
     if (!(error instanceof AuthError)) throw error;
-    redirect("/sign-in?error=credentials");
+    return { error: "Check your email and password and try again." };
   }
+  return {};
 }
 
 export async function logout() {
-  if (frontendPreview) redirect("/sign-in");
   await signOut({ redirectTo: "/sign-in" });
 }

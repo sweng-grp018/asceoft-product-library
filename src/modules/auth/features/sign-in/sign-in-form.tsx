@@ -1,72 +1,34 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition, type ReactNode, type FormEvent } from "react";
+import { useActionState, type ReactNode } from "react";
 import { ArrowRight, Mail, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { PasswordInput } from "@/modules/auth/components/password-input";
-import { frontendPreview } from "@/lib/frontend-preview";
-import {
-  previewProfile,
-  DEFAULT_PROFILE,
-} from "@/modules/auth/features/frontend-preview/preview-profile";
+import type { ActionResult } from "@/lib/action-result";
 import { login } from "./actions";
 
 export function SignInForm({ error }: { error: ReactNode }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [rememberEmail, setRememberEmail] = useState(false);
-  const [email, setEmail] = useState("");
-  useEffect(() => {
-    if (!frontendPreview) return;
-    try {
-      const savedEmail = localStorage.getItem("lensistry-preview-email-v1");
-      if (savedEmail) {
-        setEmail(savedEmail);
-        setRememberEmail(true);
-      }
-    } catch {
-      /* The preview works without browser storage. */
-    }
-  }, []);
-  function submitPreview(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
-    const email = String(data.get("email") ?? "").trim();
-    previewProfile.setValue({
-      ...DEFAULT_PROFILE,
-      email,
-      name: email.split("@")[0].replaceAll(/[._-]/g, " "),
-    });
-    try {
-      if (rememberEmail) localStorage.setItem("lensistry-preview-email-v1", email);
-      else localStorage.removeItem("lensistry-preview-email-v1");
-    } catch {
-      /* Optional email preference. */
-    }
-    startTransition(() => router.push("/dashboard"));
-  }
+  const [result, action, pending] = useActionState<ActionResult, FormData>(
+    async (_previous, data) => login(data),
+    {},
+  );
   return (
     <>
       <header className="flex flex-col gap-2">
         <p className="text-xs font-semibold tracking-[0.16em] text-brand uppercase">
-          Your workspace awaits
+          Your grocery library
         </p>
-        <h1 className="text-3xl leading-tight font-semibold tracking-tight text-brand-ink sm:text-4xl">
-          Welcome back<span className="text-brand">.</span>
+        <h1 className="text-3xl font-semibold tracking-tight text-brand-ink sm:text-4xl">
+          Welcome back.
         </h1>
-        <p className="text-sm text-ink-muted">Good to see you. Let’s pick up where you left off.</p>
+        <p className="text-sm text-ink-muted">Sign in to find and manage your store’s products.</p>
       </header>
-      <form
-        action={frontendPreview ? undefined : login}
-        onSubmit={frontendPreview ? submitPreview : undefined}
-      >
+      <form action={action}>
         <FieldGroup className="gap-4">
           <Field>
-            <FieldLabel htmlFor="sign-in-email">Work email</FieldLabel>
+            <FieldLabel htmlFor="sign-in-email">Email address</FieldLabel>
             <InputGroup className="h-11">
               <InputGroupAddon>
                 <Mail aria-hidden />
@@ -75,12 +37,10 @@ export function SignInForm({ error }: { error: ReactNode }) {
                 id="sign-in-email"
                 name="email"
                 type="email"
-                placeholder="you@company.com"
-                required
+                placeholder="you@example.com"
                 autoComplete="username"
+                required
                 maxLength={254}
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
               />
             </InputGroup>
           </Field>
@@ -90,47 +50,32 @@ export function SignInForm({ error }: { error: ReactNode }) {
               id="sign-in-password"
               name="password"
               placeholder="Enter your password"
-              required
               autoComplete="current-password"
+              required
               maxLength={128}
             />
           </Field>
           {error}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <Field orientation="horizontal" className="w-auto">
-              <Checkbox
-                id="remember-email"
-                checked={rememberEmail}
-                onCheckedChange={(checked) => setRememberEmail(checked === true)}
-              />
-              <FieldLabel htmlFor="remember-email">Remember my email</FieldLabel>
-            </Field>
-            <Link
-              href="/forgot-password"
-              className="text-xs font-medium text-brand hover:underline"
-            >
-              Forgot password?
-            </Link>
-          </div>
-          <Button variant="brand" size="xl" type="submit" disabled={pending} className="w-full">
-            {pending ? <LoaderCircle data-icon="inline-start" className="animate-spin" /> : null}
-            {pending ? "Opening workspace…" : "Sign in to workspace"}
+          <FieldError>{result.error}</FieldError>
+          <Link
+            href="/forgot-password"
+            className="self-end text-xs font-medium text-brand hover:underline"
+          >
+            Forgot password?
+          </Link>
+          <Button type="submit" variant="brand" size="xl" disabled={pending} className="w-full">
+            {pending ? <LoaderCircle className="animate-spin" data-icon="inline-start" /> : null}
+            {pending ? "Signing in…" : "Sign in"}
             <ArrowRight data-icon="inline-end" />
           </Button>
         </FieldGroup>
       </form>
       <p className="text-center text-sm text-ink-muted">
-        New to Lensistry?{" "}
+        New here?{" "}
         <Link href="/sign-up" className="font-semibold text-brand hover:underline">
           Create an account
         </Link>
       </p>
-      {frontendPreview && (
-        <p className="rounded-xl bg-brand-tint px-4 py-3 text-xs leading-relaxed text-ink-muted">
-          <strong className="font-semibold text-brand-ink">You’re in preview mode.</strong> Use any
-          valid email and a password to explore. No real account is required or created.
-        </p>
-      )}
     </>
   );
 }

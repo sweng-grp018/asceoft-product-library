@@ -7,11 +7,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Lensistry | Product Library",
+    default: "Lensistry | Grocery Library",
     template: "%s | Lensistry",
   },
   description:
-    "An AI-powered product library for intelligent product search, image recognition, product detection, and catalog management.",
+    "A shared grocery product library for stores in the Philippines. Find products, save photos, and keep product details in one place.",
   applicationName: "Lensistry",
 };
 
