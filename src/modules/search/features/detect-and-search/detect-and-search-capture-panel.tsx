@@ -100,7 +100,7 @@ export function DetectAndSearchCapturePanel({
         <Input
           type="file"
           accept={IMAGE_MIME_TYPES.join(",")}
-          className="sr-only"
+          className="sr-only max-w-px"
           onChange={handleChange}
         />
       </Label>
@@ -120,7 +120,7 @@ export function DetectAndSearchCapturePanel({
         type="file"
         accept={IMAGE_MIME_TYPES.join(",")}
         capture="environment"
-        className="sr-only"
+        className="sr-only max-w-px"
         onChange={handleChange}
       />
 
@@ -151,7 +151,7 @@ export function DetectAndSearchCapturePanel({
       <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-page px-3 py-2 text-[11px] text-ink-muted ring-1 ring-line">
         <span className="flex items-center gap-1.5">
           <ScanEyeIcon aria-hidden className="size-3.5 text-brand" />
-          YOLO11 proposals · OpenCLIP similarity
+          Sample detections · manual review
         </span>
         <span className="font-mono">Latency: not measured</span>
       </div>

@@ -2,12 +2,14 @@ import "server-only";
 import axios, { type AxiosRequestConfig } from "axios";
 import { auth } from "@/modules/auth/server/session";
 import { apiUrl } from "@/lib/api-url";
+import { frontendPreview } from "@/lib/frontend-preview";
 
 export async function api<T>(
   path: string,
   options: AxiosRequestConfig = {},
   protectedRoute = true,
 ): Promise<T> {
+  if (frontendPreview) throw new Error("API requests are disabled in frontend preview mode.");
   const session = protectedRoute ? await auth() : null;
   if (protectedRoute && !session?.accessToken) throw new Error("Sign in required");
   const response = await axios
