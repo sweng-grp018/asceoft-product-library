@@ -22,7 +22,10 @@
     "db:generate": "bun run --cwd src/api db:generate",
     "db:migrate": "bun run --cwd src/api db:migrate",
     "db:studio": "bun run --cwd src/api db:studio",
-    "db:seed-admin": "bun run --cwd src/api seed:admin"
+    "db:seed-admin": "bun run --cwd src/api seed:admin",
+    "db:seed-groceries": "bun run --cwd src/api seed:groceries",
+    "dev:storage": "bun run --cwd src/api dev:storage",
+    "dev:local": "concurrently --kill-others --names storage,api,web \"bun run dev:storage\" \"bun run dev:api\" \"bun run dev\""
   },
   "dependencies": {
     "axios": "^1.21.1",
