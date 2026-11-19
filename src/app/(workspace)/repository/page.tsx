@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PreviewRepository } from "@/modules/repository/features/frontend-preview/preview-repository";
 
 type Shelf = { id: string; store: string | null; campaign: string | null; createdAt: string };
 export default async function Repository({
@@ -11,6 +13,7 @@ export default async function Repository({
 }: {
   searchParams: Promise<{ uploaded?: string }>;
 }) {
+  if (frontendPreview) return <PreviewRepository />;
   const { images, serverInferenceEnabled } = await api<{
     images: Shelf[];
     serverInferenceEnabled: boolean;

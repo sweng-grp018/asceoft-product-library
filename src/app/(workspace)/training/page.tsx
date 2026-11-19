@@ -3,8 +3,11 @@ import { api, type Product } from "@/lib/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PreviewIndex } from "@/modules/indexing/features/frontend-preview/preview-index";
 
 export default async function Training() {
+  if (frontendPreview) return <PreviewIndex />;
   const { products } = await api<{ products: Product[] }>("/products", {}, false);
   return (
     <div className="flex flex-col gap-6">

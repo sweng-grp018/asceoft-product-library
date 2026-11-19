@@ -6,8 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PreviewTeam } from "@/modules/auth/features/frontend-preview/preview-team";
 
 export default async function Users() {
+  if (frontendPreview) return <PreviewTeam />;
   if ((await auth())?.user.role !== "ADMIN") redirect("/dashboard");
   return (
     <Card className="max-w-xl">

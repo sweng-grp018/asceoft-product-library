@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { frontendPreview } from "@/lib/frontend-preview";
+import { PreviewHistory } from "@/modules/repository/features/frontend-preview/preview-history";
 
 type Search = { id: string; createdAt: string; matches: Match[] };
 export default async function History() {
+  if (frontendPreview) return <PreviewHistory />;
   const [{ searches }, { products }] = await Promise.all([
     api<{ searches: Search[] }>("/repository/searches/recent"),
     api<{ products: Product[] }>("/products", {}, false),
