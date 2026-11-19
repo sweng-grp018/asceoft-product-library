@@ -26,7 +26,14 @@ const onError: ErrorRequestHandler = (error: unknown, _req, res, _next) => {
     return;
   }
   if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-    res.status(409).json({ error: "A record with this unique value already exists" });
+    const fields = JSON.stringify(error.meta?.target ?? "");
+    res.status(409).json({
+      error: fields.includes("email")
+        ? "An account already uses this email address."
+        : fields.includes("sku")
+          ? "A product already uses this product code."
+          : "This record already exists.",
+    });
     return;
   }
   if (error instanceof SyntaxError && "body" in error) {
