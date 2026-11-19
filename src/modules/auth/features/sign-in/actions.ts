@@ -3,8 +3,10 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/modules/auth/server/session";
+import { frontendPreview } from "@/lib/frontend-preview";
 
 export async function login(data: FormData) {
+  if (frontendPreview) redirect("/dashboard");
   try {
     await signIn("credentials", {
       email: data.get("email"),
@@ -18,5 +20,6 @@ export async function login(data: FormData) {
 }
 
 export async function logout() {
+  if (frontendPreview) redirect("/sign-in");
   await signOut({ redirectTo: "/sign-in" });
 }
