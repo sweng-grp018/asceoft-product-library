@@ -25,6 +25,7 @@
     "db:seed-admin": "bun run --cwd src/api seed:admin"
   },
   "dependencies": {
+    "axios": "^1.21.1",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
     "cn": "^0.5.1",

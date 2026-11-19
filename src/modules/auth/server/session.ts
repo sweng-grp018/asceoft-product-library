@@ -1,4 +1,5 @@
 import NextAuth from "next-auth";
+import axios from "axios";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { apiUrl } from "@/lib/api-url";
@@ -16,17 +17,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const input = credentials.safeParse(raw);
         if (!input.success) return null;
         try {
-          const response = await fetch(apiUrl("/auth/login"), {
-            method: "POST",
-            cache: "no-store",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify(input.data),
-          });
-          if (!response.ok) return null;
-          const result = (await response.json()) as {
+          const { data: result } = await axios.post<{
             accessToken: string;
             user: { id: string; email: string; role: "ADMIN" | "STAFF" | "PUBLIC" };
-          };
+          }>(apiUrl("/auth/login").toString(), input.data);
           return { ...result.user, name: result.user.email, accessToken: result.accessToken };
         } catch {
           return null;

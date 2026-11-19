@@ -1,31 +1,36 @@
 import "server-only";
+import axios, { type AxiosRequestConfig } from "axios";
 import { auth } from "@/modules/auth/server/session";
 import { apiUrl } from "@/lib/api-url";
 
 export async function api<T>(
   path: string,
-  options: RequestInit = {},
+  options: AxiosRequestConfig = {},
   protectedRoute = true,
 ): Promise<T> {
   const session = protectedRoute ? await auth() : null;
   if (protectedRoute && !session?.accessToken) throw new Error("Sign in required");
-  const response = await fetch(apiUrl(path), {
-    ...options,
-    cache: "no-store",
-    headers: {
-      ...(options.body && typeof options.body === "string"
-        ? { "content-type": "application/json" }
-        : {}),
-      ...(session?.accessToken ? { authorization: `Bearer ${session.accessToken}` } : {}),
-      ...options.headers,
-    },
-  });
-  if (!response.ok) {
-    const body = (await response.json().catch(() => null)) as { error?: string } | null;
+  const response = await axios
+    .request<T>({
+      ...options,
+      url: apiUrl(path).toString(),
+      headers: {
+        ...options.headers,
+        ...(session?.accessToken ? { authorization: `Bearer ${session.accessToken}` } : {}),
+      },
+      responseType: "json",
+      transitional: { silentJSONParsing: false },
+      validateStatus: () => true,
+    })
+    .catch(() => {
+      throw new Error("API request unavailable");
+    });
+  if (response.status < 200 || response.status >= 300) {
+    const body = response.data as { error?: string } | null;
     throw new Error(body?.error ?? `API request failed: ${response.status}`);
   }
   if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
+  return response.data;
 }
 
 export type Product = {

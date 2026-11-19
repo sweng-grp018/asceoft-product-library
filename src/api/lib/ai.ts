@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export class ServerInferenceUnavailableError extends Error {
   constructor() {
     super("Server inference is disabled. The web app does not host an AI runtime.");
@@ -12,14 +14,20 @@ export function createAiClient(serviceUrl: string | undefined) {
   const base = new URL(serviceUrl);
 
   return async function aiRequest<T>(route: "/embed" | "/detect", image: Buffer): Promise<T> {
-    const response = await fetch(new URL(route, base), {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ imageBase64: image.toString("base64") }),
-      signal: AbortSignal.timeout(120_000),
-    });
-    if (!response.ok) throw Object.assign(new Error("AI inference unavailable"), { status: 502 });
-    return (await response.json()) as T;
+    try {
+      const { data } = await axios.post<T>(
+        new URL(route, base).toString(),
+        { imageBase64: image.toString("base64") },
+        {
+          signal: AbortSignal.timeout(120_000),
+          responseType: "json",
+          transitional: { silentJSONParsing: false },
+        },
+      );
+      return data;
+    } catch {
+      throw Object.assign(new Error("AI inference unavailable"), { status: 502 });
+    }
   };
 }
 

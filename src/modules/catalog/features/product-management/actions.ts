@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import axios from "axios";
 import { api } from "@/lib/api";
 import { auth } from "@/modules/auth/server/session";
 
@@ -31,7 +32,7 @@ export async function createProduct(data: FormData) {
   await adminOnly();
   const { product } = await api<{ product: { id: string } }>("/products", {
     method: "POST",
-    body: JSON.stringify(formProduct(data)),
+    data: formProduct(data),
   });
   revalidatePath("/products");
   redirect(`/products/${product.id}`);
@@ -41,7 +42,7 @@ export async function updateProduct(productId: string, data: FormData) {
   await adminOnly();
   await api(`/products/${z.uuid().parse(productId)}`, {
     method: "PATCH",
-    body: JSON.stringify(formProduct(data)),
+    data: formProduct(data),
   });
   revalidatePath("/products");
   redirect(`/products/${productId}`);
@@ -62,14 +63,14 @@ async function putFile(file: File, destination: { uploadUrl: string; maxBytes: n
   ) {
     throw new Error("Please upload a JPEG, PNG, or WebP image up to 10 MiB");
   }
-  const upload = await fetch(destination.uploadUrl, {
-    method: "PUT",
-    headers: { "content-type": file.type },
-    body: Buffer.from(await file.arrayBuffer()),
-    cache: "no-store",
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!upload.ok) throw new Error("Object storage upload failed");
+  await axios
+    .put(destination.uploadUrl, Buffer.from(await file.arrayBuffer()), {
+      headers: { "content-type": file.type },
+      signal: AbortSignal.timeout(60_000),
+    })
+    .catch(() => {
+      throw new Error("Object storage upload failed");
+    });
 }
 
 export async function uploadReference(productId: string, data: FormData) {
@@ -84,7 +85,7 @@ export async function uploadReference(productId: string, data: FormData) {
     throw new Error("Invalid image");
   const destination = await api<{ uploadUrl: string; maxBytes: number }>(
     `/products/${z.uuid().parse(productId)}/images`,
-    { method: "POST", body: JSON.stringify({ contentType: file.type }) },
+    { method: "POST", data: { contentType: file.type } },
   );
   await putFile(file, destination);
   revalidatePath(`/products/${productId}`);

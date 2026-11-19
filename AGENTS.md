@@ -34,6 +34,8 @@ Keep cohesive business vertical slices and thin framework entry points. Apply SO
 
 Keep web and Express application code under the root `src/` folder. For every code file, use the simplest direct implementation that does the job. Keep functions focused, names clear and code short without sacrificing readability, validation or authorization. Add helpers, layers or dependencies only when they solve a current need.
 
+Use Axios for application HTTP requests and keep async/await for asynchronous work. Send JSON as Axios `data`; preserve authorization headers, upload content types and request timeouts. The AWS SDK remains responsible for S3 operations and presigning.
+
 The `/products` catalog screen uses fixture rows and local-only create, edit and delete actions; changes reset on reload, and its create drawer does not upload staged photos. Separate product routes and Express CRUD endpoints exist. The dashboard displays placeholder statistics and activity. The `/detection` screen uses simulated results; do not describe these screens as live integrations. Deployment configuration separates web services from AI tooling, but deployment and full database/S3 flows need verification.
 
 ## Stack requirements

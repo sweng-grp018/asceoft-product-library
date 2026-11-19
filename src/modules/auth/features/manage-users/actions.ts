@@ -17,5 +17,5 @@ export async function createStaffUser(data: FormData) {
     name: data.get("name"),
     role: data.get("role"),
   });
-  await api("/auth/users", { method: "POST", body: JSON.stringify(user) });
+  await api("/auth/users", { method: "POST", data: user });
 }

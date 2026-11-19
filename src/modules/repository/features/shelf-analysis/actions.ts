@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import axios from "axios";
 import { api } from "@/lib/api";
 import { auth } from "@/modules/auth/server/session";
 
@@ -23,20 +24,20 @@ export async function uploadShelf(data: FormData) {
     throw new Error("Select an image up to 10 MiB");
   const { uploadUrl, imageId } = await api<{ uploadUrl: string; imageId: string }>("/repository", {
     method: "POST",
-    body: JSON.stringify({
+    data: {
       contentType: file.type,
       store: String(data.get("store") ?? ""),
       campaign: String(data.get("campaign") ?? ""),
-    }),
+    },
   });
-  const upload = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "content-type": file.type },
-    body: Buffer.from(await file.arrayBuffer()),
-    cache: "no-store",
-    signal: AbortSignal.timeout(60_000),
-  });
-  if (!upload.ok) throw new Error("Object storage upload failed");
+  await axios
+    .put(uploadUrl, Buffer.from(await file.arrayBuffer()), {
+      headers: { "content-type": file.type },
+      signal: AbortSignal.timeout(60_000),
+    })
+    .catch(() => {
+      throw new Error("Object storage upload failed");
+    });
   revalidatePath("/repository");
   redirect(`/repository?uploaded=${imageId}`);
 }
@@ -57,7 +58,7 @@ export async function correctMatch(searchId: string, matchId: string, data: Form
   const productId = input ? z.uuid().parse(input) : null;
   await api(`/repository/searches/${z.uuid().parse(searchId)}/matches/${z.uuid().parse(matchId)}`, {
     method: "PATCH",
-    body: JSON.stringify({ productId }),
+    data: { productId },
   });
   revalidatePath("/history");
 }
