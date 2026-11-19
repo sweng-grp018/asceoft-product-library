@@ -1,99 +1,84 @@
+import Image from "next/image";
+import Link from "next/link";
 import { api } from "@/lib/api";
-import { uploadShelf, analyzeShelf } from "@/modules/repository/features/shelf-analysis/actions";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { PageHeading } from "@/components/layout/page-heading";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { frontendPreview } from "@/lib/frontend-preview";
-import { PreviewRepository } from "@/modules/repository/features/frontend-preview/preview-repository";
+import { PhotoUploadForm } from "@/modules/repository/features/photo-upload/photo-upload-form";
 
-type Shelf = { id: string; store: string | null; campaign: string | null; createdAt: string };
-export default async function Repository({
-  searchParams,
-}: {
-  searchParams: Promise<{ uploaded?: string }>;
-}) {
-  if (frontendPreview) return <PreviewRepository />;
-  const { images, serverInferenceEnabled } = await api<{
-    images: Shelf[];
-    serverInferenceEnabled: boolean;
+export default async function Repository() {
+  const { images } = await api<{
+    images: {
+      id: string;
+      url: string;
+      store: string | null;
+      campaign: string | null;
+      createdAt: string;
+    }[];
   }>("/repository");
-  const { uploaded } = await searchParams;
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold">Shelf images</h1>
-        <p className="text-muted-foreground">Store and organize shelf photos for later review.</p>
-      </div>
-      {uploaded && (
-        <p role="status" className="rounded-lg bg-muted p-3">
-          {serverInferenceEnabled
-            ? "Image uploaded. Select Analyze to run detection."
-            : "Image uploaded. Server analysis is disabled."}
-        </p>
-      )}
-      <Card>
+      <PageHeading
+        title="Shelf photos"
+        description="Save grocery shelf photos by store or collection, ready for later review."
+        action={
+          <Button asChild variant="outline" size="xl">
+            <Link href="/detection">Find from a photo</Link>
+          </Button>
+        }
+      />
+      <Card className="border-line">
         <CardHeader>
-          <CardTitle>Upload shelf photo</CardTitle>
+          <CardTitle>Add a shelf photo</CardTitle>
           <CardDescription>
-            JPEG, PNG or WebP, maximum 10 MiB. Uploads are saved to your image repository.
+            JPG, PNG, or WebP. Up to 10 MB. Photos are saved privately.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={uploadShelf}>
-            <FieldGroup className="grid gap-3 md:grid-cols-2">
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="shelf-store">Store</FieldLabel>
-                <Input id="shelf-store" name="store" maxLength={100} placeholder="Store location" />
-              </Field>
-              <Field className="gap-1.5">
-                <FieldLabel htmlFor="shelf-campaign">Campaign</FieldLabel>
-                <Input
-                  id="shelf-campaign"
-                  name="campaign"
-                  maxLength={100}
-                  placeholder="Optional campaign"
-                />
-              </Field>
-              <Field className="gap-1.5 md:col-span-2">
-                <FieldLabel htmlFor="shelf-image">Photo</FieldLabel>
-                <Input
-                  id="shelf-image"
-                  name="image"
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  required
-                />
-              </Field>
-              <Button type="submit">Upload photo</Button>
-            </FieldGroup>
-          </form>
+          <PhotoUploadForm />
         </CardContent>
       </Card>
-      {!serverInferenceEnabled && (
-        <p className="text-sm text-muted-foreground">
-          Server analysis is disabled. Local browser inference with an exported model is planned.
+      <h2 className="text-lg font-semibold text-brand-ink">Saved photos ({images.length})</h2>
+      <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        {images.map((image) => (
+          <Card key={image.id} className="border-line">
+            <CardHeader>
+              <div className="relative mb-3 h-48 rounded-xl bg-brand-tint">
+                <Image
+                  src={image.url}
+                  alt={`Shelf photo from ${image.store || "the store"}`}
+                  fill
+                  unoptimized
+                  sizes="(min-width:1280px) 30vw,(min-width:640px) 45vw,90vw"
+                  className="object-contain p-3"
+                />
+              </div>
+              <CardTitle>{image.store || "No store name"}</CardTitle>
+              <CardDescription>{image.campaign || "No collection"}</CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <p className="text-xs text-ink-muted">
+                {new Intl.DateTimeFormat("en-PH", {
+                  dateStyle: "medium",
+                  timeZone: "Asia/Manila",
+                }).format(new Date(image.createdAt))}
+              </p>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+      {!images.length && (
+        <p className="rounded-xl border border-dashed border-line p-10 text-center text-sm text-ink-muted">
+          No shelf photos yet. Add the first photo above.
         </p>
       )}
-      <h2 className="text-xl font-semibold">Recent shelf photos</h2>
-      {images.map((image) => (
-        <Card key={image.id}>
-          <CardContent className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="font-medium">{image.store || "Unspecified store"}</p>
-              <p className="text-sm text-muted-foreground">
-                {image.campaign || "No campaign"} · {new Date(image.createdAt).toLocaleString()}
-              </p>
-            </div>
-            <form action={analyzeShelf.bind(null, image.id)}>
-              <Button type="submit" variant="outline" disabled={!serverInferenceEnabled}>
-                Analyze
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ))}
-      {!images.length && <p className="text-muted-foreground">No shelf photos uploaded yet.</p>}
     </div>
   );
 }

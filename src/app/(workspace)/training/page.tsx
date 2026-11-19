@@ -1,40 +1,58 @@
 import Link from "next/link";
-import { api, type Product } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
+import { api } from "@/lib/api";
+import { allProducts } from "@/modules/catalog/server/products";
+import { PageHeading } from "@/components/layout/page-heading";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { frontendPreview } from "@/lib/frontend-preview";
-import { PreviewIndex } from "@/modules/indexing/features/frontend-preview/preview-index";
-
-export default async function Training() {
-  if (frontendPreview) return <PreviewIndex />;
-  const { products } = await api<{ products: Product[] }>("/products", {}, false);
+import { StatusPill } from "@/modules/catalog/features/list-products/status-pill";
+export default async function ProductPhotos() {
+  const products = await allProducts();
+  const { ready } = await api<{ ready: number }>("/products/summary");
   return (
     <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-3xl font-semibold">Embedding index</h1>
-        <p className="text-muted-foreground">
-          Reference images produce OpenCLIP embeddings. YOLO model fine-tuning requires a labeled
-          dataset and is not part of this POC.
-        </p>
-      </header>
-      <div className="grid gap-3">
+      <PageHeading
+        title="Product photos"
+        description="Check which groceries have photos and which are ready for photo search."
+      />
+      <p className="text-sm text-ink-muted">
+        {ready} of {products.length} products are ready for photo search.
+      </p>
+      <div className="grid gap-4 md:grid-cols-2">
         {products.map((p) => (
-          <Card key={p.id}>
+          <Card key={p.id} className="border-line">
             <CardHeader>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="font-mono text-xs text-ink-muted">{p.sku}</span>
+                <StatusPill status={p.indexStatus} />
+              </div>
               <CardTitle>{p.name}</CardTitle>
+              <CardDescription>
+                {p.brand} · {p.category}
+              </CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap items-center justify-between gap-3">
-              <span>
-                {p.images.length} references · <Badge>{p.indexStatus}</Badge>
-              </span>
-              <Button variant="outline" asChild>
-                <Link href={`/products/${p.id}`}>Manage indexing</Link>
-              </Button>
+            <CardContent>
+              <p className="text-sm text-ink-muted">{p.images.length} saved photos</p>
             </CardContent>
+            <CardFooter>
+              <Button asChild variant="brand-ghost">
+                <Link href={`/products/${p.id}`}>View product and photos</Link>
+              </Button>
+            </CardFooter>
           </Card>
         ))}
       </div>
+      {!products.length && (
+        <p className="text-sm text-ink-muted">
+          Add a product first, then save a clear photo of its pack.
+        </p>
+      )}
     </div>
   );
 }
