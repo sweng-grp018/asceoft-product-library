@@ -12,7 +12,7 @@ Standalone AI-powered product/SKU catalog and shelf-photo identification proof o
 
 </div>
 
-> **Implementation status:** The web deployment is configured separately from AI tooling, but deployment and live database/S3 integration still need verification. The team's YOLO26n detector has been trained independently on SKU-110K; browser integration and crop-based SKU identification are not implemented in this repository. The detection screen uses simulated results, and the main product catalog and dashboard use preview data.
+> **Implementation status:** The frontend opens in a labeled preview mode by default. Sign-in, sign-up, recovery, catalog, dashboard, images, history, team and profile screens work with local sample data, without Express, a database, object storage or AI services. No real accounts are created or reset. The existing backend integration is retained behind `NEXT_PUBLIC_FRONTEND_PREVIEW=false` and still needs end-to-end verification. The team's YOLO26n detector has been trained independently on SKU-110K; browser inference and crop-based SKU identification are not implemented here.
 
 ## Overview
 
@@ -20,12 +20,12 @@ Lensistry is intended to help administrators maintain a SKU catalog and staff id
 
 | Capability                                                | Current state                                                                                                  |
 | --------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Public catalog search by name, brand or SKU               | Implemented through Express and Next.js                                                                        |
-| Staff/CMS sign-in and admin-managed staff users           | NextAuth credentials with Express-issued JWT and database-backed role checks                                   |
+| Public catalog search by name, brand or SKU               | Local sample catalog by default; existing Express integration available with preview disabled                  |
+| Staff/CMS sign-in and admin-managed staff users           | Local preview forms by default; NextAuth/JWT/RBAC retained for live integration                                |
 | Product CRUD, reference photos and indexing states        | API routes and separate product pages implemented; admin modifications require authorization                   |
 | Main product catalog (`/products`)                        | Static preview; create, edit and delete change local state only and reset on reload                            |
-| Dashboard                                                 | Placeholder statistics and activity; not connected to live catalog data                                        |
-| Shelf photo uploads and history                           | Web/API routes implemented; require object storage and database integration                                    |
+| Dashboard                                                 | Counts and recent products derived from the shared sample catalog                                              |
+| Shelf photo uploads and history                           | Local photo staging and simulated correction flow by default; live web/API routes retained                     |
 | Browser inference using the team's YOLO26n detector       | Planned; requires an exported model and its input/output contract                                              |
 | SKU identification from detected object crops             | Separate stage from detection; the browser workflow is not implemented                                         |
 | Legacy server detection, similarity matching and indexing | Optional standalone prototype; disabled unless `AI_SERVICE_URL` is configured                                  |
@@ -43,6 +43,7 @@ The client-aligned technology stack is:
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                                               |
 | Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                                      |
+| HTTP client           | **Axios** for web-to-API calls, presigned image uploads and optional AI service requests                                         |
 | Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                                  |
 | Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**                  |
 | Images                | **S3-compatible storage** with presigned uploads (MinIO in development; other compatible providers configurable)                 |
@@ -66,7 +67,7 @@ flowchart LR
   B -. Object crops .-> I[Separate SKU identification]
 ```
 
-Express owns data, credential checks, privileged operations and access to storage. Next.js routes and Server Actions are the browser-facing entry points. The `/products` catalog screen currently uses fixture rows and local-only mutations; its create drawer stages photos without uploading them. Separate product creation, detail and edit routes call the API. The dashboard uses placeholder values. Neither the web build nor normal web startup installs or runs Python. `services/` is a self-contained legacy inference prototype retained for independent experimentation; the Vercel configuration excludes it and model files. No Skaffld CORE dependencies are required.
+Express owns data, credential checks, privileged operations and access to storage. Next.js routes and Server Actions are the browser-facing entry points. The `/products` catalog screen currently uses fixture rows and local-only mutations; its create drawer stages photos without uploading them. Separate product creation, detail and edit routes use local state in preview mode and retain API calls when preview is disabled. The dashboard derives its counts from the shared sample catalog. Neither the web build nor normal web startup installs or runs Python. `services/` is a self-contained legacy inference prototype retained for independent experimentation; the Vercel configuration excludes it and model files. No Skaffld CORE dependencies are required.
 
 Web and Express application code share the root `src/` directory. The Express workspace is `src/api/`, with `app.ts` for deployment, `index.ts` for local startup, `modules/` for routes, `lib/` for service clients, and `prisma/` for the schema and migrations. It has no nested `src/` directory. The optional Python prototype stays in `services/` as an independent project.
 
@@ -87,6 +88,20 @@ Each detected object is cropped from the original image and passed to a separate
 These legacy requests run synchronously only when an operator explicitly configures `AI_SERVICE_URL`. With no endpoint, indexing and analysis controls are disabled and the API returns 503 before reading image bytes or changing indexing state. Catalog, sign-in, uploads and history do not require AI.
 
 ## Local development
+
+### Frontend preview (current focus)
+
+Install dependencies with `bun install --frozen-lockfile`, then run `bun run dev` and open `http://localhost:3000/sign-in`. No `.env`, Express server, database, Docker, object storage, Python or model is needed for the preview. Prisma client generation during install does not connect to a database.
+
+Preview mode is enabled when `NEXT_PUBLIC_FRONTEND_PREVIEW` is unset or `true`. Sign in with any valid email and a nonempty password, create a preview profile at `/sign-up`, or visit `/dashboard` directly. `/forgot-password` previews a reset request without sending email or changing a password.
+
+Catalog changes are shared across the dashboard, product list, public search, product forms and reference index during client navigation. A full reload restores fixtures. Profile and team edits are also local; repository photos and history corrections last for the current page. The optional “Remember my email” preference stores only an email address in browser local storage. Passwords are never stored. No preview identity or role grants API access.
+
+All workspace routes are available in preview mode, including `/repository`, `/history`, `/training`, `/users` and `/profile`. Detection results and indexing states are examples, not live inference. The web API helper rejects requests in preview mode to prevent accidental backend calls.
+
+To resume the **existing live integration**, set `NEXT_PUBLIC_FRONTEND_PREVIEW=false`, restart/rebuild Next.js, and follow the setup below. Live self-registration and password-reset delivery remain unimplemented; staff accounts still require admin provisioning. The main catalog and dashboard remain sample screens even with preview disabled.
+
+### Existing live integration setup
 
 Web prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3** and Docker Compose (Postgres/MinIO). Python and uv are needed only for optional standalone tooling. Do not put live secrets in version control.
 
@@ -146,7 +161,7 @@ Express provides JSON endpoints, with Zod validation and role checks at the back
 | GET               | `/repository/searches/recent`          | Signed-in staff/admin; own searches       |
 | PATCH             | `/repository/searches/:id/matches/:id` | Search owner or admin; manual correction  |
 
-Images are stored in S3-compatible storage; only object keys and metadata are stored in PostgreSQL. JWT validation verifies issuer, audience, expiry and the current user/role in the database. Direct API access cannot bypass these checks. NextAuth sessions are intended for the CMS; there is no public self-registration workflow.
+Images are stored in S3-compatible storage; only object keys and metadata are stored in PostgreSQL. JWT validation verifies issuer, audience, expiry and the current user/role in the database. Direct API access cannot bypass these checks. NextAuth sessions are intended for the CMS; the public sign-up screen creates a local preview profile only, not a live account.
 
 ## Validation
 
