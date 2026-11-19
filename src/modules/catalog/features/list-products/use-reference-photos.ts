@@ -13,8 +13,8 @@ function describeBytes(bytes: number) {
 /**
  * Stages reference photos in the browser for the create drawer.
  *
- * Nothing is uploaded: the API only issues a presigned URL for a product that
- * already exists. Object URLs are revoked on removal and on unmount so a long
+ * Selected File objects are uploaded after the product is created. Object URLs
+ * are revoked on removal and on unmount so a long
  * session does not leak blob memory.
  */
 export function useReferencePhotos(limit: number = PHOTO_LIMIT) {
@@ -56,6 +56,7 @@ export function useReferencePhotos(limit: number = PHOTO_LIMIT) {
         const previewUrl = URL.createObjectURL(file);
         objectUrls.current.push(previewUrl);
         accepted.push({
+          file,
           id: crypto.randomUUID(),
           name: file.name,
           size: file.size,

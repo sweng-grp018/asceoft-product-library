@@ -33,8 +33,8 @@ export function ListProductsToolbar({
           type="text"
           value={query}
           onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="Search by SKU, product name, or brand..."
-          aria-label="Search by SKU, product name, or brand"
+          placeholder="Search by product code, name, or brand..."
+          aria-label="Search by product code, name, or brand"
           className="text-sm"
         />
 
@@ -51,8 +51,11 @@ export function ListProductsToolbar({
         ) : null}
       </InputGroup>
 
+      <Button type="submit" variant="outline" size="xl">
+        Search
+      </Button>
       {canCreate ? (
-        <Button variant="brand" size="xl" onClick={onCreate}>
+        <Button type="button" variant="brand" size="xl" onClick={onCreate}>
           <PlusIcon data-icon="inline-start" />
           Add product
         </Button>

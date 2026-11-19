@@ -20,21 +20,35 @@ import {
 } from "@/components/ui/input-group";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
-import { filterCatalogRows } from "../list-products/list-products.search";
-import { catalogPreview } from "../list-products/catalog-preview-store";
+import type { CatalogRow } from "../list-products/list-products.types";
 
-export function PublicCatalog({ initialQuery = "" }: { initialQuery?: string }) {
+export function PublicCatalog({
+  initialQuery,
+  rows,
+  total,
+  page,
+  pageSize,
+  account,
+}: {
+  initialQuery: string;
+  rows: CatalogRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  account?: { name: string; role: string } | null;
+}) {
   const [query, setQuery] = useState(initialQuery);
-  const rows = catalogPreview.useValue();
-  const products = filterCatalogRows(rows, query);
+  const products = rows;
   return (
     <main className="min-h-dvh bg-page">
       <header className="border-b border-line bg-background">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
           <Brand href="/search" />
           <Button asChild variant="outline" size="xl">
-            <Link href="/sign-in">
-              Staff sign in
+            <Link
+              href={account ? (account.role === "PUBLIC" ? "/account" : "/dashboard") : "/sign-in"}
+            >
+              {account ? (account.role === "PUBLIC" ? "My account" : "My store") : "Sign in"}
               <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>
@@ -43,52 +57,55 @@ export function PublicCatalog({ initialQuery = "" }: { initialQuery?: string }) 
       <section className="mx-auto flex max-w-6xl flex-col gap-7 px-5 py-10 sm:py-14">
         <div className="flex max-w-2xl flex-col gap-4">
           <Badge variant="secondary" className="w-fit">
-            The public library
+            Grocery products
           </Badge>
           <h1 className="text-4xl font-semibold tracking-tight text-brand-ink sm:text-5xl">
-            Good products.
-            <br />
-            Easy to find.
+            Find grocery products.
           </h1>
           <p className="max-w-lg text-sm leading-relaxed text-ink-muted sm:text-base">
-            Explore the library by product name, brand, or SKU. The details you need, all in one
-            place.
+            Find rice, canned goods, drinks, and everyday essentials by name, brand, or product
+            code.
           </p>
         </div>
-        <Field className="max-w-2xl">
-          <FieldLabel htmlFor="public-search" className="sr-only">
-            Search the public catalog
-          </FieldLabel>
-          <InputGroup className="h-12 bg-background">
-            <InputGroupAddon>
-              <Search aria-hidden />
-            </InputGroupAddon>
-            <InputGroupInput
-              id="public-search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search products, brands, or SKUs…"
-              maxLength={150}
-            />
-            {query && (
-              <InputGroupAddon align="inline-end">
-                <InputGroupButton
-                  size="icon-sm"
-                  onClick={() => setQuery("")}
-                  aria-label="Clear search"
-                >
-                  <X />
-                </InputGroupButton>
+        <form action="/search" className="flex max-w-2xl items-end gap-3">
+          <Field className="max-w-2xl">
+            <FieldLabel htmlFor="public-search" className="sr-only">
+              Find grocery products
+            </FieldLabel>
+            <InputGroup className="h-12 bg-background">
+              <InputGroupAddon>
+                <Search aria-hidden />
               </InputGroupAddon>
-            )}
-          </InputGroup>
-        </Field>
+              <InputGroupInput
+                id="public-search"
+                name="q"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search a name, brand, or product code…"
+                maxLength={150}
+              />
+              {query && (
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-sm"
+                    onClick={() => setQuery("")}
+                    aria-label="Clear search"
+                  >
+                    <X />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              )}
+            </InputGroup>
+          </Field>
+          <Button type="submit" variant="brand" size="xl">
+            Search
+          </Button>
+        </form>
         <div className="flex items-center justify-between">
           <p role="status" className="text-sm text-ink-muted">
-            {products.length} {products.length === 1 ? "product" : "products"}
-            {query ? ` matching “${query}”` : " to explore"}
+            {total} {total === 1 ? "product" : "products"}
+            {initialQuery ? ` matching “${initialQuery}”` : " available"}
           </p>
-          <span className="text-xs text-ink-muted">Sample catalog</span>
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {products.map((product) => (
@@ -127,14 +144,41 @@ export function PublicCatalog({ initialQuery = "" }: { initialQuery?: string }) 
           <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-background px-6 py-16 text-center">
             <Search className="size-8 text-ink-muted" aria-hidden />
             <h2 className="text-lg font-semibold text-brand-ink">No products found</h2>
-            <p className="text-sm text-ink-muted">Try a different product name, brand, or SKU.</p>
-            <Button variant="outline" onClick={() => setQuery("")}>
-              Clear search
+            <p className="text-sm text-ink-muted">Try a different name, brand, or product code.</p>
+            <Button asChild variant="outline">
+              <Link href="/search">Clear search</Link>
             </Button>
           </div>
         )}
+        <nav aria-label="Product pages" className="flex items-center justify-between gap-3">
+          {page <= 1 ? (
+            <Button variant="outline" disabled>
+              Previous
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link href={`/search?q=${encodeURIComponent(initialQuery)}&page=${page - 1}`}>
+                Previous
+              </Link>
+            </Button>
+          )}
+          <p className="text-xs text-ink-muted">
+            Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+          </p>
+          {page * pageSize >= total ? (
+            <Button variant="outline" disabled>
+              Next
+            </Button>
+          ) : (
+            <Button asChild variant="outline">
+              <Link href={`/search?q=${encodeURIComponent(initialQuery)}&page=${page + 1}`}>
+                Next
+              </Link>
+            </Button>
+          )}
+        </nav>
         <footer className="py-6 text-center text-xs text-ink-muted">
-          You’re exploring sample products. No account needed.
+          Browse the store’s products. No sign-in needed.
         </footer>
       </section>
     </main>

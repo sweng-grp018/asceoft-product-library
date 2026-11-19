@@ -3,17 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { CheckIcon, ImageIcon, SlidersHorizontalIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Sheet, SheetClose, SheetContent } from "@/components/ui/sheet";
 import { ListProductsCreateWizard } from "./list-products-create-wizard";
-import { STATUS_META, STATUS_OPTIONS } from "./list-products.data";
 import {
   BrandField,
   CategoryField,
@@ -22,7 +13,6 @@ import {
   SkuField,
 } from "./list-products-form-fields";
 import {
-  Field,
   SheetEyebrow,
   SheetPanel,
   SheetPanelBody,
@@ -30,7 +20,7 @@ import {
   SheetPanelHeader,
   sheetSectionHeadingClass,
 } from "./list-products-sheet-parts";
-import type { CatalogDraft, CatalogEditor, CatalogRow, IndexStatus } from "./list-products.types";
+import type { CatalogDraft, CatalogEditor, CatalogRow } from "./list-products.types";
 
 type ListProductsEditorSheetProps = {
   editor: CatalogEditor | null;
@@ -38,7 +28,8 @@ type ListProductsEditorSheetProps = {
   existingSkus: readonly string[];
   onClose: () => void;
   onUpdate: (id: string, draft: CatalogDraft) => void;
-  onCreate: (draft: CatalogDraft, photoCount: number) => void;
+  onCreate: (draft: CatalogDraft, photos: import("./list-products.types").CatalogPhoto[]) => void;
+  pending?: boolean;
   onOpenProductPage: () => void;
 };
 
@@ -55,12 +46,13 @@ export function ListProductsEditorSheet({
   onUpdate,
   onCreate,
   onOpenProductPage,
+  pending,
 }: ListProductsEditorSheetProps) {
   return (
     <Sheet
       open={editor !== null}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open && !pending) onClose();
       }}
     >
       {editor ? (
@@ -72,11 +64,13 @@ export function ListProductsEditorSheet({
             <ListProductsCreateWizard
               key={editor.session}
               existingSkus={existingSkus}
+              pending={pending}
               onCreate={onCreate}
             />
           ) : (
             <CatalogEditForm
               key={editor.session}
+              pending={pending}
               row={editor.row}
               onSave={(draft) => onUpdate(editor.row.id, draft)}
               onOpenProductPage={onOpenProductPage}
@@ -92,10 +86,12 @@ function CatalogEditForm({
   row,
   onSave,
   onOpenProductPage,
+  pending,
 }: {
   row: CatalogRow;
   onSave: (draft: CatalogDraft) => void;
   onOpenProductPage: () => void;
+  pending?: boolean;
 }) {
   const [draft, setDraft] = useState<CatalogDraft>(() => ({
     sku: row.sku,
@@ -112,18 +108,18 @@ function CatalogEditForm({
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSave(draft);
+    if (!pending) onSave(draft);
   }
 
   return (
     <SheetPanel onSubmit={submit}>
       <SheetPanelHeader
-        eyebrow={<SheetEyebrow>Editing record</SheetEyebrow>}
+        eyebrow={<SheetEyebrow>Edit product</SheetEyebrow>}
         title="Edit product"
         description={
           <>
             <span className="font-mono text-[13px] font-semibold text-brand">
-              {draft.sku.trim() || "SKU pending"}
+              {draft.sku.trim() || "Product code needed"}
             </span>
             <span aria-hidden className="mx-1.5">
               •
@@ -140,9 +136,11 @@ function CatalogEditForm({
           <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <h2 className={sheetSectionHeadingClass}>
               <SlidersHorizontalIcon aria-hidden className="size-4 text-brand" />
-              Product metadata
+              Product details
             </h2>
-            <span className="text-[11px] text-ink-muted">* SKU, name and brand are required</span>
+            <span className="text-[11px] text-ink-muted">
+              * Product code, name and brand are required
+            </span>
           </header>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -173,29 +171,6 @@ function CatalogEditForm({
               value={draft.category}
               onChange={(value) => update("category", value)}
             />
-
-            <Field label="Indexing status" htmlFor="edit-product-status">
-              <Select
-                value={draft.status}
-                onValueChange={(value) => update("status", value as IndexStatus)}
-              >
-                <SelectTrigger
-                  id="edit-product-status"
-                  className="h-11 w-full rounded-lg border-line bg-card px-3.5 text-sm text-brand-ink"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {STATUS_OPTIONS.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {STATUS_META[status].label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </Field>
           </div>
 
           <DescriptionField
@@ -209,9 +184,9 @@ function CatalogEditForm({
           <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
             <h2 className={sheetSectionHeadingClass}>
               <ImageIcon aria-hidden className="size-4 text-brand" />
-              Reference photos
+              Product photos
             </h2>
-            <span className="text-[11px] text-ink-muted">Not loaded in this preview</span>
+            <span className="text-[11px] text-ink-muted">Product photos</span>
           </header>
 
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-line bg-card px-6 py-8 text-center">
@@ -221,26 +196,31 @@ function CatalogEditForm({
             <div className="flex flex-col gap-1">
               <p className="text-sm font-semibold text-brand-ink">Explore the product details</p>
               <p className="mx-auto max-w-xs text-xs leading-relaxed text-ink-muted">
-                View this product’s details and sample index status. Photo uploads and indexing are
-                not connected in this preview.
+                View this product’s details, saved photos, and photo search status.
               </p>
             </div>
-            <Button type="button" variant="brand-ghost" size="sm" onClick={onOpenProductPage}>
+            <Button
+              type="button"
+              variant="brand-ghost"
+              size="sm"
+              disabled={pending}
+              onClick={onOpenProductPage}
+            >
               Open product page
             </Button>
           </div>
         </section>
       </SheetPanelBody>
 
-      <SheetPanelFooter note="Changes stay in this preview">
+      <SheetPanelFooter note="Changes are saved to your store">
         <SheetClose asChild>
-          <Button type="button" variant="secondary" size="xl">
+          <Button type="button" variant="secondary" size="xl" disabled={pending}>
             Cancel
           </Button>
         </SheetClose>
-        <Button type="submit" variant="brand" size="xl">
+        <Button type="submit" variant="brand" size="xl" disabled={pending}>
           <CheckIcon data-icon="inline-start" />
-          Save changes
+          {pending ? "Saving…" : "Save changes"}
         </Button>
       </SheetPanelFooter>
     </SheetPanel>

@@ -15,18 +15,20 @@ type ListProductsDeleteDialogProps = {
   target: CatalogRow | null;
   onClose: () => void;
   onConfirm: () => void;
+  pending?: boolean;
 };
 
 export function ListProductsDeleteDialog({
   target,
   onClose,
   onConfirm,
+  pending,
 }: ListProductsDeleteDialogProps) {
   return (
     <Dialog
       open={target !== null}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open && !pending) onClose();
       }}
     >
       {target ? (
@@ -47,13 +49,19 @@ export function ListProductsDeleteDialog({
 
             <div className="mt-6 flex items-center justify-end gap-2">
               <DialogClose asChild>
-                <Button type="button" variant="secondary" size="xl">
+                <Button type="button" variant="secondary" size="xl" disabled={pending}>
                   Cancel
                 </Button>
               </DialogClose>
-              <Button type="button" variant="danger" size="xl" onClick={onConfirm}>
+              <Button
+                type="button"
+                variant="danger"
+                size="xl"
+                onClick={onConfirm}
+                disabled={pending}
+              >
                 <Trash2Icon data-icon="inline-start" />
-                Delete product
+                {pending ? "Deleting…" : "Delete product"}
               </Button>
             </div>
           </div>

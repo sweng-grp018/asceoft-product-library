@@ -1,26 +1,27 @@
 import type { ComponentType } from "react";
 import {
-  CameraIcon,
-  DrillIcon,
-  GlassesIcon,
   PackageIcon,
-  RulerIcon,
-  VideoIcon,
-  WrenchIcon,
+  WheatIcon,
+  FishIcon,
+  CookingPotIcon,
+  MilkIcon,
+  CoffeeIcon,
+  CookieIcon,
+  SprayCanIcon,
+  SoupIcon,
 } from "lucide-react";
-
 type IconComponent = ComponentType<{ className?: string; strokeWidth?: number }>;
-
 const CATEGORY_ICONS: Record<string, IconComponent> = {
-  "Power tools": DrillIcon,
-  "Hand tools": WrenchIcon,
-  "Measuring tools": RulerIcon,
-  "Safety equipment": GlassesIcon,
-  "Imaging equipment": VideoIcon,
-  "Inspection equipment": CameraIcon,
+  "Rice & grains": WheatIcon,
+  "Canned food": FishIcon,
+  "Sauces & seasonings": CookingPotIcon,
+  "Noodles & pasta": SoupIcon,
+  "Cooking essentials": CookingPotIcon,
+  "Milk & dairy": MilkIcon,
+  "Coffee & drinks": CoffeeIcon,
+  "Snacks & biscuits": CookieIcon,
+  "Household care": SprayCanIcon,
 };
-
-/** Category icons stay out of the row model: the record owns data, this owns presentation. */
 export function categoryIcon(category: string): IconComponent {
   return CATEGORY_ICONS[category] ?? PackageIcon;
 }
