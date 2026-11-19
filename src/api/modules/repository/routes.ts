@@ -1,9 +1,10 @@
 import { Router } from "express";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
 import { authenticate, requireRole, type AuthenticatedRequest } from "../../lib/auth.js";
-import { IMAGE_TYPES, newImageKey, uploadUrl, readImage } from "../../lib/storage.js";
+import { IMAGE_TYPES, uploadUrl, readImage, viewUrl, deleteImage } from "../../lib/storage.js";
 import { createAiClient, bestMatch, type DetectionResult } from "../../lib/ai.js";
 import { config } from "../../lib/config.js";
 
@@ -18,9 +19,12 @@ const inputSchema = z.object({
 });
 
 repositoryRoutes.get("/", async (_req, res) => {
+  const images = await db.repositoryImage.findMany({ take: 50, orderBy: { createdAt: "desc" } });
   res.json({
     serverInferenceEnabled: Boolean(config.AI_SERVICE_URL),
-    images: await db.repositoryImage.findMany({ take: 50, orderBy: { createdAt: "desc" } }),
+    images: await Promise.all(
+      images.map(async ({ objectKey, ...image }) => ({ ...image, url: await viewUrl(objectKey) })),
+    ),
   });
 });
 
@@ -30,23 +34,61 @@ repositoryRoutes.post("/", async (req, res) => {
     res.status(400).json({ error: "Invalid image metadata" });
     return;
   }
-  const { contentType, capturedAt, ...metadata } = parsed.data;
-  const objectKey = newImageKey("shelf");
-  const image = await db.repositoryImage.create({
-    data: {
-      ...metadata,
-      objectKey,
-      contentType,
-      ...(capturedAt ? { capturedAt: new Date(capturedAt) } : {}),
-    },
-  });
+  const { contentType } = parsed.data;
+  const imageId = randomUUID();
+  const objectKey = `shelf/${imageId}`;
   res.status(201).json({
-    imageId: image.id,
+    imageId,
+    objectKey,
     uploadUrl: await uploadUrl(objectKey, contentType),
     method: "PUT",
     expiresIn: 300,
     maxBytes: 10 * 1024 * 1024,
   });
+});
+
+repositoryRoutes.post("/:id/complete", async (req, res) => {
+  const imageId = id.safeParse(req.params.id);
+  const input = inputSchema.safeParse(req.body);
+  if (!imageId.success || !input.success) {
+    res.status(400).json({ error: "Invalid photo details." });
+    return;
+  }
+  const objectKey = `shelf/${imageId.data}`;
+  const { bytes } = await readImage(objectKey);
+  const type = await fileTypeFromBuffer(bytes);
+  if (type?.mime !== input.data.contentType) {
+    res.status(422).json({ error: "This file is not a valid photo." });
+    return;
+  }
+  const { capturedAt, ...metadata } = input.data;
+  await db.repositoryImage.upsert({
+    where: { id: imageId.data },
+    create: {
+      id: imageId.data,
+      objectKey,
+      ...metadata,
+      ...(capturedAt ? { capturedAt: new Date(capturedAt) } : {}),
+    },
+    update: {},
+  });
+  res.status(201).json({ imageId: imageId.data });
+});
+
+repositoryRoutes.delete("/:id", requireRole("ADMIN"), async (req, res) => {
+  const imageId = id.safeParse(req.params.id);
+  if (!imageId.success) {
+    res.status(400).json({ error: "Invalid photo." });
+    return;
+  }
+  const image = await db.repositoryImage.findUnique({ where: { id: imageId.data } });
+  if (!image) {
+    res.status(404).json({ error: "Photo not found." });
+    return;
+  }
+  await deleteImage(image.objectKey);
+  await db.repositoryImage.delete({ where: { id: image.id } });
+  res.status(204).end();
 });
 
 repositoryRoutes.post("/:id/analyze", async (req: AuthenticatedRequest, res) => {

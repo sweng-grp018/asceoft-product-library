@@ -2,14 +2,14 @@ import "server-only";
 import axios, { type AxiosRequestConfig } from "axios";
 import { auth } from "@/modules/auth/server/session";
 import { apiUrl } from "@/lib/api-url";
-import { frontendPreview } from "@/lib/frontend-preview";
+import { connection } from "next/server";
 
 export async function api<T>(
   path: string,
   options: AxiosRequestConfig = {},
   protectedRoute = true,
 ): Promise<T> {
-  if (frontendPreview) throw new Error("API requests are disabled in frontend preview mode.");
+  await connection();
   const session = protectedRoute ? await auth() : null;
   if (protectedRoute && !session?.accessToken) throw new Error("Sign in required");
   const response = await axios
@@ -21,15 +21,18 @@ export async function api<T>(
         ...(session?.accessToken ? { authorization: `Bearer ${session.accessToken}` } : {}),
       },
       responseType: "json",
+      timeout: options.timeout ?? 15000,
       transitional: { silentJSONParsing: false },
       validateStatus: () => true,
     })
     .catch(() => {
-      throw new Error("API request unavailable");
+      throw new Error("We could not reach the store service. Please try again.");
     });
   if (response.status < 200 || response.status >= 300) {
     const body = response.data as { error?: string } | null;
-    throw new Error(body?.error ?? `API request failed: ${response.status}`);
+    throw Object.assign(new Error(body?.error ?? "We could not complete that request."), {
+      status: response.status,
+    });
   }
   if (response.status === 204) return undefined as T;
   return response.data;
