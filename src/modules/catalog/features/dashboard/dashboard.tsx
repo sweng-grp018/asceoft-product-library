@@ -1,15 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  ArrowUpRight,
-  Package,
-  Plus,
-  ScanLine,
-  CheckCircle2,
-  Clock3,
-  ImagePlus,
-} from "lucide-react";
-import { PageHeading } from "@/components/layout/page-heading";
+import { ArrowRight, Package, Plus, CheckCircle2, Clock3, ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -68,45 +58,19 @@ export function DashboardView({
   ];
   return (
     <div className="flex flex-col gap-6">
-      <PageHeading
-        eyebrow="A clearer view of your library"
-        title={`Welcome, ${name.split(" ")[0] || "there"}.`}
-        description="Here’s what’s happening in your product workspace."
-        action={
-          canEdit ? (
-            <Button asChild variant="brand" size="xl">
-              <Link href="/products/new">
-                <Plus data-icon="inline-start" />
-                Add product
-              </Link>
-            </Button>
-          ) : undefined
-        }
-      />
-      <section className="relative flex flex-wrap items-center justify-between gap-6 overflow-hidden rounded-2xl bg-brand-strong px-6 py-7 text-white sm:px-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-28 right-12 size-80 rounded-full border border-white/10"
-        />
-        <div className="relative flex max-w-lg flex-col gap-3">
-          <p className="text-[10px] font-semibold tracking-[0.18em] text-white/65 uppercase">
-            Less searching. More finding.
-          </p>
-          <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
-            Everyday groceries, easy to find.
-          </h2>
-          <p className="text-sm leading-relaxed text-white/75">
-            Keep rice, canned goods, drinks, and household essentials in one shared product list.
-          </p>
-        </div>
-        <Button asChild variant="secondary" size="xl">
-          <Link href="/detection">
-            <ScanLine data-icon="inline-start" />
-            Find from a photo
-            <ArrowUpRight data-icon="inline-end" />
-          </Link>
-        </Button>
-      </section>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <p className="text-lg font-semibold text-brand-ink">
+          Welcome, {name.split(" ")[0] || "there"}.
+        </p>
+        {canEdit && (
+          <Button asChild variant="outline" size="xl">
+            <Link href="/products/new">
+              <Plus data-icon="inline-start" />
+              Add product
+            </Link>
+          </Button>
+        )}
+      </div>
       <div className="grid gap-4 md:grid-cols-3">
         {stats.map(({ label, value, detail, icon: Icon }) => (
           <Card key={label} className="gap-3 border-line shadow-none">
