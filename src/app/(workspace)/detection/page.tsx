@@ -1,61 +1,81 @@
+import { Suspense } from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
 import { api } from "@/lib/api";
+import { allProducts } from "@/modules/catalog/server/products";
+import { currentAccount } from "@/modules/auth/server/viewer";
 import { PageHeading } from "@/components/layout/page-heading";
+import { PageLoading } from "@/components/layout/page-loading";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ActionForm } from "@/components/action-form";
-import { Field, FieldLabel } from "@/components/ui/field";
-import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { analyzeSelectedShelf } from "@/modules/repository/features/shelf-analysis/actions";
-export default async function PhotoSearch() {
-  const { images, serverInferenceEnabled } = await api<{
-    images: { id: string; store: string | null; campaign: string | null }[];
-    serverInferenceEnabled: boolean;
-  }>("/repository");
+import { formatShelfPhotoDate } from "@/modules/repository/features/photo-library/shelf-photos";
+import { ShelfAnalysisForm } from "@/modules/repository/features/shelf-analysis/shelf-analysis-form";
+
+export const metadata: Metadata = { title: "Find from a photo" };
+
+export default function PhotoSearch() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeading
         title="Find from a photo"
-        description="Choose a saved grocery shelf photo to look for matching products."
+        description="Find one product from a pack photo or look for several products in a saved shelf photo."
       />
       <Card className="max-w-2xl border-line">
         <CardHeader>
-          <CardTitle>
-            {serverInferenceEnabled ? "Choose a shelf photo" : "Photo search is not available yet"}
-          </CardTitle>
+          <CardTitle>Product photo</CardTitle>
           <CardDescription>
-            {serverInferenceEnabled
-              ? "Search results will be saved to Past searches for you to review."
-              : "The photo search service has not been connected. You can still save shelf photos and find products by name."}
+            Choose a photo of a single pack to find similar products.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-5">
-          {serverInferenceEnabled && images.length > 0 ? (
-            <ActionForm action={analyzeSelectedShelf} submitLabel="Find products">
-              <Field>
-                <FieldLabel htmlFor="search-photo">Shelf photo</FieldLabel>
-                <NativeSelect id="search-photo" name="imageId" required className="w-full">
-                  {images.map((image) => (
-                    <NativeSelectOption key={image.id} value={image.id}>
-                      {image.store || "Store photo"} — {image.campaign || "No collection"}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-            </ActionForm>
-          ) : null}
-          <div className="flex flex-wrap gap-3">
-            <Button asChild variant="brand">
-              <Link href="/repository">
-                {images.length ? "View shelf photos" : "Add a shelf photo"}
-              </Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/products">Find by name</Link>
-            </Button>
-          </div>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/search?mode=image">Search by image</Link>
+          </Button>
         </CardContent>
       </Card>
+      <Suspense fallback={<PageLoading />}>
+        <ShelfAnalysis />
+      </Suspense>
     </div>
+  );
+}
+
+async function ShelfAnalysis() {
+  const account = await currentAccount();
+  if (!account || account.role === "PUBLIC") return null;
+
+  const { images, serverInferenceEnabled } = await api<{
+    images: { id: string; createdAt: string }[];
+    serverInferenceEnabled: boolean;
+  }>("/repository");
+  const products = serverInferenceEnabled && images.length ? await allProducts() : [];
+  return (
+    <Card className="max-w-2xl border-line">
+      <CardHeader>
+        <CardTitle>Shelf photo</CardTitle>
+        <CardDescription>
+          {serverInferenceEnabled
+            ? "Choose a saved shelf photo to find products."
+            : "Photo search is unavailable right now. You can still save and view shelf photos."}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {serverInferenceEnabled && images.length ? (
+          <ShelfAnalysisForm
+            images={images.map(({ id, createdAt }) => ({
+              id,
+              label: formatShelfPhotoDate(createdAt),
+            }))}
+            products={products.map(({ id, name, sku }) => ({ id, name, sku }))}
+          />
+        ) : (
+          <Button asChild variant="outline">
+            <Link href="/repository">
+              {images.length ? "View shelf photos" : "Add a shelf photo"}
+            </Link>
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 }

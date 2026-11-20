@@ -7,7 +7,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Lensistry | Grocery Library",
+    default: "Lensistry | Product Library",
     template: "%s | Lensistry",
   },
   description:

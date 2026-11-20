@@ -16,23 +16,23 @@ Standalone AI-powered product/SKU catalog and shelf-photo identification proof o
 
 ## Overview
 
-Lensistry helps a grocery team keep product details and photos in one place. Store managers maintain products and staff accounts; staff browse products, save shelf photos and review their own photo-search history. Visitors can browse products without signing in. A product code identifies one product and pack size.
+Lensistry helps a grocery team keep product details and photos in one place. Store managers maintain products and staff accounts; staff browse products, save shelf photos and review the results of their current photo search. Visitors can browse products without signing in. A product code identifies one product and pack size.
 
-| Page              | Current behavior                                                                                                                                         |
-| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview          | Counts and recent products come from PostgreSQL.                                                                                                         |
-| Products          | Search, pagination, create, edit and delete use the API and persist after reload. Only managers can change products.                                     |
-| Find from a photo | Uses saved shelf photos when the optional analysis service is configured; otherwise clearly shows that photo search is unavailable. No invented results. |
-| Shelf photos      | Uploads photos directly to S3 using short-lived signed URLs. The API checks the saved image bytes before adding its database record.                     |
-| Past searches     | Shows the signed-in staff member’s real search history and saves manual product corrections.                                                             |
-| Product photos    | Shows stored photo counts and actual photo-search readiness. Preparing photos requires the optional analysis service.                                    |
-| Staff             | Managers can list staff, create staff or manager accounts, and reset staff passwords.                                                                    |
-| My account        | Reads and saves the signed-in user’s real name and email.                                                                                                |
-| Public products   | Database-backed browsing and search, without sign-in.                                                                                                    |
-| Sign-up           | Creates a browsing-only account. Staff access is granted by a store manager.                                                                             |
-| Password help     | Directs users to their store manager; no reset email is claimed or sent.                                                                                 |
+| Page              | Current behavior                                                                                                                                                    |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview          | Counts and recent products come from PostgreSQL.                                                                                                                    |
+| Products          | Search, pagination, create, edit and delete use the API and persist after reload. Only managers can change product details. Product codes are read-only in the app. |
+| Find from a photo | Finds products in a saved shelf photo when the optional analysis service is configured. Results and manual corrections are available in the current search.         |
+| Photos            | Shelf photos can be uploaded to private S3 storage and deleted by managers. The Product photos tab shows which products have photos ready for image search.         |
+| Staff             | Managers can list staff, create staff or manager accounts, and reset staff passwords.                                                                               |
+| Profile           | Reads and saves the signed-in user’s real name and email.                                                                                                           |
+| Browse products   | Browse by name, brand, or product code without signing in. Signed-in users can search with a product photo when the embedding service is configured.                |
+| Sign-up           | Creates a browsing-only account. Staff access is granted by a store manager.                                                                                        |
+| Password help     | Directs users to their store manager; no reset email is claimed or sent.                                                                                            |
 
 JWT access checks re-read the user’s database role. Password changes invalidate older API tokens. No preview identity or browser-only role can grant access to store data.
+
+In the workspace, **Ctrl+K** or **Command+K** opens product suggestions and page shortcuts. Recently opened suggestions stay in the current browser tab. The profile is available from the name at the bottom of the sidebar.
 
 The sidebar’s **Page guide** explains the available pages with everyday grocery examples. Its table uses the same page list as the navigation, shows only pages available to the account, and can be copied as Markdown for a review.
 
@@ -45,7 +45,7 @@ The client-aligned technology stack is:
 | Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                                               |
 | Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                                      |
 | HTTP client           | **Axios** for web-to-API calls, presigned image uploads and optional AI service requests                                         |
-| Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                                  |
+| Database              | **PostgreSQL 18**, **pgvector**, **Prisma ORM 7** and reviewed SQL migrations                                                    |
 | Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**                  |
 | Images                | **S3-compatible storage** with presigned uploads (local filesystem service or optional Docker MinIO in development)              |
 | Product detector      | **YOLO26n**, trained independently on **SKU-110K**; browser integration is pending                                               |
@@ -82,11 +82,13 @@ Each detected object is cropped from the original image and passed to a separate
 
 ### Legacy image indexing versus independent training
 
-**Indexing** does not fine-tune a neural network. In the separate product detail flow, administrators can upload JPEG/PNG/WebP reference photos (10 MiB each) and request indexing when the legacy service is configured. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. The current 512-dimensional vectors are kept as PostgreSQL float arrays and compared in the API for this small POC; a vector index should be considered only when catalog size warrants it.
+**Indexing** does not fine-tune a neural network. In the separate product detail flow, administrators can upload JPEG/PNG/WebP reference photos (10 MiB each) and request indexing when the legacy service is configured. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. PostgreSQL generates a 512-dimensional pgvector column from compatible existing and new embeddings. Matching uses exact cosine distance in PostgreSQL and ranks each product by its closest prepared photo. Existing compatible photos do not require reprocessing.
 
 **Legacy server detection** defaults to the general-purpose `yolo11n.pt` detector, independently of the team's trained YOLO26n model. Each bounding-box crop is embedded with the same OpenCLIP model and compared using cosine similarity to indexed reference embeddings. Similarity below `0.78` yields **Unknown**. This threshold is an **uncalibrated heuristic** and similarity is not a probability. The default YOLO11n has not been trained on the project's SKU labels, so detection coverage can be poor for packaging, crowded shelves or uncommon products. Manual corrections update the stored match and mark it as manually corrected.
 
-These legacy requests run synchronously only when an operator explicitly configures `AI_SERVICE_URL`. With no endpoint, indexing and analysis controls are disabled and the API returns 503 before reading image bytes or changing indexing state. Catalog, sign-in, uploads and history do not require AI.
+**Search by image** on `/search` embeds one uploaded JPG, PNG, or WebP (up to 3 MB) and returns up to eight distinct products with a similarity of at least `0.78`. A signed-in browsing, staff, or manager account can use it. The query photo is processed in memory. Saved shelf and product photos keep their 10 MB upload limit.
+
+These requests run synchronously only when an operator explicitly configures `AI_SERVICE_URL`. With no endpoint, indexing and analysis controls are disabled and the API returns 503 before reading image bytes or changing indexing state. Catalog browsing, sign-in and saved-photo management do not require AI.
 
 ## Local development
 
@@ -95,9 +97,11 @@ These legacy requests run synchronously only when an operator explicitly configu
 1. Run `bun install --frozen-lockfile`.
 2. Configure the root `.env` with your PostgreSQL URL and independent `AUTH_SECRET` and `JWT_SECRET` values. Preserve an existing `.env`; do not replace hosted credentials with example values.
 3. For the local filesystem-backed S3 service, use `S3_ENDPOINT=http://localhost:9000`, `S3_BUCKET=lensistry` and the local access key and secret `S3RVER`. `WEB_ORIGIN` sets the allowed browser origin. This development service binds only to `127.0.0.1`, requires signed requests, and keeps files in the git-ignored `.local/storage/` directory after restart. It is not a hosted storage service.
-4. Run `bun run dev:local` to start storage, Express and Next.js together. Individual commands are `bun run dev:storage`, `bun run dev:api` and `bun run dev`.
+4. Run `bun run dev:all` (or `bun run dev:local`) to start storage, Express and Next.js together without Docker. This uses the PostgreSQL database configured in `.env`; it does not start a database, run migrations or seed data. Individual commands are `bun run dev:storage`, `bun run dev:api` and `bun run dev`.
 5. Open `/sign-in` and use a real account. The verified existing database already contains a store-manager account; do not reset it merely to run the app. For a new database, follow the reviewed migration and admin setup below.
 6. After verifying the target database, run `bun run db:seed-groceries` to add the 18 fictional groceries. This command skips existing product codes and never changes accounts, existing products, photos, history or photo readiness.
+
+The launcher checks required settings and ports before starting services. Running `bun run dev:all` again while it is active prints the app URL and exits successfully. Stop the original command with Ctrl+C to stop all three services before restarting. If another program occupies a required port, the launcher explains which setting to change and leaves that program running. Stale launcher locks are cleared automatically. Hosted or separately managed S3 storage is used directly; the local storage process starts only for localhost endpoints with the `S3RVER` credentials.
 
 Public registration creates a browsing account, not staff access. A manager adds staff through the Staff page. Password help explains the manager-assisted reset path; email recovery is not implemented.
 
@@ -111,9 +115,9 @@ Web prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3** and Docke
 
 1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`). Installation generates the Prisma client; this step does not connect to a database or require `DATABASE_URL`.
 2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL` and `WEB_ORIGIN` consistent with your services. Leave `AI_SERVICE_URL` unset for normal web development. For Docker MinIO, set the S3 keys to the credentials configured in Compose. The example S3RVER keys belong to the separate filesystem service.
-3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The initial reviewed SQL is in `src/api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; do not run them against an unverified database.
+3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The Compose database image includes pgvector. If you bring your own PostgreSQL instance, make the `vector` extension available to the migration role before applying the migrations. **Migrations modify the specified database**; do not run them against an unverified database.
 4. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
-5. Run `bun run dev:all` from the repository root. It starts Compose, generates the Prisma client, and runs the web app and Express API. Open `http://localhost:3000` or `/sign-in`. No Python dependencies or model weights are installed.
+5. Run `bun run dev:docker` from the repository root. It starts Compose, generates the Prisma client, and runs the web app and Express API. Docker must be installed and running. Open `http://localhost:3000` or `/sign-in`. No Python dependencies or model weights are installed.
 
 Press Ctrl+C to stop the web and API processes. The Docker containers keep running; use `docker compose down` to stop them. If either application process exits, the command stops the other. The command does not run migrations or seed data. For individual processes use `bun run dev` or `bun run dev:api`.
 
@@ -129,7 +133,7 @@ The Compose stack pins a Bitnami legacy MinIO build (`2025.7.23`) because MinIO 
 
 The Prisma schema is in `src/api/prisma/schema.prisma` and reviewed migrations are in `src/api/prisma/migrations/`. Confirm those files exist in the revision you deploy. Release changes to `main` through the team's reviewed Gitflow process.
 
-For a new, empty PostgreSQL database, set `DATABASE_URL` as a server-side secret in the environment that runs the Express API. From a trusted environment with that same database connection and the project dependencies installed, verify the target, then apply the existing migration once:
+For a new, empty PostgreSQL database, set `DATABASE_URL` as a server-side secret in the environment that runs the Express API. From a trusted environment with that same database connection and the project dependencies installed, verify the target, then apply the reviewed migrations. The database host must provide pgvector, and the migration role must be able to enable it:
 
 ```bash
 bun run --cwd src/api db:deploy
@@ -151,26 +155,28 @@ Remove any previously configured `AI_SERVICE_URL` from the hosted project to kee
 
 Express provides JSON endpoints, with Zod validation and role checks at the backend:
 
-| Method            | Path                                   | Role                                       |
-| ----------------- | -------------------------------------- | ------------------------------------------ |
-| POST              | `/auth/register`                       | Public; creates browsing accounts only     |
-| GET/PATCH         | `/auth/me`                             | Signed-in; own profile                     |
-| GET               | `/auth/users`                          | Manager                                    |
-| PATCH             | `/auth/users/:id/password`             | Manager; staff password reset              |
-| POST              | `/auth/login`                          | Public credential exchange (rate limited)  |
-| POST              | `/auth/users`                          | Admin                                      |
-| GET               | `/products`, `/products/:id`           | Public                                     |
-| POST/PATCH/DELETE | `/products`, `/products/:id`           | Admin                                      |
-| POST              | `/products/:id/images`                 | Admin; returns a presigned S3 PUT URL      |
-| POST              | `/products/:id/images/complete`        | Admin; validates and records a photo       |
-| GET               | `/products/:id/images`                 | Staff/admin; private photo links           |
-| POST              | `/products/:id/index`                  | Admin; synchronous reference embedding     |
-| GET/POST          | `/repository`                          | Staff/admin                                |
-| POST              | `/repository/:id/complete`             | Staff/admin; validates and records a photo |
-| DELETE            | `/repository/:id`                      | Admin                                      |
-| POST              | `/repository/:id/analyze`              | Staff/admin; YOLO and matching             |
-| GET               | `/repository/searches/recent`          | Signed-in staff/admin; own searches        |
-| PATCH             | `/repository/searches/:id/matches/:id` | Search owner or admin; manual correction   |
+| Method            | Path                                   | Role                                        |
+| ----------------- | -------------------------------------- | ------------------------------------------- |
+| POST              | `/auth/register`                       | Public; creates browsing accounts only      |
+| GET/PATCH         | `/auth/me`                             | Signed-in; own profile                      |
+| GET               | `/auth/users`                          | Manager                                     |
+| PATCH             | `/auth/users/:id/password`             | Manager; staff password reset               |
+| POST              | `/auth/login`                          | Public credential exchange (rate limited)   |
+| POST              | `/auth/users`                          | Admin                                       |
+| GET               | `/products`, `/products/:id`           | Public                                      |
+| GET               | `/products/image-search/status`        | Public                                      |
+| POST              | `/products/image-search`               | Signed-in; transient product-photo matching |
+| POST/PATCH/DELETE | `/products`, `/products/:id`           | Admin                                       |
+| POST              | `/products/:id/images`                 | Admin; returns a presigned S3 PUT URL       |
+| POST              | `/products/:id/images/complete`        | Admin; validates and records a photo        |
+| GET               | `/products/:id/images`                 | Staff/admin; private photo links            |
+| POST              | `/products/:id/index`                  | Admin; synchronous reference embedding      |
+| GET/POST          | `/repository`                          | Staff/admin                                 |
+| POST              | `/repository/:id/complete`             | Staff/admin; validates and records a photo  |
+| DELETE            | `/repository/:id`                      | Admin                                       |
+| POST              | `/repository/:id/analyze`              | Staff/admin; YOLO and matching              |
+| GET               | `/repository/searches/recent`          | Signed-in staff/admin; own searches         |
+| PATCH             | `/repository/searches/:id/matches/:id` | Search owner or admin; manual correction    |
 
 Images are stored in S3-compatible storage; only object keys and metadata are stored in PostgreSQL. JWT validation verifies issuer, audience, expiry and the current user/role in the database. Direct API access cannot bypass these checks. NextAuth sessions provide the browser interface. Public sign-up creates a real PUBLIC browsing account; manager-created accounts use STAFF or ADMIN. The API rechecks database roles and credential versions on every protected request.
 
@@ -194,7 +200,7 @@ API type checking also generates the Prisma client, including after an install t
 
 ## Roadmap and limitations
 
-Remaining work includes connecting and evaluating the team’s trained browser detector, implementing crop-based product identification and email-based account recovery, and verifying the final hosted deployment. Photo search does not show synthetic boxes or scores. The optional legacy server service is enabled only with `AI_SERVICE_URL`. Account and catalog flows require the configured database and running API; photo flows also need reachable object storage. File lifecycle cleanup, natural-language retrieval and versioned Skaffld integration remain outside the implemented scope. See `docs/browser-inference.md` for the model handoff. A passing build does not establish deployment readiness or model accuracy.
+Remaining work includes connecting and evaluating the team’s trained browser detector, implementing crop-based product identification and email-based account recovery, and verifying the final hosted deployment. Photo search does not show synthetic boxes or scores. The optional legacy server service is enabled only with `AI_SERVICE_URL`. Account and catalog flows require the configured database and running API; photo flows also need reachable object storage. Cleanup of abandoned saved-photo uploads, natural-language retrieval and versioned Skaffld integration remain outside the implemented scope. See `docs/browser-inference.md` for the model handoff. A passing build does not establish deployment readiness or model accuracy.
 
 ## Gitflow
 

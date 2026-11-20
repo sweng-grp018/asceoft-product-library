@@ -1,17 +1,34 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
+import { api } from "@/lib/api";
 import { currentAccount } from "@/modules/auth/server/viewer";
 import { productPage, catalogRow } from "@/modules/catalog/server/products";
 import { PublicCatalog } from "@/modules/catalog/features/public-search/public-catalog";
 import { PageLoading } from "@/components/layout/page-loading";
-async function Results({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+
+export const metadata: Metadata = { title: "Browse products" };
+
+async function Results({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string; mode?: string }>;
+}) {
   const params = await searchParams;
   const q = typeof params.q === "string" ? params.q.slice(0, 150) : "";
   const page = Math.min(10000, Math.max(1, Number.parseInt(params.page ?? "1") || 1));
   try {
-    const [result, account] = await Promise.all([productPage(q, page), currentAccount()]);
+    const [result, account, imageSearch] = await Promise.all([
+      productPage(q, page),
+      currentAccount(),
+      api<{ enabled: boolean }>("/products/image-search/status", {}, false).catch(() => ({
+        enabled: false,
+      })),
+    ]);
     return (
       <PublicCatalog
-        key={`${q}:${page}`}
+        key={`${q}:${page}:${params.mode ?? ""}`}
+        initialMode={params.mode === "image" ? "image" : "name"}
+        imageSearchEnabled={imageSearch.enabled}
         rows={result.products.map(catalogRow)}
         total={result.total}
         page={result.page}
@@ -36,7 +53,9 @@ async function Results({ searchParams }: { searchParams: Promise<{ q?: string; p
     );
   }
 }
-export default function Search(props: { searchParams: Promise<{ q?: string; page?: string }> }) {
+export default function Search(props: {
+  searchParams: Promise<{ q?: string; page?: string; mode?: string }>;
+}) {
   return (
     <Suspense
       fallback={

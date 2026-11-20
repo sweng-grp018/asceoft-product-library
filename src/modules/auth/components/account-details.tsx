@@ -8,7 +8,7 @@ import { updateAccount } from "@/modules/auth/features/manage-users/actions";
 export function AccountDetails({ account }: { account: Account }) {
   return (
     <div className="flex max-w-2xl flex-col gap-6">
-      <PageHeading title="My account" description="Keep your name and email address up to date." />
+      <PageHeading title="Profile" description="Keep your name and email address up to date." />
       <Card className="border-line">
         <CardHeader>
           <CardTitle>Personal details</CardTitle>

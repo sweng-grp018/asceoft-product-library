@@ -18,12 +18,12 @@ export function describeBytes(bytes: number) {
 }
 
 /** Returns a human-readable reason, or `null` when the file is acceptable. */
-export function validateImageFile(file: File): string | null {
+export function validateImageFile(file: File, maxBytes = IMAGE_MAX_BYTES): string | null {
   if (!ACCEPTED.has(file.type)) {
     return `${file.name} is not a JPG, PNG or WEBP file.`;
   }
-  if (file.size > IMAGE_MAX_BYTES) {
-    return `${file.name} is ${describeBytes(file.size)}; the limit is ${describeBytes(IMAGE_MAX_BYTES)}.`;
+  if (file.size > maxBytes) {
+    return `${file.name} is ${describeBytes(file.size)}. The limit is ${describeBytes(maxBytes)}.`;
   }
   return null;
 }

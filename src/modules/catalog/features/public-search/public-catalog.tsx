@@ -20,10 +20,14 @@ import {
 } from "@/components/ui/input-group";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ImageSearchForm } from "@/modules/search/features/image-search/image-search-form";
 import type { CatalogRow } from "../list-products/list-products.types";
 
 export function PublicCatalog({
   initialQuery,
+  initialMode,
+  imageSearchEnabled,
   rows,
   total,
   page,
@@ -31,6 +35,8 @@ export function PublicCatalog({
   account,
 }: {
   initialQuery: string;
+  initialMode: "name" | "image";
+  imageSearchEnabled: boolean;
   rows: CatalogRow[];
   total: number;
   page: number;
@@ -48,7 +54,7 @@ export function PublicCatalog({
             <Link
               href={account ? (account.role === "PUBLIC" ? "/account" : "/dashboard") : "/sign-in"}
             >
-              {account ? (account.role === "PUBLIC" ? "My account" : "My store") : "Sign in"}
+              {account ? (account.role === "PUBLIC" ? "Profile" : "My store") : "Sign in"}
               <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>
@@ -60,123 +66,146 @@ export function PublicCatalog({
             Grocery products
           </Badge>
           <h1 className="text-4xl font-semibold tracking-tight text-brand-ink sm:text-5xl">
-            Find grocery products.
+            Browse products
           </h1>
           <p className="max-w-lg text-sm leading-relaxed text-ink-muted sm:text-base">
-            Find rice, canned goods, drinks, and everyday essentials by name, brand, or product
-            code.
+            Find rice, canned goods, drinks, and everyday essentials by name, brand, product code,
+            or photo.
           </p>
         </div>
-        <form action="/search" className="flex max-w-2xl items-end gap-3">
-          <Field className="max-w-2xl">
-            <FieldLabel htmlFor="public-search" className="sr-only">
-              Find grocery products
-            </FieldLabel>
-            <InputGroup className="h-12 bg-background">
-              <InputGroupAddon>
-                <Search aria-hidden />
-              </InputGroupAddon>
-              <InputGroupInput
-                id="public-search"
-                name="q"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search a name, brand, or product code…"
-                maxLength={150}
-              />
-              {query && (
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton
-                    size="icon-sm"
-                    onClick={() => setQuery("")}
-                    aria-label="Clear search"
-                  >
-                    <X />
-                  </InputGroupButton>
-                </InputGroupAddon>
-              )}
-            </InputGroup>
-          </Field>
-          <Button type="submit" variant="brand" size="xl">
-            Search
-          </Button>
-        </form>
-        <div className="flex items-center justify-between">
-          <p role="status" className="text-sm text-ink-muted">
-            {total} {total === 1 ? "product" : "products"}
-            {initialQuery ? ` matching “${initialQuery}”` : " available"}
-          </p>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
-            <Card key={product.id} className="gap-4 border-line transition-shadow hover:shadow-md">
-              <CardHeader>
-                <div className="mb-4 flex h-28 items-center justify-center rounded-xl bg-brand-tint">
-                  <Package className="size-12 text-brand/35" strokeWidth={1.2} aria-hidden />
-                </div>
-                <CardDescription>
-                  {product.brand} · {product.category}
-                </CardDescription>
-                <CardTitle>
-                  <Link href={`/search/${product.id}`} className="text-brand-ink hover:text-brand">
-                    {product.name}
-                  </Link>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="line-clamp-2 text-sm leading-relaxed text-ink-muted">
-                  {product.description}
+        <Tabs defaultValue={initialMode} className="gap-5">
+          <TabsList aria-label="Search method" className="h-10">
+            <TabsTrigger value="name" className="px-3">
+              Search by name
+            </TabsTrigger>
+            <TabsTrigger value="image" className="px-3">
+              Search by image
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="name" className="flex flex-col gap-6">
+            <form action="/search" className="flex max-w-2xl items-end gap-3">
+              <Field className="max-w-2xl">
+                <FieldLabel htmlFor="public-search" className="sr-only">
+                  Find grocery products
+                </FieldLabel>
+                <InputGroup className="h-12 bg-background">
+                  <InputGroupAddon>
+                    <Search aria-hidden />
+                  </InputGroupAddon>
+                  <InputGroupInput
+                    id="public-search"
+                    name="q"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search a name, brand, or product code…"
+                    maxLength={150}
+                  />
+                  {query && (
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton
+                        size="icon-sm"
+                        onClick={() => setQuery("")}
+                        aria-label="Clear search"
+                      >
+                        <X />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  )}
+                </InputGroup>
+              </Field>
+              <Button type="submit" variant="brand" size="xl">
+                Search
+              </Button>
+            </form>
+            <div className="flex items-center justify-between">
+              <p role="status" className="text-sm text-ink-muted">
+                {total} {total === 1 ? "product" : "products"}
+                {initialQuery ? ` matching “${initialQuery}”` : " available"}
+              </p>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {products.map((product) => (
+                <Card
+                  key={product.id}
+                  className="gap-4 border-line transition-shadow hover:shadow-md"
+                >
+                  <CardHeader>
+                    <div className="mb-4 flex h-28 items-center justify-center rounded-xl bg-brand-tint">
+                      <Package className="size-12 text-brand/35" strokeWidth={1.2} aria-hidden />
+                    </div>
+                    <CardDescription>
+                      {product.brand} · {product.category}
+                    </CardDescription>
+                    <CardTitle>
+                      <Link
+                        href={`/search/${product.id}`}
+                        className="text-brand-ink hover:text-brand"
+                      >
+                        {product.name}
+                      </Link>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="line-clamp-2 text-sm leading-relaxed text-ink-muted">
+                      {product.description}
+                    </p>
+                  </CardContent>
+                  <CardFooter className="mt-auto justify-between">
+                    <span className="font-mono text-[11px] text-ink-muted">{product.sku}</span>
+                    <Button variant="brand-ghost" asChild>
+                      <Link href={`/search/${product.id}`}>
+                        View details
+                        <ArrowRight data-icon="inline-end" />
+                      </Link>
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+            {!products.length && (
+              <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-background px-6 py-16 text-center">
+                <Search className="size-8 text-ink-muted" aria-hidden />
+                <h2 className="text-lg font-semibold text-brand-ink">No products found</h2>
+                <p className="text-sm text-ink-muted">
+                  Try a different name, brand, or product code.
                 </p>
-              </CardContent>
-              <CardFooter className="mt-auto justify-between">
-                <span className="font-mono text-[11px] text-ink-muted">{product.sku}</span>
-                <Button variant="brand-ghost" asChild>
-                  <Link href={`/search/${product.id}`}>
-                    View details
-                    <ArrowRight data-icon="inline-end" />
+                <Button asChild variant="outline">
+                  <Link href="/search">Clear search</Link>
+                </Button>
+              </div>
+            )}
+            <nav aria-label="Product pages" className="flex items-center justify-between gap-3">
+              {page <= 1 ? (
+                <Button variant="outline" disabled>
+                  Previous
+                </Button>
+              ) : (
+                <Button asChild variant="outline">
+                  <Link href={`/search?q=${encodeURIComponent(initialQuery)}&page=${page - 1}`}>
+                    Previous
                   </Link>
                 </Button>
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-        {!products.length && (
-          <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-line bg-background px-6 py-16 text-center">
-            <Search className="size-8 text-ink-muted" aria-hidden />
-            <h2 className="text-lg font-semibold text-brand-ink">No products found</h2>
-            <p className="text-sm text-ink-muted">Try a different name, brand, or product code.</p>
-            <Button asChild variant="outline">
-              <Link href="/search">Clear search</Link>
-            </Button>
-          </div>
-        )}
-        <nav aria-label="Product pages" className="flex items-center justify-between gap-3">
-          {page <= 1 ? (
-            <Button variant="outline" disabled>
-              Previous
-            </Button>
-          ) : (
-            <Button asChild variant="outline">
-              <Link href={`/search?q=${encodeURIComponent(initialQuery)}&page=${page - 1}`}>
-                Previous
-              </Link>
-            </Button>
-          )}
-          <p className="text-xs text-ink-muted">
-            Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
-          </p>
-          {page * pageSize >= total ? (
-            <Button variant="outline" disabled>
-              Next
-            </Button>
-          ) : (
-            <Button asChild variant="outline">
-              <Link href={`/search?q=${encodeURIComponent(initialQuery)}&page=${page + 1}`}>
-                Next
-              </Link>
-            </Button>
-          )}
-        </nav>
+              )}
+              <p className="text-xs text-ink-muted">
+                Page {page} of {Math.max(1, Math.ceil(total / pageSize))}
+              </p>
+              {page * pageSize >= total ? (
+                <Button variant="outline" disabled>
+                  Next
+                </Button>
+              ) : (
+                <Button asChild variant="outline">
+                  <Link href={`/search?q=${encodeURIComponent(initialQuery)}&page=${page + 1}`}>
+                    Next
+                  </Link>
+                </Button>
+              )}
+            </nav>
+          </TabsContent>
+          <TabsContent value="image">
+            <ImageSearchForm enabled={imageSearchEnabled} signedIn={Boolean(account)} />
+          </TabsContent>
+        </Tabs>
         <footer className="py-6 text-center text-xs text-ink-muted">
           Browse the store’s products. No sign-in needed.
         </footer>

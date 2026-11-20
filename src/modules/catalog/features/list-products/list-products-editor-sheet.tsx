@@ -138,18 +138,11 @@ function CatalogEditForm({
               <SlidersHorizontalIcon aria-hidden className="size-4 text-brand" />
               Product details
             </h2>
-            <span className="text-[11px] text-ink-muted">
-              * Product code, name and brand are required
-            </span>
+            <span className="text-[11px] text-ink-muted">* Name and brand are required</span>
           </header>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <SkuField
-              idPrefix="edit-product"
-              value={draft.sku}
-              onChange={(value) => update("sku", value)}
-              required
-            />
+            <SkuField idPrefix="edit-product" value={draft.sku} />
             <BrandField
               idPrefix="edit-product"
               value={draft.brand}

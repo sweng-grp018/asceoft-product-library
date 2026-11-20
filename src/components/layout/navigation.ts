@@ -1,8 +1,6 @@
 import {
   ArrowUpRight,
-  History,
   Images,
-  Layers,
   LayoutDashboard,
   Package,
   ScanSearch,
@@ -33,33 +31,15 @@ export const storePages = [
     label: "Find from a photo",
     href: "/detection",
     icon: ScanSearch,
-    purpose: "Search a saved shelf photo when photo search is available.",
-    example:
-      "Once photo search is connected, I choose a shelf photo to look for products. Until then, I search by name.",
+    purpose: "Find a product from a pack photo or look for products in a saved shelf photo.",
+    example: "I upload a photo of an unfamiliar pack to look for matches in the catalog.",
   },
   {
-    label: "Shelf photos",
+    label: "Photos",
     href: "/repository",
     icon: Images,
-    purpose: "Save photos of store shelves, with a store name and an optional group.",
-    example:
-      "I save a photo from the Quezon City branch under November display so the team can find it later.",
-  },
-  {
-    label: "Past searches",
-    href: "/history",
-    icon: History,
-    purpose: "Review your saved photo searches and correct product choices.",
-    example:
-      "If a search chose the wrong milk pack, I choose the correct product and save the change.",
-  },
-  {
-    label: "Product photos",
-    href: "/training",
-    icon: Layers,
-    purpose: "See which products have photos and are ready for photo search.",
-    example:
-      "I open the sardines product and add a clear front photo. A manager can prepare it when photo search is connected.",
+    purpose: "Save shelf photos and see which product photos are ready for search.",
+    example: "I save a shelf photo, then check whether the sardines have a prepared product photo.",
   },
   {
     label: "Staff",
@@ -81,7 +61,7 @@ export const accountPages = [
     example: "I search jasmine rice to check the available pack sizes.",
   },
   {
-    label: "My account",
+    label: "Profile",
     href: "/profile",
     icon: Settings,
     purpose: "View and save your name and email address.",

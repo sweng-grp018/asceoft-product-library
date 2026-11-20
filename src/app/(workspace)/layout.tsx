@@ -17,7 +17,7 @@ export default async function WorkspaceLayout({ children }: { children: ReactNod
 
   return (
     <SidebarProvider defaultOpen>
-      <AppSidebar name={account.name} role={account.role} logout={logout} />
+      <AppSidebar name={account.name} accountId={account.id} role={account.role} logout={logout} />
 
       <SidebarInset className="min-w-0 bg-page">
         <WorkspaceHeader />

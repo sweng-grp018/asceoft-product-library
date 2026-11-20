@@ -1,7 +1,6 @@
 "use client";
 
-import { PlusIcon, SearchIcon, XIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SearchIcon, XIcon } from "lucide-react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -11,17 +10,10 @@ import {
 
 type ListProductsToolbarProps = {
   query: string;
-  canCreate: boolean;
   onQueryChange: (query: string) => void;
-  onCreate: () => void;
 };
 
-export function ListProductsToolbar({
-  query,
-  canCreate,
-  onQueryChange,
-  onCreate,
-}: ListProductsToolbarProps) {
+export function ListProductsToolbar({ query, onQueryChange }: ListProductsToolbarProps) {
   return (
     <div className="flex flex-col gap-3 rounded-xl bg-card p-4 shadow-sm ring-1 ring-line sm:flex-row sm:items-center sm:justify-between">
       <InputGroup className="h-11 max-w-xl rounded-lg border-line bg-page">
@@ -35,11 +27,12 @@ export function ListProductsToolbar({
           onChange={(event) => onQueryChange(event.target.value)}
           placeholder="Search by product code, name, or brand..."
           aria-label="Search by product code, name, or brand"
+          maxLength={150}
           className="text-sm"
         />
 
-        {query ? (
-          <InputGroupAddon align="inline-end">
+        <InputGroupAddon align="inline-end">
+          {query && (
             <InputGroupButton
               size="icon-xs"
               onClick={() => onQueryChange("")}
@@ -47,19 +40,12 @@ export function ListProductsToolbar({
             >
               <XIcon />
             </InputGroupButton>
-          </InputGroupAddon>
-        ) : null}
+          )}
+          <InputGroupButton type="submit" variant="outline" size="sm">
+            Search
+          </InputGroupButton>
+        </InputGroupAddon>
       </InputGroup>
-
-      <Button type="submit" variant="outline" size="xl">
-        Search
-      </Button>
-      {canCreate ? (
-        <Button type="button" variant="brand" size="xl" onClick={onCreate}>
-          <PlusIcon data-icon="inline-start" />
-          Add product
-        </Button>
-      ) : null}
     </div>
   );
 }

@@ -61,16 +61,17 @@ export function ProductForm({ title, product }: { title: string; product?: Produ
                           category: "Category",
                         }[key]
                       }
-                      {key === "sku" || key === "name" ? " *" : ""}
+                      {key === "name" ? " *" : ""}
                     </FieldLabel>
                     <Input
                       className="h-11"
                       id={`product-${key}`}
-                      name={key}
-                      required={key === "sku" || key === "name"}
+                      name={key === "sku" ? undefined : key}
+                      readOnly={key === "sku"}
+                      required={key === "name"}
                       maxLength={key === "name" ? 200 : 100}
                       defaultValue={product?.[key] ?? ""}
-                      placeholder={key === "sku" ? "PH-GR-0019" : undefined}
+                      placeholder={key === "sku" ? "Assigned when saved" : undefined}
                     />
                   </Field>
                 ))}

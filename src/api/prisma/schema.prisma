@@ -57,6 +57,7 @@ model ReferenceImage {
   contentType    String
   embedding      Float[]   @default([])
   embeddingModel String?
+  searchEmbedding Unsupported("vector(512)")? @default(dbgenerated())
   isPrimary      Boolean   @default(false)
   createdAt      DateTime  @default(now())
 
