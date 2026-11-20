@@ -6,7 +6,10 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   reactCompiler: true,
   redirects() {
-    return [{ source: "/training", destination: "/repository?tab=products", permanent: false }];
+    return [
+      { source: "/training", destination: "/repository?tab=products", permanent: false },
+      { source: "/history", destination: "/detection", permanent: false },
+    ];
   },
   experimental: { serverActions: { bodySizeLimit: "12mb" } },
 };

@@ -1,6 +1,5 @@
 import {
   ArrowUpRight,
-  History,
   Images,
   LayoutDashboard,
   Package,
@@ -32,9 +31,8 @@ export const storePages = [
     label: "Find from a photo",
     href: "/detection",
     icon: ScanSearch,
-    purpose: "Search a saved shelf photo when photo search is available.",
-    example:
-      "Once photo search is connected, I choose a shelf photo to look for products. Until then, I search by name.",
+    purpose: "Find a product from a pack photo or look for products in a saved shelf photo.",
+    example: "I upload a photo of an unfamiliar pack to look for matches in the catalog.",
   },
   {
     label: "Photos",
@@ -42,14 +40,6 @@ export const storePages = [
     icon: Images,
     purpose: "Save shelf photos and see which product photos are ready for search.",
     example: "I save a shelf photo, then check whether the sardines have a prepared product photo.",
-  },
-  {
-    label: "Past searches",
-    href: "/history",
-    icon: History,
-    purpose: "Review your saved photo searches and correct product choices.",
-    example:
-      "If a search chose the wrong milk pack, I choose the correct product and save the change.",
   },
   {
     label: "Staff",
