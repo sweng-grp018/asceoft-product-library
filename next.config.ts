@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   redirects() {
     return [
+      { source: "/", destination: "/sign-in", permanent: false },
       { source: "/training", destination: "/repository?tab=products", permanent: false },
       { source: "/history", destination: "/detection", permanent: false },
     ];
