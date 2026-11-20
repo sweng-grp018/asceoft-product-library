@@ -1,11 +1,13 @@
 import { Router } from "express";
 import { z } from "zod";
 import { fileTypeFromBuffer } from "file-type";
+import { rateLimit } from "express-rate-limit";
 import { db } from "../../lib/db.js";
-import { authenticate, requireRole } from "../../lib/auth.js";
+import { authenticate, requireRole, type AuthenticatedRequest } from "../../lib/auth.js";
 import { IMAGE_TYPES, newImageKey, uploadUrl, readImage, viewUrl } from "../../lib/storage.js";
-import { createAiClient, embeddingResult } from "../../lib/ai.js";
+import { createAiClient, embeddingResult, MATCH_THRESHOLD } from "../../lib/ai.js";
 import { config } from "../../lib/config.js";
+import { findImageMatches } from "./image-matches.js";
 
 export const catalogRoutes = Router();
 catalogRoutes.get("/summary", authenticate, requireRole("ADMIN", "STAFF"), async (_req, res) => {
@@ -38,6 +40,51 @@ const productInput = z.object({
   description: z.string().trim().max(5000).optional().nullable(),
 });
 const uploadInput = z.object({ contentType: z.enum(IMAGE_TYPES) });
+const MAX_SEARCH_IMAGE_BYTES = 3 * 1024 * 1024;
+const imageSearchInput = z.object({
+  contentType: z.enum(IMAGE_TYPES),
+  imageBase64: z
+    .base64()
+    .min(4)
+    .max(Math.ceil(MAX_SEARCH_IMAGE_BYTES / 3) * 4),
+});
+
+catalogRoutes.get("/image-search/status", (_req, res) => {
+  res.json({ enabled: Boolean(config.AI_SERVICE_URL) });
+});
+
+catalogRoutes.post(
+  "/image-search",
+  authenticate,
+  rateLimit({
+    windowMs: 60_000,
+    limit: 6,
+    keyGenerator: (req: AuthenticatedRequest) => req.viewer!.id,
+    message: { error: "Too many photo searches. Try again in a minute." },
+  }),
+  async (req, res) => {
+    const infer = createAiClient(config.AI_SERVICE_URL);
+    const input = imageSearchInput.safeParse(req.body);
+    if (!input.success) {
+      res.status(400).json({ error: "Choose a JPG, PNG or WebP photo up to 3 MB." });
+      return;
+    }
+    const bytes = Buffer.from(input.data.imageBase64, "base64");
+    const detected = await fileTypeFromBuffer(bytes).catch(() => undefined);
+    if (bytes.length > MAX_SEARCH_IMAGE_BYTES || detected?.mime !== input.data.contentType) {
+      res.status(422).json({ error: "This file is not a valid photo up to 3 MB." });
+      return;
+    }
+    const embedded = embeddingResult.safeParse(await infer<unknown>("/embed", bytes));
+    if (!embedded.success) {
+      res.status(502).json({ error: "The photo search service returned an invalid result." });
+      return;
+    }
+    const matches = await findImageMatches([embedded.data.embedding], 8);
+    res.json({ matches: matches.filter((match) => match.similarity >= MATCH_THRESHOLD) });
+  },
+);
+
 catalogRoutes.get("/", async (req, res) => {
   const parsed = z
     .object({
