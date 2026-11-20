@@ -2,6 +2,9 @@
 
 import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { PageHeading } from "@/components/layout/page-heading";
 import { StatusToast, type ToastMessage } from "@/components/ui/status-toast";
 import { ListProductsCardList } from "./list-products-card-list";
 import { ListProductsDeleteDialog } from "./list-products-delete-dialog";
@@ -119,10 +122,18 @@ export function ListProducts({
 
   return (
     <div className="flex flex-col gap-6">
-      <header className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-ink">Products</h1>
-        <p className="text-sm text-ink-muted">Keep your store’s grocery products easy to find.</p>
-      </header>
+      <PageHeading
+        title="Products"
+        description="Keep your store’s grocery products easy to find."
+        action={
+          canEdit && (
+            <Button type="button" variant="brand" size="xl" onClick={openCreate}>
+              <PlusIcon data-icon="inline-start" />
+              Add product
+            </Button>
+          )
+        }
+      />
 
       <form
         onSubmit={(event) => {
@@ -130,12 +141,7 @@ export function ListProducts({
           search();
         }}
       >
-        <ListProductsToolbar
-          query={query}
-          canCreate={canEdit}
-          onQueryChange={setQuery}
-          onCreate={openCreate}
-        />
+        <ListProductsToolbar query={query} onQueryChange={setQuery} />
       </form>
 
       <div className="overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-line">
