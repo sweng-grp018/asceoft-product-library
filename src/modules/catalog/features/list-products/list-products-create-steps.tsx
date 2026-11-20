@@ -48,7 +48,7 @@ export function CreateMetadataStep({
       <StepHeading
         index={1}
         icon={SlidersHorizontalIcon}
-        title="Product metadata"
+        title="Product details"
         hint="* Required to continue"
       />
 
@@ -127,17 +127,16 @@ export function CreatePhotosStep({
       <StepHeading
         index={2}
         icon={ImagesIcon}
-        title="Visual reference photos"
+        title="Product photos"
         badge={
           <span className="rounded-full bg-brand-tint px-2.5 py-0.5 text-[11px] font-semibold text-brand">
-            {photos.length} selected · 0 uploaded
+            {photos.length} selected · ready to save
           </span>
         }
       />
 
       <p className="text-xs leading-relaxed text-ink-muted">
-        Staged on this device so you can see the set before submitting. Nothing uploads yet: uploads
-        need a stored SKU and a short-lived upload URL from the API.
+        Choose clear photos of the pack. Your selected photos are saved when you create the product.
       </p>
 
       <PhotoDropzone isFull={isFull} onAddFiles={onAddFiles} />
@@ -208,7 +207,7 @@ export function CreatePhotosStep({
           Suggested angles
         </p>
         <p className="text-xs leading-relaxed text-ink-muted">
-          Guidance only - any clear photo of the item works. Indexing needs at least one photo.
+          Any clear photo of the pack works. Photo search needs at least one product photo.
         </p>
         <div className="flex flex-wrap gap-1.5">
           {SUGGESTED_ANGLES.map((angle) => (
@@ -268,7 +267,7 @@ function PhotoDropzone({
         multiple
         accept={PHOTO_TYPES.join(",")}
         disabled={isFull}
-        className="sr-only"
+        className="sr-only max-w-px"
         onChange={(event) => {
           onAddFiles(event.target.files);
           event.target.value = "";
@@ -297,17 +296,17 @@ export function CreateReviewStep({
         index={3}
         icon={SparklesIcon}
         title="Review"
-        hint="Nothing is saved in this preview"
+        hint="Check the details before saving"
       />
 
       <div className="overflow-hidden rounded-xl border border-line bg-card">
         <dl className="divide-y divide-line-subtle">
-          <ReviewRow label="SKU">
+          <ReviewRow label="Product code">
             <span className="font-mono text-[13px] font-semibold text-brand">{draft.sku}</span>
           </ReviewRow>
           <ReviewRow label="Product name">{draft.name || "—"}</ReviewRow>
           <ReviewRow label="Brand">{draft.brand || "—"}</ReviewRow>
-          <ReviewRow label="Category">{draft.category || "Uncategorized"}</ReviewRow>
+          <ReviewRow label="Category">{draft.category || "Other groceries"}</ReviewRow>
           <ReviewRow label="Description">
             <span className="line-clamp-2">{draft.description || "—"}</span>
           </ReviewRow>
@@ -315,7 +314,7 @@ export function CreateReviewStep({
             <StatusPill status="PENDING" />
           </ReviewRow>
           <ReviewRow label="Photos">
-            {photoCount ? `${photoCount} selected · 0 uploaded` : "None selected"}
+            {photoCount ? `${photoCount} selected · ready to save` : "None selected"}
           </ReviewRow>
         </dl>
 
@@ -329,23 +328,23 @@ export function CreateReviewStep({
 
       <div className="flex flex-col gap-3 rounded-xl bg-brand-tint/70 px-4 py-4 ring-1 ring-brand/10">
         <p className="text-[11px] font-semibold tracking-[0.06em] text-brand uppercase">
-          What indexing does
+          What happens next
         </p>
         <ol className="flex flex-col gap-3">
           <NextStep
             icon={DatabaseIcon}
-            title="The SKU is stored as unindexed"
-            body="Text search matches its name, brand and SKU straight away; visual search has nothing to compare against yet."
+            title="Your product is saved"
+            body="Your team can find the product by its name, brand, or product code."
           />
           <NextStep
             icon={ImageUpIcon}
-            title="Photos upload from the product page"
-            body="Each reference image goes to object storage through a short-lived upload URL, then is marked as the primary photo."
+            title="Your selected photos are saved"
+            body="Clear photos help your team recognize the pack. You can add more from the product page."
           />
           <NextStep
             icon={SparklesIcon}
-            title="Indexing computes embeddings"
-            body="YOLO11 finds the item in a scan and CLIP embeddings measure similarity per reference photo. This is inference, not model training."
+            title="Photo search needs prepared photos"
+            body="When photo search is connected, your store manager can prepare these photos for matching."
           />
         </ol>
       </div>

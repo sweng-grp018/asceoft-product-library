@@ -17,7 +17,7 @@ export function EmptyCatalogState({ query, onClearSearch }: EmptyCatalogStatePro
       </span>
       <p className="text-base font-semibold text-brand-ink">No products found</p>
       <p className="text-sm text-ink-muted">
-        Nothing matches “{query.trim()}”. Check the SKU format or try another keyword.
+        Nothing matches “{query.trim()}”. Check the product code or try another name.
       </p>
       <Button type="button" variant="brand-ghost" size="sm" onClick={onClearSearch}>
         Clear search

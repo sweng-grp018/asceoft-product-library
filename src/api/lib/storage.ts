@@ -4,6 +4,7 @@ import {
   PutObjectCommand,
   GetObjectCommand,
   HeadObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { config } from "./config.js";
@@ -20,8 +21,18 @@ const s3 = new S3Client({
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
-export function newImageKey(prefix: "reference" | "shelf") {
-  return `${prefix}/${randomUUID()}`;
+export function newImageKey(prefix: "reference" | "shelf", ownerId?: string) {
+  return `${prefix}/${ownerId ? `${ownerId}/` : ""}${randomUUID()}`;
+}
+
+export async function viewUrl(key: string) {
+  return getSignedUrl(s3, new GetObjectCommand({ Bucket: config.S3_BUCKET, Key: key }), {
+    expiresIn: 300,
+  });
+}
+
+export async function deleteImage(key: string) {
+  await s3.send(new DeleteObjectCommand({ Bucket: config.S3_BUCKET, Key: key }));
 }
 
 export async function uploadUrl(key: string, contentType: string) {

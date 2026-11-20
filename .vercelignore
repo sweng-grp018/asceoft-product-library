@@ -4,3 +4,6 @@ services/**
 **/*.pth
 **/*.onnx
 **/.venv/**
+
+# Local photo-storage data must never enter deployment bundles.
+.local/

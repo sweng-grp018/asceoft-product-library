@@ -31,6 +31,7 @@ export type CatalogDraftErrors = Partial<Record<keyof CatalogDraft, string>>;
  * uploads need a stored product id and a presigned URL from the API.
  */
 export type CatalogPhoto = {
+  file: File;
   id: string;
   name: string;
   size: number;

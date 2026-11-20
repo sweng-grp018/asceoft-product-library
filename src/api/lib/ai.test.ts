@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
-import { test, mock } from "node:test";
+import { test } from "node:test";
+import { createServer } from "node:http";
+import axios from "axios";
 import { cosine, bestMatch, createAiClient, ServerInferenceUnavailableError } from "./ai.js";
 
 test("cosine similarity handles identical, orthogonal and invalid vectors", () => {
@@ -15,30 +17,50 @@ test("unrecognized image is unknown even with a nearby candidate below threshold
 });
 
 test("disabled server inference fails before any network request", (t) => {
-  const request = mock.method(globalThis, "fetch", async () => {
+  const original = axios.defaults.adapter;
+  let requests = 0;
+  axios.defaults.adapter = async () => {
+    requests++;
     throw new Error("Unexpected network request");
+  };
+  t.after(() => {
+    axios.defaults.adapter = original;
   });
-  t.after(() => request.mock.restore());
   assert.throws(() => createAiClient(undefined), ServerInferenceUnavailableError);
-  assert.equal(request.mock.callCount(), 0);
+  assert.equal(requests, 0);
 });
 
-test("an explicit standalone endpoint preserves the image inference contract", async (t) => {
+test("Axios preserves inference payloads and handles unavailable or malformed responses", async (t) => {
   const image = Buffer.from("local prototype image");
-  const request = mock.method(
-    globalThis,
-    "fetch",
-    async (...[input, options]: Parameters<typeof fetch>) => {
-      assert.equal(String(input), "http://127.0.0.1:8000/detect");
-      assert.equal(options?.method, "POST");
-      assert.deepEqual(JSON.parse(String(options?.body)), {
-        imageBase64: image.toString("base64"),
-      });
-      return Response.json({ detections: [] });
-    },
-  );
-  t.after(() => request.mock.restore());
-  const infer = createAiClient("http://127.0.0.1:8000");
+  let malformed = false;
+  const server = createServer(async (req, res) => {
+    const chunks: Buffer[] = [];
+    for await (const chunk of req) chunks.push(Buffer.from(chunk));
+    assert.equal(req.method, "POST");
+    assert.match(req.headers["content-type"] ?? "", /application\/json/);
+    assert.deepEqual(JSON.parse(Buffer.concat(chunks).toString()), {
+      imageBase64: image.toString("base64"),
+    });
+    res.setHeader("content-type", "application/json");
+    res.statusCode = req.url === "/embed" ? 503 : 200;
+    res.end(malformed ? "invalid JSON" : JSON.stringify({ detections: [] }));
+  });
+  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => {
+    server.closeAllConnections();
+    server.close();
+  });
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const infer = createAiClient(`http://127.0.0.1:${address.port}`);
   assert.deepEqual(await infer("/detect", image), { detections: [] });
-  assert.equal(request.mock.callCount(), 1);
+  await assert.rejects(infer("/embed", image), {
+    message: "AI inference unavailable",
+    status: 502,
+  });
+  malformed = true;
+  await assert.rejects(infer("/detect", image), {
+    message: "AI inference unavailable",
+    status: 502,
+  });
 });

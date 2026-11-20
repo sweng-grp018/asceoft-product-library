@@ -19,13 +19,14 @@ import {
 } from "./list-products-sheet-parts";
 import { generateSku, isSkuTaken } from "./list-products.sku";
 import { ListProductsStepper } from "./list-products-stepper";
-import type { CatalogDraft, CatalogDraftErrors } from "./list-products.types";
+import type { CatalogDraft, CatalogDraftErrors, CatalogPhoto } from "./list-products.types";
 import { useReferencePhotos } from "./use-reference-photos";
 
 type ListProductsCreateWizardProps = {
   /** SKUs already in the catalog; the API enforces `@unique` on the column. */
   existingSkus: readonly string[];
-  onCreate: (draft: CatalogDraft, photoCount: number) => void;
+  onCreate: (draft: CatalogDraft, photos: CatalogPhoto[]) => void;
+  pending?: boolean;
 };
 
 /**
@@ -37,6 +38,7 @@ type ListProductsCreateWizardProps = {
 export function ListProductsCreateWizard({
   existingSkus,
   onCreate,
+  pending,
 }: ListProductsCreateWizardProps) {
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<CatalogDraft>(() => ({ ...EMPTY_DRAFT, sku: generateSku() }));
@@ -60,7 +62,7 @@ export function ListProductsCreateWizard({
     const next: CatalogDraftErrors = {};
 
     if (!draft.sku.trim()) {
-      next.sku = "A SKU is required.";
+      next.sku = "A product code is required.";
     } else if (isSkuTaken(draft.sku, existingSkus)) {
       next.sku = `${draft.sku.trim()} is already in the catalog.`;
     }
@@ -89,16 +91,16 @@ export function ListProductsCreateWizard({
       return;
     }
 
-    onCreate(draft, photos.length);
+    onCreate(draft, photos);
   }
 
   return (
     <SheetPanel onSubmit={handleSubmit} noValidate>
       <SheetPanelHeader
-        eyebrow={<SheetEyebrow>New SKU onboarding</SheetEyebrow>}
-        badge={<SheetEyebrow tone="muted">Preview only</SheetEyebrow>}
+        eyebrow={<SheetEyebrow>New product</SheetEyebrow>}
+
         title="Add product"
-        description="Register a new SKU, stage its reference photos, and review what indexing will do."
+        description="Add product details, choose photos, and check before saving."
       >
         <ListProductsStepper current={stepIndex} onSelect={setStepIndex} />
       </SheetPanelHeader>
@@ -132,7 +134,7 @@ export function ListProductsCreateWizard({
         ) : null}
       </SheetPanelBody>
 
-      <SheetPanelFooter note="Draft stays in this preview">
+      <SheetPanelFooter note="Your product will be saved to the store">
         <SheetClose asChild>
           <Button type="button" variant="secondary" size="xl">
             Cancel
@@ -151,7 +153,7 @@ export function ListProductsCreateWizard({
           </Button>
         ) : null}
 
-        <Button type="submit" variant="brand" size="xl">
+        <Button type="submit" variant="brand" size="xl" disabled={pending}>
           {isLastStep ? (
             <>
               <CheckIcon data-icon="inline-start" />

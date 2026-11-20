@@ -1,0 +1,128 @@
+[
+  {
+    "sku": "PH-GR-0001",
+    "name": "Jasmine Rice 5 kg",
+    "brand": "Sunrise Mill",
+    "category": "Rice & grains",
+    "description": "White jasmine rice in a resealable 5 kg bag. Look for the green rice-field label and the large weight mark."
+  },
+  {
+    "sku": "PH-GR-0002",
+    "name": "Sardines in Tomato Sauce 155 g",
+    "brand": "Harbor Basket",
+    "category": "Canned food",
+    "description": "Sardines in tomato sauce in a small red can with an easy-open lid. Sold as a single 155 g can."
+  },
+  {
+    "sku": "PH-GR-0003",
+    "name": "Corned Beef 150 g",
+    "brand": "Fiesta Table",
+    "category": "Canned food",
+    "description": "Canned corned beef for breakfast meals. The blue label has a white serving bowl and a 150 g weight mark."
+  },
+  {
+    "sku": "PH-GR-0004",
+    "name": "Banana Ketchup 320 g",
+    "brand": "Isla Pantry",
+    "category": "Sauces & seasonings",
+    "description": "Sweet banana ketchup in a clear squeeze bottle with a red cap. The yellow label shows a banana and the 320 g size."
+  },
+  {
+    "sku": "PH-GR-0005",
+    "name": "Soy Sauce 350 mL",
+    "brand": "Isla Pantry",
+    "category": "Sauces & seasonings",
+    "description": "Soy sauce for everyday cooking in a 350 mL bottle. Look for the dark label and yellow cap."
+  },
+  {
+    "sku": "PH-GR-0006",
+    "name": "Cane Vinegar 350 mL",
+    "brand": "Isla Pantry",
+    "category": "Sauces & seasonings",
+    "description": "Clear cane vinegar in a 350 mL bottle with a white cap and a green label. Keep separate from the matching soy sauce bottle."
+  },
+  {
+    "sku": "PH-GR-0007",
+    "name": "Instant Stir-Fry Noodles 60 g",
+    "brand": "Quick Bowl",
+    "category": "Noodles & pasta",
+    "description": "Single pack of instant stir-fry noodles with seasoning sachets. The orange wrapper shows a prepared noodle bowl."
+  },
+  {
+    "sku": "PH-GR-0008",
+    "name": "Chicken Noodle Soup 55 g",
+    "brand": "Quick Bowl",
+    "category": "Noodles & pasta",
+    "description": "Instant chicken-flavored noodle soup in a yellow 55 g wrapper. Sold as one packet."
+  },
+  {
+    "sku": "PH-GR-0009",
+    "name": "Coconut Milk 400 mL",
+    "brand": "Coco Grove",
+    "category": "Cooking essentials",
+    "description": "Coconut milk for stews and desserts in a 400 mL can. The white label has a green coconut illustration."
+  },
+  {
+    "sku": "PH-GR-0010",
+    "name": "Evaporated Milk 370 mL",
+    "brand": "Morning Meadow",
+    "category": "Milk & dairy",
+    "description": "Evaporated milk in a tall 370 mL can with a cream-and-blue label. Check the size to distinguish it from condensed milk."
+  },
+  {
+    "sku": "PH-GR-0011",
+    "name": "Sweetened Condensed Milk 300 mL",
+    "brand": "Morning Meadow",
+    "category": "Milk & dairy",
+    "description": "Sweetened condensed milk for drinks and desserts. The short 300 mL can has a cream-and-gold label."
+  },
+  {
+    "sku": "PH-GR-0012",
+    "name": "3-in-1 Coffee 27 g",
+    "brand": "Daily Cup",
+    "category": "Coffee & drinks",
+    "description": "Single coffee sachet with milk and sugar. The brown wrapper has a white cup and a 27 g size mark."
+  },
+  {
+    "sku": "PH-GR-0013",
+    "name": "Chocolate Malt Drink 22 g",
+    "brand": "Daily Cup",
+    "category": "Coffee & drinks",
+    "description": "Chocolate malt drink powder in a green 22 g sachet. Sold individually for small grocery shelves."
+  },
+  {
+    "sku": "PH-GR-0014",
+    "name": "Potato Chips 85 g",
+    "brand": "Crisp Corner",
+    "category": "Snacks & biscuits",
+    "description": "Original-flavor potato chips in a purple 85 g bag. The front shows thin golden chips and a large round brand mark."
+  },
+  {
+    "sku": "PH-GR-0015",
+    "name": "Rice Crackers 60 g",
+    "brand": "Crisp Corner",
+    "category": "Snacks & biscuits",
+    "description": "Light rice crackers in a red 60 g bag. Look for the rice-grain illustration and the clearly printed pack size."
+  },
+  {
+    "sku": "PH-GR-0016",
+    "name": "White Sugar 1 kg",
+    "brand": "Sunrise Mill",
+    "category": "Cooking essentials",
+    "description": "White sugar in a clear 1 kg pouch with a blue seal. The front label includes the product name and weight."
+  },
+  {
+    "sku": "PH-GR-0017",
+    "name": "Laundry Powder 500 g",
+    "brand": "Everyday Home",
+    "category": "Household care",
+    "description": "Laundry powder in a blue 500 g pouch with a white shirt illustration. Keep on the household goods shelf."
+  },
+  {
+    "sku": "PH-GR-0018",
+    "name": "Dishwashing Liquid 250 mL",
+    "brand": "Everyday Home",
+    "category": "Household care",
+    "description": "Lemon-scented dishwashing liquid in a clear 250 mL bottle with a green cap. The label shows a plate and a lemon."
+  }
+]

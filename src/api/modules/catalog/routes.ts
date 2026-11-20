@@ -3,14 +3,35 @@ import { z } from "zod";
 import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
 import { authenticate, requireRole } from "../../lib/auth.js";
-import { IMAGE_TYPES, newImageKey, uploadUrl, readImage } from "../../lib/storage.js";
+import { IMAGE_TYPES, newImageKey, uploadUrl, readImage, viewUrl } from "../../lib/storage.js";
 import { createAiClient, type EmbeddingResult } from "../../lib/ai.js";
 import { config } from "../../lib/config.js";
 
 export const catalogRoutes = Router();
+catalogRoutes.get("/summary", authenticate, requireRole("ADMIN", "STAFF"), async (_req, res) => {
+  const [total, statuses, recent] = await Promise.all([
+    db.product.count(),
+    db.product.groupBy({ by: ["indexStatus"], _count: { _all: true } }),
+    db.product.findMany({
+      take: 5,
+      orderBy: { createdAt: "desc" },
+      include: { images: { select: { id: true, isPrimary: true } } },
+    }),
+  ]);
+  res.json({
+    total,
+    ready: statuses.find((row) => row.indexStatus === "INDEXED")?._count._all ?? 0,
+    recent,
+  });
+});
 const id = z.uuid();
 const productInput = z.object({
-  sku: z.string().trim().min(1).max(100),
+  sku: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .transform((value) => value.toUpperCase()),
   name: z.string().trim().min(1).max(200),
   brand: z.string().trim().max(100).optional().nullable(),
   category: z.string().trim().max(100).optional().nullable(),
@@ -23,13 +44,14 @@ catalogRoutes.get("/", async (req, res) => {
     .object({
       q: z.string().max(150).optional(),
       page: z.coerce.number().int().min(1).max(10000).default(1),
+      pageSize: z.coerce.number().int().min(1).max(100).default(25),
     })
     .safeParse(req.query);
   if (!parsed.success) {
     res.status(400).json({ error: "Invalid query" });
     return;
   }
-  const { q, page } = parsed.data;
+  const { q, page, pageSize } = parsed.data;
   const where = q
     ? {
         OR: [
@@ -43,13 +65,13 @@ catalogRoutes.get("/", async (req, res) => {
     db.product.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      skip: (page - 1) * 25,
-      take: 25,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
       include: { images: { select: { id: true, isPrimary: true } } },
     }),
     db.product.count({ where }),
   ]);
-  res.json({ products, total, page, pageSize: 25 });
+  res.json({ products, total, page, pageSize });
 });
 
 catalogRoutes.get("/:id", async (req, res) => {
@@ -128,20 +150,74 @@ catalogRoutes.post("/:id/images", authenticate, requireRole("ADMIN"), async (req
     res.status(404).json({ error: "Product not found" });
     return;
   }
-  const objectKey = newImageKey("reference");
-  const image = await db.referenceImage.create({
-    data: { productId: productId.data, objectKey, contentType: input.data.contentType },
-  });
-  await db.product.update({
-    where: { id: productId.data },
-    data: { indexStatus: "PENDING", indexError: null },
-  });
+  const objectKey = newImageKey("reference", productId.data);
   res.status(201).json({
-    imageId: image.id,
+    objectKey,
     uploadUrl: await uploadUrl(objectKey, input.data.contentType),
     method: "PUT",
     expiresIn: 300,
     maxBytes: 10 * 1024 * 1024,
+  });
+});
+
+catalogRoutes.post("/:id/images/complete", authenticate, requireRole("ADMIN"), async (req, res) => {
+  const productId = id.safeParse(req.params.id);
+  const input = z
+    .object({ objectKey: z.string(), contentType: z.enum(IMAGE_TYPES) })
+    .safeParse(req.body);
+  if (
+    !productId.success ||
+    !input.success ||
+    !input.data.objectKey.startsWith(`reference/${productId.data}/`) ||
+    !id.safeParse(input.data.objectKey.split("/")[2]).success ||
+    input.data.objectKey.split("/").length !== 3
+  ) {
+    res.status(400).json({ error: "Invalid photo." });
+    return;
+  }
+  if (!(await db.product.findUnique({ where: { id: productId.data }, select: { id: true } }))) {
+    res.status(404).json({ error: "Product not found." });
+    return;
+  }
+  const { bytes } = await readImage(input.data.objectKey);
+  const detected = await fileTypeFromBuffer(bytes);
+  if (detected?.mime !== input.data.contentType) {
+    res.status(422).json({ error: "This file is not a valid photo." });
+    return;
+  }
+  const [image] = await db.$transaction([
+    db.referenceImage.upsert({
+      where: { objectKey: input.data.objectKey },
+      create: {
+        productId: productId.data,
+        objectKey: input.data.objectKey,
+        contentType: input.data.contentType,
+      },
+      update: {},
+    }),
+    db.product.update({
+      where: { id: productId.data },
+      data: { indexStatus: "PENDING", indexError: null },
+    }),
+  ]);
+  res.status(201).json({ image: { id: image.id } });
+});
+
+catalogRoutes.get("/:id/images", authenticate, requireRole("ADMIN", "STAFF"), async (req, res) => {
+  const productId = id.safeParse(req.params.id);
+  if (!productId.success) {
+    res.status(400).json({ error: "Invalid product." });
+    return;
+  }
+  const images = await db.referenceImage.findMany({
+    where: { productId: productId.data },
+    select: { id: true, objectKey: true },
+    take: 100,
+  });
+  res.json({
+    images: await Promise.all(
+      images.map(async (image) => ({ id: image.id, url: await viewUrl(image.objectKey) })),
+    ),
   });
 });
 

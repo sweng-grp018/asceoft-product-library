@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PencilIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,13 +46,13 @@ export function ListProductsTable({
   return (
     <Table className="table-fixed">
       <TableCaption className="sr-only">
-        Product catalog records with SKU, brand and indexing status.
+        Grocery products with product code, brand and photo status.
       </TableCaption>
 
       <TableHeader>
         <TableRow className="border-0 bg-brand-tint hover:bg-brand-tint">
           <TableHead scope="col" className={`${HEAD_CELL} w-[124px] xl:w-[136px]`}>
-            SKU
+            Product code
           </TableHead>
           <TableHead scope="col" className={`${HEAD_CELL} w-full`}>
             Product name
@@ -117,7 +119,12 @@ function CatalogRowItem({
             <Icon aria-hidden className="size-[18px]" strokeWidth={1.9} />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-[15px] font-medium text-brand-ink">{row.name}</p>
+            <Link
+              href={`/products/${row.id}`}
+              className="block truncate text-[15px] font-medium text-brand-ink hover:text-brand hover:underline"
+            >
+              {row.name}
+            </Link>
             <p className="truncate text-xs text-ink-muted">{row.category}</p>
           </div>
         </div>

@@ -34,7 +34,13 @@ Keep cohesive business vertical slices and thin framework entry points. Apply SO
 
 Keep web and Express application code under the root `src/` folder. For every code file, use the simplest direct implementation that does the job. Keep functions focused, names clear and code short without sacrificing readability, validation or authorization. Add helpers, layers or dependencies only when they solve a current need.
 
-The `/products` catalog screen uses fixture rows and local-only create, edit and delete actions; changes reset on reload, and its create drawer does not upload staged photos. Separate product routes and Express CRUD endpoints exist. The dashboard displays placeholder statistics and activity. The `/detection` screen uses simulated results; do not describe these screens as live integrations. Deployment configuration separates web services from AI tooling, but deployment and full database/S3 flows need verification.
+Use Axios for application HTTP requests and keep async/await for asynchronous work. Send JSON as Axios `data`; preserve authorization headers, upload content types and request timeouts. The AWS SDK remains responsible for S3 operations and presigning.
+
+The app targets Filipino grocery products and keeps every interface label in simple English. Product codes are called “Product code” in the UI; photo indexing is called “Prepare photos for search”. The optional grocery seed adds fictional brands and products without replacing existing data or changing accounts.
+
+The frontend preview mode and temporary stores are removed. Staff pages require real NextAuth sign-in and a fresh role check through Express; public registration creates browsing accounts only. Product changes, dashboard totals, staff, profiles, shelf photos and history use the API and database. Photo uploads go directly to S3 and are registered only after server-side byte and size checks. `bun run dev:local` starts the filesystem-backed local S3 development service, Express and Next.js without Docker. Keep `.local/` out of Git and deployments. Hosted storage is configured through `S3_*` settings.
+
+Photo search displays an unavailable state unless `AI_SERVICE_URL` is configured. Do not restore invented detections or claim browser inference, model accuracy, email password recovery, or verified deployment. The trained browser runtime is still pending. Password changes invalidate older API tokens; Express remains responsible for all role checks.
 
 ## Stack requirements
 

@@ -1,75 +1,103 @@
-import { api, type Match, type Product } from "@/lib/api";
+import Link from "next/link";
+import { api, type Match } from "@/lib/api";
+import { allProducts } from "@/modules/catalog/server/products";
 import { correctMatch } from "@/modules/repository/features/shelf-analysis/actions";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { PageHeading } from "@/components/layout/page-heading";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { ActionForm } from "@/components/action-form";
+import { Field, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-
-type Search = { id: string; createdAt: string; matches: Match[] };
 export default async function History() {
-  const [{ searches }, { products }] = await Promise.all([
-    api<{ searches: Search[] }>("/repository/searches/recent"),
-    api<{ products: Product[] }>("/products", {}, false),
+  const [{ searches }, products] = await Promise.all([
+    api<{ searches: { id: string; createdAt: string; matches: Match[] }[] }>(
+      "/repository/searches/recent",
+    ),
+    allProducts(),
   ]);
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-3xl font-semibold">Detection history</h1>
-        <p className="text-muted-foreground">
-          Review boxes, scores and manual SKU corrections for your searches.
-        </p>
-      </div>
-      {searches.map((s) => (
-        <Card key={s.id}>
+      <PageHeading
+        title="Past searches"
+        description="Review your saved photo searches and correct any product choices."
+        action={
+          <Button asChild variant="brand" size="xl">
+            <Link href="/detection">Find from a photo</Link>
+          </Button>
+        }
+      />
+      {searches.map((search) => (
+        <Card key={search.id} className="border-line">
           <CardHeader>
-            <CardTitle>{new Date(s.createdAt).toLocaleString()}</CardTitle>
+            <CardTitle>
+              {new Intl.DateTimeFormat("en-PH", {
+                dateStyle: "medium",
+                timeStyle: "short",
+                timeZone: "Asia/Manila",
+              }).format(new Date(search.createdAt))}
+            </CardTitle>
+            <CardDescription>{search.matches.length} items found</CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {!s.matches.length && <p>No objects detected in this image.</p>}
-            {s.matches.map((match, i) => (
-              <div key={match.id} className="flex flex-col gap-2 rounded-lg border p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                  <strong>Detection {i + 1}</strong>
-                  <Badge variant={match.productId ? "default" : "secondary"}>
-                    {match.productId ? "Matched" : "Unknown"}
+          <CardContent className="grid gap-4">
+            {search.matches.map((match, i) => (
+              <div key={match.id} className="flex flex-col gap-3 rounded-xl border border-line p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-sm font-semibold text-brand-ink">Item {i + 1}</h2>
+                  <Badge variant="secondary">
+                    {match.manuallySet
+                      ? "Changed by you"
+                      : match.productId
+                        ? "Product suggested"
+                        : "Needs a product choice"}
                   </Badge>
-                  {match.manuallySet && <Badge variant="outline">Corrected</Badge>}
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Box [{match.boundingBox.join(", ")}] · detector confidence{" "}
-                  {(match.detectorScore * 100).toFixed(1)}% · cosine similarity{" "}
-                  {match.similarityScore === null ? "N/A" : match.similarityScore.toFixed(3)}
-                </p>
-                <form action={correctMatch.bind(null, s.id, match.id)}>
-                  <FieldGroup className="flex-row flex-wrap gap-2">
-                    <Field className="min-w-52 flex-1 gap-1">
-                      <FieldLabel htmlFor={`correction-${match.id}`}>Correct SKU</FieldLabel>
-                      <NativeSelect
-                        id={`correction-${match.id}`}
-                        name="productId"
-                        defaultValue={match.productId ?? ""}
-                        className="w-full"
-                      >
-                        <NativeSelectOption value="">Unknown / no match</NativeSelectOption>
-                        {products.map((p) => (
-                          <NativeSelectOption value={p.id} key={p.id}>
-                            {p.sku} — {p.name}
-                          </NativeSelectOption>
-                        ))}
-                      </NativeSelect>
-                    </Field>
-                    <Button type="submit" variant="outline" className="self-end">
-                      Save correction
-                    </Button>
-                  </FieldGroup>
-                </form>
+                <ActionForm
+                  action={correctMatch.bind(null, search.id, match.id)}
+                  submitLabel="Save product choice"
+                  variant="outline"
+                >
+                  <Field>
+                    <FieldLabel htmlFor={`match-${match.id}`}>Product</FieldLabel>
+                    <NativeSelect
+                      id={`match-${match.id}`}
+                      name="productId"
+                      defaultValue={match.productId ?? ""}
+                      className="w-full"
+                    >
+                      <NativeSelectOption value="">Unknown product</NativeSelectOption>
+                      {products.map((product) => (
+                        <NativeSelectOption key={product.id} value={product.id}>
+                          {product.name} — {product.sku}
+                        </NativeSelectOption>
+                      ))}
+                    </NativeSelect>
+                  </Field>
+                </ActionForm>
               </div>
             ))}
+            {!search.matches.length && (
+              <p className="text-sm text-ink-muted">No products were found in this photo.</p>
+            )}
           </CardContent>
         </Card>
       ))}
-      {!searches.length && <p className="text-muted-foreground">No detection history yet.</p>}
+      {!searches.length && (
+        <Card className="border-line">
+          <CardHeader>
+            <CardTitle>No searches yet</CardTitle>
+            <CardDescription>
+              Your completed photo searches will appear here. You can save shelf photos while photo
+              search is being connected.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline">
+              <Link href="/repository">View shelf photos</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

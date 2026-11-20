@@ -119,7 +119,7 @@
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
+    --primary: var(--brand);
     --primary-foreground: oklch(0.985 0 0);
     --secondary: oklch(0.97 0 0);
     --secondary-foreground: oklch(0.205 0 0);
@@ -130,23 +130,44 @@
     --destructive: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --ring: var(--brand);
     --chart-1: oklch(0.87 0 0);
     --chart-2: oklch(0.556 0 0);
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar: var(--background);
+    --sidebar-foreground: var(--brand-ink);
+    --sidebar-primary: var(--brand);
     --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
-    --sidebar-ring: oklch(0.708 0 0);
+    --sidebar-accent: var(--brand-tint);
+    --sidebar-accent-foreground: var(--brand);
+    --sidebar-border: var(--line);
+    --sidebar-ring: var(--brand);
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
+}
+
+/* Compact auth spacing keeps phone and laptop sign-in within the viewport.
+   The form panel can still scroll when zoom or a keyboard reduces usable space. */
+@media (max-height: 740px) {
+    .auth-panel { padding-block: 1rem; }
+    .auth-content { gap: 1rem; }
+    .auth-mobile-header { margin-bottom: 1rem; }
+    .auth-art { max-height: 20vh; }
+}
+
+@media (max-height: 620px) {
+    .auth-panel { padding-block: 0.75rem; }
+    .auth-content { gap: 0.5rem; }
+    .auth-content [data-slot="field-group"] { gap: 0.625rem; }
+    .auth-content > header > p:first-child { display: none; }
+    .auth-content h1 { font-size: 1.75rem; }
+    .auth-content > p.rounded-xl { padding: 0.5rem 0.75rem; }
+    .auth-mobile-header { margin-bottom: 0.75rem; }
+    .auth-panel > p:last-child { display: none; }
+    .auth-art { display: none; }
 }
 
 .dark {

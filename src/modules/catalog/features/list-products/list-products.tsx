@@ -1,13 +1,8 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { StatusToast, type ToastMessage } from "@/components/ui/status-toast";
-import {
-  PLACEHOLDER_PAGE,
-  PLACEHOLDER_PAGE_COUNT,
-  PLACEHOLDER_ROWS,
-  PLACEHOLDER_TOTAL,
-} from "./list-products.data";
 import { ListProductsCardList } from "./list-products-card-list";
 import { ListProductsDeleteDialog } from "./list-products-delete-dialog";
 import { ListProductsEditorSheet } from "./list-products-editor-sheet";
@@ -15,20 +10,30 @@ import { ListProductsPagination } from "./list-products-pagination";
 import { ListProductsTable } from "./list-products-table";
 import { ListProductsToolbar } from "./list-products-toolbar";
 import type { CatalogDraft, CatalogEditor, CatalogRow } from "./list-products.types";
-import { useListProducts } from "./use-list-products";
+import { saveCatalogProduct, removeCatalogProduct } from "../product-management/save-product";
+import { uploadPhoto } from "@/modules/repository/features/photo-upload/upload-photo";
+import type { CatalogPhoto } from "./list-products.types";
 
-/**
- * Product catalog screen.
- *
- * Static preview: rows come from `PLACEHOLDER_ROWS` and every mutation is local
- * state, so a reload restores the fixtures. Wiring the screen to the API means
- * replacing the `useListProducts` mutators and the placeholder totals here; the
- * toolbar, table, card list, pagination and dialogs stay as they are.
- */
-export function ListProducts({ canEdit }: { canEdit: boolean }) {
-  const { rows, visibleRows, query, setQuery, createRow, updateRow, removeRow } =
-    useListProducts(PLACEHOLDER_ROWS);
-
+export function ListProducts({
+  canEdit,
+  initialRows,
+  total,
+  page,
+  pageSize,
+  initialQuery,
+}: {
+  canEdit: boolean;
+  initialRows: CatalogRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+  initialQuery: string;
+}) {
+  const router = useRouter();
+  const [query, setQuery] = useState(initialQuery);
+  const [pending, startTransition] = useTransition();
+  const rows = initialRows;
+  const visibleRows = initialRows;
   const [editor, setEditor] = useState<CatalogEditor | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CatalogRow | null>(null);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -47,71 +52,98 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
   const closeEditor = useCallback(() => setEditor(null), []);
   const closeDelete = useCallback(() => setDeleteTarget(null), []);
   const dismissToast = useCallback(() => setToast(null), []);
-  const clearSearch = useCallback(() => setQuery(""), [setQuery]);
+  const clearSearch = useCallback(() => {
+    setQuery("");
+    router.push("/products");
+  }, [router]);
 
   /** Stable identity: the create wizard checks SKU uniqueness against this list. */
   const existingSkus = useMemo(() => rows.map((row) => row.sku), [rows]);
 
   function updateProduct(id: string, draft: CatalogDraft) {
-    updateRow(id, draft);
-    setToast({ message: `${draft.sku} updated.`, tone: "success" });
-    setEditor(null);
-  }
-
-  function createProduct(draft: CatalogDraft, photoCount: number) {
-    createRow(draft);
-
-    const photos = `${photoCount} photo${photoCount === 1 ? "" : "s"}`;
-    setToast({
-      message: photoCount
-        ? `${draft.sku} added as unindexed. ${photos} stayed on this device — upload them from the product page.`
-        : `${draft.sku} added as unindexed — add reference photos to enable visual matching.`,
-      tone: "success",
+    if (pending) return;
+    startTransition(async () => {
+      const result = await saveCatalogProduct(draft, id);
+      if (result.error) {
+        setToast({ message: result.error, tone: "danger" });
+        return;
+      }
+      setToast({ message: `${draft.name} saved.`, tone: "success" });
+      setEditor(null);
+      router.refresh();
     });
-    setEditor(null);
   }
-
+  function createProduct(draft: CatalogDraft, photos: CatalogPhoto[]) {
+    if (pending) return;
+    startTransition(async () => {
+      const result = await saveCatalogProduct(draft);
+      if (!result.product) {
+        setToast({ message: result.error ?? "We could not save this product.", tone: "danger" });
+        return;
+      }
+      setEditor(null);
+      try {
+        for (const photo of photos) await uploadPhoto(photo.file, result.product.id);
+        setToast({ message: `${draft.name} saved.`, tone: "success" });
+      } catch {
+        setToast({
+          message:
+            "Product saved, but some photos could not be saved. Open the product to add them again.",
+          tone: "danger",
+        });
+      }
+      router.refresh();
+    });
+  }
   function confirmDelete() {
-    if (!deleteTarget) return;
-
-    removeRow(deleteTarget.id);
-    setToast({ message: `${deleteTarget.sku} removed from the catalog.`, tone: "danger" });
-    setDeleteTarget(null);
-  }
-
-  function announcePaging() {
-    setToast({ message: "Pagination is not wired to the API yet.", tone: "success" });
-  }
-
-  function announceProductPage() {
-    setToast({
-      message: "Reference photos live on the product page — not wired in this preview.",
-      tone: "success",
+    if (!deleteTarget || pending) return;
+    startTransition(async () => {
+      const result = await removeCatalogProduct(deleteTarget.id);
+      if (result.error) {
+        setToast({ message: result.error, tone: "danger" });
+        return;
+      }
+      setToast({ message: `${deleteTarget.name} removed.`, tone: "success" });
+      setDeleteTarget(null);
+      router.refresh();
     });
+  }
+  function search() {
+    router.push(`/products?q=${encodeURIComponent(query.trim())}`);
+  }
+  function openProductPage() {
+    if (editor?.mode !== "edit") return;
+    router.push(`/products/${editor.row.id}`);
+    setEditor(null);
   }
 
   return (
     <div className="flex flex-col gap-6">
       <header className="flex flex-col gap-1.5">
-        <h1 className="text-2xl font-semibold tracking-tight text-brand-ink">Product catalog</h1>
-        <p className="text-sm text-ink-muted">
-          Manage the SKUs that visual search matches against.
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-brand-ink">Products</h1>
+        <p className="text-sm text-ink-muted">Keep your store’s grocery products easy to find.</p>
       </header>
 
-      <ListProductsToolbar
-        query={query}
-        canCreate={canEdit}
-        onQueryChange={setQuery}
-        onCreate={openCreate}
-      />
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          search();
+        }}
+      >
+        <ListProductsToolbar
+          query={query}
+          canCreate={canEdit}
+          onQueryChange={setQuery}
+          onCreate={openCreate}
+        />
+      </form>
 
       <div className="overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-line">
         <div className="lg:hidden">
           <ListProductsCardList
             rows={visibleRows}
             canEdit={canEdit}
-            query={query}
+            query={initialQuery}
             onEdit={openEdit}
             onDelete={setDeleteTarget}
             onClearSearch={clearSearch}
@@ -122,7 +154,7 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
           <ListProductsTable
             rows={visibleRows}
             canEdit={canEdit}
-            query={query}
+            query={initialQuery}
             onEdit={openEdit}
             onDelete={setDeleteTarget}
             onClearSearch={clearSearch}
@@ -131,22 +163,27 @@ export function ListProducts({ canEdit }: { canEdit: boolean }) {
 
         <ListProductsPagination
           shownCount={visibleRows.length}
-          total={PLACEHOLDER_TOTAL}
-          page={PLACEHOLDER_PAGE}
-          pageCount={PLACEHOLDER_PAGE_COUNT}
-          onNext={announcePaging}
+          total={total}
+          page={page}
+          pageCount={Math.max(1, Math.ceil(total / pageSize))}
+          pageSize={pageSize}
+          onPage={(next) =>
+            router.push(`/products?q=${encodeURIComponent(initialQuery)}&page=${next}`)
+          }
         />
       </div>
 
       <ListProductsEditorSheet
+        pending={pending}
         editor={editor}
         existingSkus={existingSkus}
         onClose={closeEditor}
         onUpdate={updateProduct}
         onCreate={createProduct}
-        onOpenProductPage={announceProductPage}
+        onOpenProductPage={openProductPage}
       />
       <ListProductsDeleteDialog
+        pending={pending}
         target={deleteTarget}
         onClose={closeDelete}
         onConfirm={confirmDelete}

@@ -51,7 +51,7 @@ export function SkuField({
   const id = `${idPrefix}-sku`;
 
   return (
-    <Field label="SKU identifier" htmlFor={id} error={error} required action={action}>
+    <Field label="Product code" htmlFor={id} error={error} required action={action}>
       <div className="relative">
         <QrCodeIcon aria-hidden className={sheetLeadingIconClass} />
         <Input
@@ -61,7 +61,7 @@ export function SkuField({
           autoComplete="off"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="SKU-10492"
+          placeholder="PH-GR-0019"
           {...errorProps(id, error)}
           className={cn(sheetFieldClass, "pl-10 font-mono")}
         />
@@ -75,7 +75,7 @@ export function BrandField({ idPrefix, value, onChange, error, required }: Field
   const listId = `${idPrefix}-brand-options`;
 
   return (
-    <Field label="Manufacturer / brand" htmlFor={id} error={error} required={required}>
+    <Field label="Brand" htmlFor={id} error={error} required={required}>
       <div className="relative">
         <FactoryIcon aria-hidden className={sheetLeadingIconClass} />
         <Input
@@ -85,7 +85,7 @@ export function BrandField({ idPrefix, value, onChange, error, required }: Field
           autoComplete="off"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="DeWalt"
+          placeholder="Isla Pantry"
           required={required}
           {...errorProps(id, error)}
           className={cn(sheetFieldClass, "pl-10")}
@@ -110,7 +110,7 @@ export function NameField({ idPrefix, value, onChange, error, required }: FieldP
         maxLength={NAME_MAX_LENGTH}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        placeholder="Heavy-duty angle grinder"
+        placeholder="Banana Ketchup 320 g"
         required={required}
         {...errorProps(id, error)}
         className={sheetFieldClass}
@@ -133,7 +133,7 @@ export function CategoryField({ idPrefix, value, onChange }: FieldProps) {
           autoComplete="off"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder="Power tools"
+          placeholder="Canned goods"
           className={sheetFieldClass}
         />
         <datalist id={listId}>

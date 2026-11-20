@@ -3,9 +3,9 @@
  * can be exercised without mounting React.
  */
 
-/** Generates the `SKU-xxxxx` shape used by the fixtures and the scanner labels. */
+/** Generates a grocery product code; the database enforces uniqueness. */
 export function generateSku(): string {
-  return `SKU-${Math.floor(10000 + Math.random() * 90000)}`;
+  return `PH-GR-${Math.floor(10000 + Math.random() * 90000)}`;
 }
 
 /** The API enforces `@unique` on `Product.sku`; mirror it before submitting. */

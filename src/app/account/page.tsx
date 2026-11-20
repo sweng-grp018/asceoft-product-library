@@ -1,0 +1,33 @@
+import Link from "next/link";
+import { connection } from "next/server";
+import { redirect } from "next/navigation";
+import { currentAccount } from "@/modules/auth/server/viewer";
+import { AccountDetails } from "@/modules/auth/components/account-details";
+import { Brand } from "@/components/layout/brand";
+import { Button } from "@/components/ui/button";
+import { logout } from "@/modules/auth/features/sign-in/actions";
+export const instant = false;
+export default async function Account() {
+  await connection();
+  const account = await currentAccount();
+  if (!account) redirect("/sign-in");
+  return (
+    <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-5 py-8">
+      <div className="flex items-center justify-between gap-3">
+        <Brand href="/search" />
+        <form action={logout}>
+          <Button type="submit" variant="outline">
+            Sign out
+          </Button>
+        </form>
+      </div>
+      <Link
+        href={account.role === "PUBLIC" ? "/search" : "/dashboard"}
+        className="text-sm text-brand hover:underline"
+      >
+        Back to {account.role === "PUBLIC" ? "products" : "your store"}
+      </Link>
+      <AccountDetails account={account} />
+    </main>
+  );
+}
