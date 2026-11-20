@@ -44,23 +44,21 @@ function errorProps(id: string, error?: string) {
 export function SkuField({
   idPrefix,
   value,
-  onChange,
   error,
   action,
-}: FieldProps & { action?: ReactNode }) {
+}: Omit<FieldProps, "onChange" | "required"> & { action?: ReactNode }) {
   const id = `${idPrefix}-sku`;
 
   return (
-    <Field label="Product code" htmlFor={id} error={error} required action={action}>
+    <Field label="Product code" htmlFor={id} error={error} action={action}>
       <div className="relative">
         <QrCodeIcon aria-hidden className={sheetLeadingIconClass} />
         <Input
           id={id}
-          required
+          readOnly
           maxLength={SKU_MAX_LENGTH}
           autoComplete="off"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
           placeholder="PH-GR-0019"
           {...errorProps(id, error)}
           className={cn(sheetFieldClass, "pl-10 font-mono")}

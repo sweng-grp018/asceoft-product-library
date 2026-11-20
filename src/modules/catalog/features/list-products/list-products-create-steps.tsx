@@ -56,9 +56,7 @@ export function CreateMetadataStep({
         <SkuField
           idPrefix="create-product"
           value={draft.sku}
-          onChange={(value) => onChange("sku", value)}
           error={errors.sku}
-          required
           action={
             <Button
               type="button"
@@ -68,7 +66,7 @@ export function CreateMetadataStep({
               className="h-auto gap-1 p-0 text-[11px] font-semibold text-brand"
             >
               <RefreshCwIcon aria-hidden data-icon="inline-start" />
-              Auto-generate
+              Generate new code
             </Button>
           }
         />

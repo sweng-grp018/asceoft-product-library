@@ -118,8 +118,13 @@ catalogRoutes.patch("/:id", authenticate, requireRole("ADMIN"), async (req, res)
     res.status(404).json({ error: "Product not found" });
     return;
   }
+  const { sku, ...details } = input.data;
+  if (sku !== undefined && sku !== exists.sku) {
+    res.status(400).json({ error: "The product code cannot be changed." });
+    return;
+  }
   res.json({
-    product: await db.product.update({ where: { id: productId.data }, data: input.data }),
+    product: await db.product.update({ where: { id: productId.data }, data: details }),
   });
 });
 
