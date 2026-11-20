@@ -4,7 +4,7 @@ import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
 import { authenticate, requireRole } from "../../lib/auth.js";
 import { IMAGE_TYPES, newImageKey, uploadUrl, readImage, viewUrl } from "../../lib/storage.js";
-import { createAiClient, type EmbeddingResult } from "../../lib/ai.js";
+import { createAiClient, embeddingResult } from "../../lib/ai.js";
 import { config } from "../../lib/config.js";
 
 export const catalogRoutes = Router();
@@ -38,7 +38,6 @@ const productInput = z.object({
   description: z.string().trim().max(5000).optional().nullable(),
 });
 const uploadInput = z.object({ contentType: z.enum(IMAGE_TYPES) });
-
 catalogRoutes.get("/", async (req, res) => {
   const parsed = z
     .object({
@@ -265,13 +264,7 @@ catalogRoutes.post("/:id/index", authenticate, requireRole("ADMIN"), async (req,
       ) {
         throw Object.assign(new Error("Invalid reference image type"), { status: 422 });
       }
-      const result = await aiRequest<EmbeddingResult>("/embed", bytes);
-      if (
-        !Array.isArray(result.embedding) ||
-        result.embedding.length < 32 ||
-        result.embedding.some((n) => !Number.isFinite(n))
-      )
-        throw new Error("Invalid AI embedding");
+      const result = embeddingResult.parse(await aiRequest<unknown>("/embed", bytes));
       updates.push({ id: image.id, embedding: result.embedding, model: result.model });
     }
     await db.$transaction(async (tx) => {

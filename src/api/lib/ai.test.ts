@@ -2,18 +2,26 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createServer } from "node:http";
 import axios from "axios";
-import { cosine, bestMatch, createAiClient, ServerInferenceUnavailableError } from "./ai.js";
+import {
+  embeddingResult,
+  EMBEDDING_MODEL,
+  createAiClient,
+  ServerInferenceUnavailableError,
+} from "./ai.js";
 
-test("cosine similarity handles identical, orthogonal and invalid vectors", () => {
-  assert.equal(cosine([1, 0], [1, 0]), 1);
-  assert.equal(cosine([1, 0], [0, 1]), 0);
-  assert.equal(cosine([1], [1, 0]), 0);
-});
-test("unrecognized image is unknown even with a nearby candidate below threshold", () => {
-  assert.deepEqual(bestMatch([1, 0], [{ productId: "sku", embedding: [0, 1] }]), {
-    productId: null,
-    similarity: 0,
-  });
+test("only the supported embedding dimensions and model can be used for matching", () => {
+  const valid = { model: EMBEDDING_MODEL, embedding: [1, ...Array<number>(511).fill(0)] };
+  assert.equal(embeddingResult.safeParse(valid).success, true);
+  assert.equal(embeddingResult.safeParse({ ...valid, model: "other" }).success, false);
+  assert.equal(embeddingResult.safeParse({ ...valid, embedding: [1, 0] }).success, false);
+  assert.equal(
+    embeddingResult.safeParse({ ...valid, embedding: Array(512).fill(0) }).success,
+    false,
+  );
+  assert.equal(
+    embeddingResult.safeParse({ ...valid, embedding: [NaN, ...valid.embedding.slice(1)] }).success,
+    false,
+  );
 });
 
 test("disabled server inference fails before any network request", (t) => {

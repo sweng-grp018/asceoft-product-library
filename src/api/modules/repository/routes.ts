@@ -5,8 +5,9 @@ import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
 import { authenticate, requireRole, type AuthenticatedRequest } from "../../lib/auth.js";
 import { IMAGE_TYPES, uploadUrl, readImage, viewUrl, deleteImage } from "../../lib/storage.js";
-import { createAiClient, bestMatch, type DetectionResult } from "../../lib/ai.js";
+import { createAiClient, detectionResult, MATCH_THRESHOLD } from "../../lib/ai.js";
 import { config } from "../../lib/config.js";
+import { findImageMatches } from "../catalog/image-matches.js";
 
 export const repositoryRoutes = Router();
 repositoryRoutes.use(authenticate, requireRole("STAFF", "ADMIN"));
@@ -113,33 +114,24 @@ repositoryRoutes.post("/:id/analyze", async (req: AuthenticatedRequest, res) => 
     res.status(422).json({ error: "Invalid image file" });
     return;
   }
-  const detection = await aiRequest<DetectionResult>("/detect", bytes);
-  if (!Array.isArray(detection.detections) || detection.detections.length > 100) {
+  const result = detectionResult.safeParse(await aiRequest<unknown>("/detect", bytes));
+  if (!result.success) {
     res.status(502).json({ error: "Invalid detection response" });
     return;
   }
-  const references = await db.referenceImage.findMany({
-    where: { product: { indexStatus: "INDEXED" } },
-    select: { productId: true, embedding: true, embeddingModel: true },
-  });
-  const candidates = references.filter((r) => r.embeddingModel === "openclip-ViT-B-32-openai");
-  const matches = detection.detections.map((d) => {
-    if (
-      !Array.isArray(d.embedding) ||
-      d.embedding.length < 32 ||
-      d.embedding.some((n) => !Number.isFinite(n)) ||
-      !Array.isArray(d.boundingBox) ||
-      d.boundingBox.length !== 4 ||
-      d.boundingBox.some((n) => !Number.isFinite(n))
-    ) {
-      throw Object.assign(new Error("Invalid AI detection"), { status: 502 });
-    }
-    const match = bestMatch(d.embedding, candidates);
+  const detection = result.data;
+  const nearest = await findImageMatches(
+    detection.detections.map((d) => d.embedding),
+    1,
+  );
+  const nearestByDetection = new Map(nearest.map((match) => [match.queryIndex, match]));
+  const matches = detection.detections.map((d, index) => {
+    const match = nearestByDetection.get(index);
     return {
-      productId: match.productId,
+      productId: match && match.similarity >= MATCH_THRESHOLD ? match.productId : null,
       boundingBox: d.boundingBox,
       detectorScore: d.detectorScore,
-      similarityScore: match.similarity,
+      similarityScore: match?.similarity ?? null,
     };
   });
   const history = await db.searchHistory.create({

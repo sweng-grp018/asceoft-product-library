@@ -45,7 +45,7 @@ The client-aligned technology stack is:
 | Frontend/CMS          | **Next.js 16**, React 19, TypeScript 7, Tailwind CSS 4, **Radix UI** via shadcn/ui                                               |
 | Main backend          | **Node.js**, **Express 5**, TypeScript, Zod                                                                                      |
 | HTTP client           | **Axios** for web-to-API calls, presigned image uploads and optional AI service requests                                         |
-| Database              | **PostgreSQL 18**, **Prisma ORM 7** and reviewed SQL migrations                                                                  |
+| Database              | **PostgreSQL 18**, **pgvector**, **Prisma ORM 7** and reviewed SQL migrations                                                    |
 | Authentication        | NextAuth 5 credentials CMS sessions, short-lived **JWT access tokens** for API calls, backend-enforced **RBAC**                  |
 | Images                | **S3-compatible storage** with presigned uploads (local filesystem service or optional Docker MinIO in development)              |
 | Product detector      | **YOLO26n**, trained independently on **SKU-110K**; browser integration is pending                                               |
@@ -82,7 +82,7 @@ Each detected object is cropped from the original image and passed to a separate
 
 ### Legacy image indexing versus independent training
 
-**Indexing** does not fine-tune a neural network. In the separate product detail flow, administrators can upload JPEG/PNG/WebP reference photos (10 MiB each) and request indexing when the legacy service is configured. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. The current 512-dimensional vectors are kept as PostgreSQL float arrays and compared in the API for this small POC; a vector index should be considered only when catalog size warrants it.
+**Indexing** does not fine-tune a neural network. In the separate product detail flow, administrators can upload JPEG/PNG/WebP reference photos (10 MiB each) and request indexing when the legacy service is configured. The API downloads the objects, validates image contents, and asks FastAPI for a normalized OpenCLIP image embedding per reference. Prisma stores the vector and model ID, and records `PENDING → PROCESSING → INDEXED` or `FAILED`. Indexing can be retried. PostgreSQL generates a 512-dimensional pgvector column from compatible existing and new embeddings. Matching uses exact cosine distance in PostgreSQL and ranks each product by its closest prepared photo. Existing compatible photos do not require reprocessing.
 
 **Legacy server detection** defaults to the general-purpose `yolo11n.pt` detector, independently of the team's trained YOLO26n model. Each bounding-box crop is embedded with the same OpenCLIP model and compared using cosine similarity to indexed reference embeddings. Similarity below `0.78` yields **Unknown**. This threshold is an **uncalibrated heuristic** and similarity is not a probability. The default YOLO11n has not been trained on the project's SKU labels, so detection coverage can be poor for packaging, crowded shelves or uncommon products. Manual corrections update the stored match and mark it as manually corrected.
 
@@ -113,7 +113,7 @@ Web prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3** and Docke
 
 1. Clone the repository, then run `bun install --frozen-lockfile` (use `bun install` when intentionally updating `bun.lock`). Installation generates the Prisma client; this step does not connect to a database or require `DATABASE_URL`.
 2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL` and `WEB_ORIGIN` consistent with your services. Leave `AI_SERVICE_URL` unset for normal web development. For Docker MinIO, set the S3 keys to the credentials configured in Compose. The example S3RVER keys belong to the separate filesystem service.
-3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The initial reviewed SQL is in `src/api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; do not run them against an unverified database.
+3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The Compose database image includes pgvector. If you bring your own PostgreSQL instance, make the `vector` extension available to the migration role before applying the migrations. **Migrations modify the specified database**; do not run them against an unverified database.
 4. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
 5. Run `bun run dev:docker` from the repository root. It starts Compose, generates the Prisma client, and runs the web app and Express API. Docker must be installed and running. Open `http://localhost:3000` or `/sign-in`. No Python dependencies or model weights are installed.
 
@@ -131,7 +131,7 @@ The Compose stack pins a Bitnami legacy MinIO build (`2025.7.23`) because MinIO 
 
 The Prisma schema is in `src/api/prisma/schema.prisma` and reviewed migrations are in `src/api/prisma/migrations/`. Confirm those files exist in the revision you deploy. Release changes to `main` through the team's reviewed Gitflow process.
 
-For a new, empty PostgreSQL database, set `DATABASE_URL` as a server-side secret in the environment that runs the Express API. From a trusted environment with that same database connection and the project dependencies installed, verify the target, then apply the existing migration once:
+For a new, empty PostgreSQL database, set `DATABASE_URL` as a server-side secret in the environment that runs the Express API. From a trusted environment with that same database connection and the project dependencies installed, verify the target, then apply the reviewed migrations. The database host must provide pgvector, and the migration role must be able to enable it:
 
 ```bash
 bun run --cwd src/api db:deploy
