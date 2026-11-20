@@ -61,7 +61,7 @@ export const accountPages = [
     example: "I search jasmine rice to check the available pack sizes.",
   },
   {
-    label: "My account",
+    label: "Profile",
     href: "/profile",
     icon: Settings,
     purpose: "View and save your name and email address.",

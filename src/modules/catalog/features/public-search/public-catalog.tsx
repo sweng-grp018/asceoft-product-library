@@ -54,7 +54,7 @@ export function PublicCatalog({
             <Link
               href={account ? (account.role === "PUBLIC" ? "/account" : "/dashboard") : "/sign-in"}
             >
-              {account ? (account.role === "PUBLIC" ? "My account" : "My store") : "Sign in"}
+              {account ? (account.role === "PUBLIC" ? "Profile" : "My store") : "Sign in"}
               <ArrowRight data-icon="inline-end" />
             </Link>
           </Button>
