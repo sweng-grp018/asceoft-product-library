@@ -2,6 +2,8 @@
 
 # dependencies
 /node_modules
+/src/api/node_modules
+/src/api/generated
 /.pnp
 .pnp.*
 .yarn/*
@@ -23,6 +25,7 @@
 # misc
 .DS_Store
 *.pem
+/.local/
 
 # debug
 npm-debug.log*
@@ -32,10 +35,26 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel
+/.vercel-local-*.json
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+/services/build/
+/services/*.egg-info/
+# Training artifacts are published separately from web application source.
+*.pt
+*.pth
+*.onnx
+.neon

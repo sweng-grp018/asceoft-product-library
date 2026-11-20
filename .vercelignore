@@ -1,0 +1,9 @@
+# Standalone Python tooling and model artifacts do not belong in the web deployment.
+services/**
+**/*.pt
+**/*.pth
+**/*.onnx
+**/.venv/**
+
+# Local photo-storage data must never enter deployment bundles.
+.local/

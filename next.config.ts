@@ -5,14 +5,14 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   reactCompiler: true,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
+  redirects() {
+    return [
+      { source: "/", destination: "/sign-in", permanent: false },
+      { source: "/training", destination: "/repository?tab=products", permanent: false },
+      { source: "/history", destination: "/detection", permanent: false },
+    ];
   },
+  experimental: { serverActions: { bodySizeLimit: "12mb" } },
 };
 
 export default nextConfig;
