@@ -31,7 +31,7 @@ export function Brand({
             inverse ? "text-white/65" : "text-ink-muted",
           )}
         >
-          Grocery Library
+          Product Library
         </span>
       </span>
     </Link>
