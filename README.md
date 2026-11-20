@@ -95,9 +95,11 @@ These legacy requests run synchronously only when an operator explicitly configu
 1. Run `bun install --frozen-lockfile`.
 2. Configure the root `.env` with your PostgreSQL URL and independent `AUTH_SECRET` and `JWT_SECRET` values. Preserve an existing `.env`; do not replace hosted credentials with example values.
 3. For the local filesystem-backed S3 service, use `S3_ENDPOINT=http://localhost:9000`, `S3_BUCKET=lensistry` and the local access key and secret `S3RVER`. `WEB_ORIGIN` sets the allowed browser origin. This development service binds only to `127.0.0.1`, requires signed requests, and keeps files in the git-ignored `.local/storage/` directory after restart. It is not a hosted storage service.
-4. Run `bun run dev:local` to start storage, Express and Next.js together. Individual commands are `bun run dev:storage`, `bun run dev:api` and `bun run dev`.
+4. Run `bun run dev:all` (or `bun run dev:local`) to start storage, Express and Next.js together without Docker. This uses the PostgreSQL database configured in `.env`; it does not start a database, run migrations or seed data. Individual commands are `bun run dev:storage`, `bun run dev:api` and `bun run dev`.
 5. Open `/sign-in` and use a real account. The verified existing database already contains a store-manager account; do not reset it merely to run the app. For a new database, follow the reviewed migration and admin setup below.
 6. After verifying the target database, run `bun run db:seed-groceries` to add the 18 fictional groceries. This command skips existing product codes and never changes accounts, existing products, photos, history or photo readiness.
+
+The launcher checks required settings and ports before starting services. Running `bun run dev:all` again while it is active prints the app URL and exits successfully. Stop the original command with Ctrl+C to stop all three services before restarting. If another program occupies a required port, the launcher explains which setting to change and leaves that program running. Stale launcher locks are cleared automatically. Hosted or separately managed S3 storage is used directly; the local storage process starts only for localhost endpoints with the `S3RVER` credentials.
 
 Public registration creates a browsing account, not staff access. A manager adds staff through the Staff page. Password help explains the manager-assisted reset path; email recovery is not implemented.
 
@@ -113,7 +115,7 @@ Web prerequisites: Git, **Node.js** for the Express API, **Bun 1.4.3** and Docke
 2. Copy `.env.example` to `.env` at the repository root. Set independent, random **32+ character** values for `AUTH_SECRET` and `JWT_SECRET`; keep `DATABASE_URL`, `S3_*`, `API_URL` and `WEB_ORIGIN` consistent with your services. Leave `AI_SERVICE_URL` unset for normal web development. For Docker MinIO, set the S3 keys to the credentials configured in Compose. The example S3RVER keys belong to the separate filesystem service.
 3. For first-time database setup, run `docker compose up -d`, verify `DATABASE_URL`, then run `bun run db:generate` and `bun run db:migrate`. The initial reviewed SQL is in `src/api/prisma/migrations/20261030000000_initial/`. **Migrations modify the specified database**; do not run them against an unverified database.
 4. Temporarily set `ADMIN_EMAIL`, `ADMIN_PASSWORD` (at least 12 characters) and optionally `ADMIN_NAME` in your shell or local env; run `bun run db:seed-admin`, then clear those values from shell history/environment where practical.
-5. Run `bun run dev:all` from the repository root. It starts Compose, generates the Prisma client, and runs the web app and Express API. Open `http://localhost:3000` or `/sign-in`. No Python dependencies or model weights are installed.
+5. Run `bun run dev:docker` from the repository root. It starts Compose, generates the Prisma client, and runs the web app and Express API. Docker must be installed and running. Open `http://localhost:3000` or `/sign-in`. No Python dependencies or model weights are installed.
 
 Press Ctrl+C to stop the web and API processes. The Docker containers keep running; use `docker compose down` to stop them. If either application process exits, the command stops the other. The command does not run migrations or seed data. For individual processes use `bun run dev` or `bun run dev:api`.
 
