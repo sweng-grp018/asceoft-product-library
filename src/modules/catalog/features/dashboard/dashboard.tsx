@@ -195,7 +195,7 @@ export function DashboardView({
             </CardContent>
             <CardFooter>
               <Button asChild variant="outline" className="w-full">
-                <Link href="/training">
+                <Link href="/repository?tab=products">
                   View product photos
                   <ArrowRight data-icon="inline-end" />
                 </Link>

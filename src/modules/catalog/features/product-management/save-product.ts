@@ -29,7 +29,7 @@ export async function saveCatalogProduct(
       "/products",
       "/dashboard",
       "/search",
-      "/training",
+      "/repository",
       ...(productId ? [`/products/${productId}`] : []),
     ])
       revalidatePath(route);
@@ -41,7 +41,8 @@ export async function saveCatalogProduct(
 export async function removeCatalogProduct(productId: string): Promise<{ error?: string }> {
   try {
     await api(`/products/${z.uuid().parse(productId)}`, { method: "DELETE" });
-    for (const route of ["/products", "/dashboard", "/search", "/training"]) revalidatePath(route);
+    for (const route of ["/products", "/dashboard", "/search", "/repository"])
+      revalidatePath(route);
     return {};
   } catch (error) {
     return actionError(error);

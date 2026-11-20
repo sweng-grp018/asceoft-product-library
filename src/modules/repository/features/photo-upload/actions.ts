@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { api } from "@/lib/api";
+import { actionError, type ActionResult } from "@/lib/action-result";
 
 const mediaType = z.enum(["image/jpeg", "image/png", "image/webp"]);
 export type UploadDestination = {
@@ -22,8 +23,6 @@ export async function finishPhoto(
   destination: { objectKey: string; imageId?: string },
   contentType: string,
   productId?: string,
-  store = "",
-  campaign = "",
 ) {
   const type = mediaType.parse(contentType);
   if (productId) {
@@ -34,15 +33,26 @@ export async function finishPhoto(
   } else {
     await api(`/repository/${z.uuid().parse(destination.imageId)}/complete`, {
       method: "POST",
-      data: { contentType: type, store: store.slice(0, 100), campaign: campaign.slice(0, 100) },
+      data: { contentType: type },
     });
   }
   for (const path of [
     "/products",
     "/dashboard",
     "/repository",
-    "/training",
+    "/detection",
     ...(productId ? [`/products/${productId}`] : []),
   ])
     revalidatePath(path);
+}
+
+export async function deleteShelfPhoto(imageId: string): Promise<ActionResult> {
+  try {
+    await api(`/repository/${z.uuid().parse(imageId)}`, { method: "DELETE" });
+    revalidatePath("/repository");
+    revalidatePath("/detection");
+    return {};
+  } catch (error) {
+    return actionError(error);
+  }
 }

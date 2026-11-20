@@ -2,7 +2,6 @@ import {
   ArrowUpRight,
   History,
   Images,
-  Layers,
   LayoutDashboard,
   Package,
   ScanSearch,
@@ -38,12 +37,11 @@ export const storePages = [
       "Once photo search is connected, I choose a shelf photo to look for products. Until then, I search by name.",
   },
   {
-    label: "Shelf photos",
+    label: "Photos",
     href: "/repository",
     icon: Images,
-    purpose: "Save photos of store shelves, with a store name and an optional group.",
-    example:
-      "I save a photo from the Quezon City branch under November display so the team can find it later.",
+    purpose: "Save shelf photos and see which product photos are ready for search.",
+    example: "I save a shelf photo, then check whether the sardines have a prepared product photo.",
   },
   {
     label: "Past searches",
@@ -52,14 +50,6 @@ export const storePages = [
     purpose: "Review your saved photo searches and correct product choices.",
     example:
       "If a search chose the wrong milk pack, I choose the correct product and save the change.",
-  },
-  {
-    label: "Product photos",
-    href: "/training",
-    icon: Layers,
-    purpose: "See which products have photos and are ready for photo search.",
-    example:
-      "I open the sardines product and add a clear front photo. A manager can prepare it when photo search is connected.",
   },
   {
     label: "Staff",

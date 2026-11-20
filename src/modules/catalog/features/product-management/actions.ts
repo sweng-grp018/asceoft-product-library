@@ -16,7 +16,7 @@ export async function indexProduct(productId: string): Promise<ActionResult> {
     await adminOnly();
     await api(`/products/${z.uuid().parse(productId)}/index`, { method: "POST", timeout: 120000 });
     revalidatePath(`/products/${productId}`);
-    revalidatePath("/training");
+    revalidatePath("/repository");
     revalidatePath("/dashboard");
     return { message: "Product photos are ready for search." };
   } catch (error) {

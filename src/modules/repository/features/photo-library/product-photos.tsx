@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { api } from "@/lib/api";
 import { allProducts } from "@/modules/catalog/server/products";
-import { PageHeading } from "@/components/layout/page-heading";
 import {
   Card,
   CardHeader,
@@ -12,19 +10,15 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/modules/catalog/features/list-products/status-pill";
-export default async function ProductPhotos() {
+export async function ProductPhotos() {
   const products = await allProducts();
-  const { ready } = await api<{ ready: number }>("/products/summary");
+  const ready = products.filter((product) => product.indexStatus === "INDEXED").length;
   return (
     <div className="flex flex-col gap-6">
-      <PageHeading
-        title="Product photos"
-        description="Check which groceries have photos and which are ready for photo search."
-      />
       <p className="text-sm text-ink-muted">
         {ready} of {products.length} products are ready for photo search.
       </p>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {products.map((p) => (
           <Card key={p.id} className="border-line">
             <CardHeader>
@@ -33,9 +27,7 @@ export default async function ProductPhotos() {
                 <StatusPill status={p.indexStatus} />
               </div>
               <CardTitle>{p.name}</CardTitle>
-              <CardDescription>
-                {p.brand} · {p.category}
-              </CardDescription>
+              <CardDescription>{[p.brand, p.category].filter(Boolean).join(" · ")}</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-ink-muted">{p.images.length} saved photos</p>

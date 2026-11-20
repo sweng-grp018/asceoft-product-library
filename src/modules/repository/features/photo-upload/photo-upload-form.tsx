@@ -22,12 +22,7 @@ export function PhotoUploadForm({ productId }: { productId?: string }) {
     setError("");
     setMessage("");
     try {
-      await uploadPhoto(
-        file,
-        productId,
-        String(data.get("store") ?? ""),
-        String(data.get("campaign") ?? ""),
-      );
+      await uploadPhoto(file, productId);
       form.reset();
       setMessage("Photo saved.");
       router.refresh();
@@ -42,28 +37,6 @@ export function PhotoUploadForm({ productId }: { productId?: string }) {
   return (
     <form onSubmit={submit}>
       <FieldGroup className="gap-4">
-        {!productId && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field>
-              <FieldLabel htmlFor="photo-store">Store or branch</FieldLabel>
-              <Input
-                id="photo-store"
-                name="store"
-                placeholder="Quezon City branch"
-                maxLength={100}
-              />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="photo-collection">Collection</FieldLabel>
-              <Input
-                id="photo-collection"
-                name="campaign"
-                placeholder="November grocery display"
-                maxLength={100}
-              />
-            </Field>
-          </div>
-        )}
         <Field>
           <FieldLabel htmlFor="upload-photo">Photo</FieldLabel>
           <Input

@@ -6,10 +6,11 @@ import { Button } from "@/components/ui/button";
 import { ActionForm } from "@/components/action-form";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { formatShelfPhotoDate } from "@/modules/repository/features/photo-library/shelf-photos";
 import { analyzeSelectedShelf } from "@/modules/repository/features/shelf-analysis/actions";
 export default async function PhotoSearch() {
   const { images, serverInferenceEnabled } = await api<{
-    images: { id: string; store: string | null; campaign: string | null }[];
+    images: { id: string; createdAt: string }[];
     serverInferenceEnabled: boolean;
   }>("/repository");
   return (
@@ -37,7 +38,7 @@ export default async function PhotoSearch() {
                 <NativeSelect id="search-photo" name="imageId" required className="w-full">
                   {images.map((image) => (
                     <NativeSelectOption key={image.id} value={image.id}>
-                      {image.store || "Store photo"} — {image.campaign || "No collection"}
+                      {formatShelfPhotoDate(image.createdAt)}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>

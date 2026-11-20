@@ -14,13 +14,15 @@ repositoryRoutes.use(authenticate, requireRole("STAFF", "ADMIN"));
 const id = z.uuid();
 const inputSchema = z.object({
   contentType: z.enum(IMAGE_TYPES),
-  store: z.string().trim().max(100).optional(),
-  campaign: z.string().trim().max(100).optional(),
   capturedAt: z.iso.datetime().optional(),
 });
 
 repositoryRoutes.get("/", async (_req, res) => {
-  const images = await db.repositoryImage.findMany({ take: 50, orderBy: { createdAt: "desc" } });
+  const images = await db.repositoryImage.findMany({
+    select: { id: true, objectKey: true, contentType: true, capturedAt: true, createdAt: true },
+    take: 50,
+    orderBy: { createdAt: "desc" },
+  });
   res.json({
     serverInferenceEnabled: Boolean(config.AI_SERVICE_URL),
     images: await Promise.all(
@@ -88,7 +90,7 @@ repositoryRoutes.delete("/:id", requireRole("ADMIN"), async (req, res) => {
     return;
   }
   await deleteImage(image.objectKey);
-  await db.repositoryImage.delete({ where: { id: image.id } });
+  await db.repositoryImage.deleteMany({ where: { id: image.id } });
   res.status(204).end();
 });
 
