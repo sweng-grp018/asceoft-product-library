@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+node_modules/
 /src/api/node_modules
 /src/api/generated
 /.pnp
@@ -14,6 +15,7 @@
 
 # testing
 /coverage
+/playwright-report/
 
 # next.js
 /.next/
