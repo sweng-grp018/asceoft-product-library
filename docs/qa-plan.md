@@ -33,17 +33,17 @@ Out of scope for this cycle:
 
 This table records the starting point so later coverage claims can be checked.
 
-| Item | Status |
-| --- | --- |
-| CI | Lint, formatting, typecheck, API unit tests, web build and a gate job. No database-backed or browser tests. |
-| Automated tests with assertions | Existing API unit tests include `src/api/lib/ai.test.ts` and `src/api/modules/auth/input.test.ts`. |
-| `playwright.config.ts` and `tests/e2e/*.spec.ts` | Empty stubs; `@playwright/test` is not installed. |
-| Placeholder modules | 22 zero-byte files under `src/modules/` and `src/lib/`. They are not imported. |
-| QA environment | None. A single root `.env` points at the developer database. |
-| Seed data | `db:seed-groceries` adds 18 fictional products, idempotent by product code. |
-| Default list page size | 25. Eighteen seeded products cannot exercise page 2. |
-| Rate limits | Hard-coded: login 10 per 15 minutes per IP, registration 5 per hour, image search 6 per minute per user. |
-| AI service | Disabled unless `AI_SERVICE_URL` is set. Indexing and analysis return 503; the UI shows an unavailable state. |
+| Item                                             | Status                                                                                                        |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| CI                                               | Lint, formatting, typecheck, API unit tests, web build and a gate job. No database-backed or browser tests.   |
+| Automated tests with assertions                  | Existing API unit tests include `src/api/lib/ai.test.ts` and `src/api/modules/auth/input.test.ts`.            |
+| `playwright.config.ts` and `tests/e2e/*.spec.ts` | Empty stubs; `@playwright/test` is not installed.                                                             |
+| Placeholder modules                              | 22 zero-byte files under `src/modules/` and `src/lib/`. They are not imported.                                |
+| QA environment                                   | None. A single root `.env` points at the developer database.                                                  |
+| Seed data                                        | `db:seed-groceries` adds 18 fictional products, idempotent by product code.                                   |
+| Default list page size                           | 25. Eighteen seeded products cannot exercise page 2.                                                          |
+| Rate limits                                      | Hard-coded: login 10 per 15 minutes per IP, registration 5 per hour, image search 6 per minute per user.      |
+| AI service                                       | Disabled unless `AI_SERVICE_URL` is set. Indexing and analysis return 503; the UI shows an unavailable state. |
 
 ## 3. QA environment
 
@@ -52,13 +52,13 @@ This table records the starting point so later coverage claims can be checked.
 QA is local-only. Each tester runs the same Docker Compose stack used for development, but
 against a **separate database** so a reset never destroys developer data.
 
-| Component | QA choice |
-| --- | --- |
-| PostgreSQL | Compose service `postgres` (pgvector image) on `127.0.0.1:5433`, database `lensistry_qa`. |
-| Object storage | Compose MinIO on `127.0.0.1:9000` (preferred for parity with the Compose setup). |
-| Express API | `http://localhost:4000`, health at `GET /health`. |
-| Web | `http://localhost:3000`. |
-| AI service | Unset by default. A stub is started only for plumbing tests. |
+| Component      | QA choice                                                                                 |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| PostgreSQL     | Compose service `postgres` (pgvector image) on `127.0.0.1:5433`, database `lensistry_qa`. |
+| Object storage | Compose MinIO on `127.0.0.1:9000` (preferred for parity with the Compose setup).          |
+| Express API    | `http://localhost:4000`, health at `GET /health`.                                         |
+| Web            | `http://localhost:3000`.                                                                  |
+| AI service     | Unset by default. A stub is started only for plumbing tests.                              |
 
 Standardize on `bun run dev:docker` for manual QA. The filesystem storage service used by
 `bun run dev:local` is acceptable for quick checks but differs from the CI setup.
@@ -91,11 +91,11 @@ Requirements:
 Create accounts through the reset script or a seed, **not** through `/register`, because
 registration is limited to 5 attempts per hour.
 
-| Account | Role | Purpose |
-| --- | --- | --- |
-| `qa-manager@example.test` | ADMIN | Admin-only actions and all inherited Staff and Public journeys. |
-| `qa-staff@example.test` | STAFF | Internal catalog, product creation, shelf photos, AI search and results, plus public browsing. |
-| `qa-browser@example.test` | PUBLIC | Browse-only account; must be redirected away from `/dashboard`. |
+| Account                   | Role   | Purpose                                                                                        |
+| ------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
+| `qa-manager@example.test` | ADMIN  | Admin-only actions and all inherited Staff and Public journeys.                                |
+| `qa-staff@example.test`   | STAFF  | Internal catalog, product creation, shelf photos, AI search and results, plus public browsing. |
+| `qa-browser@example.test` | PUBLIC | Browse-only account; must be redirected away from `/dashboard`.                                |
 
 Passwords must be at least 12 characters and at most 72 UTF-8 bytes.
 
@@ -144,12 +144,12 @@ An environment/build value looks like `QA-local · a1b2c3d · 2026-11-21`.
 
 ### 4.1 Layers and coverage weight
 
-| Layer | Tool | What it carries |
-| --- | --- | --- |
-| API integration | `node:test` against the exported Express app | RBAC matrix, validation boundaries, uploads, 503 paths. **Primary automation.** |
-| Browser end-to-end | Playwright, Chromium only | The feature suites in section 6.2. |
-| Unit | `node:test` | Pure logic and Zod schemas. Extend where a bug is cheap to reproduce. |
-| Manual | Completed plan pass; defects filed as GitHub Issues | Exploration, UI/UX, accessibility, responsive behavior, edge combinations. |
+| Layer              | Tool                                                | What it carries                                                                 |
+| ------------------ | --------------------------------------------------- | ------------------------------------------------------------------------------- |
+| API integration    | `node:test` against the exported Express app        | RBAC matrix, validation boundaries, uploads, 503 paths. **Primary automation.** |
+| Browser end-to-end | Playwright, Chromium only                           | The feature suites in section 6.2.                                              |
+| Unit               | `node:test`                                         | Pure logic and Zod schemas. Extend where a bug is cheap to reproduce.           |
+| Manual             | Completed plan pass; defects filed as GitHub Issues | Exploration, UI/UX, accessibility, responsive behavior, edge combinations.      |
 
 A passing build or unit test does not establish readiness. Automated coverage is evidenced by
 CI on the commit under test; manual coverage is evidenced by a completed pass over section 4.2,
@@ -160,30 +160,30 @@ with every failure filed as an issue.
 Test by risk, not by screen order. If a P0 layer fails, stop and report instead of
 continuing.
 
-| Order | Area | Why first |
-| --- | --- | --- |
-| 1 | Auth, sessions, RBAC | Security and data exposure; every route trusts the token and a database role recheck. |
-| 2 | Uploads and storage | Magic-byte checks, size limits and presigned URLs fail silently. |
-| 3 | Catalog CRUD and validation | Core value; product-code immutability, duplicate handling, limits, pagination. |
-| 4 | Staff management | Account creation, reset, and token invalidation. |
-| 5 | Public browsing | Unauthenticated access and no leakage of staff-only data. |
-| 6 | AI-disabled behavior | 503 paths and the unavailable UI must be honest and stable. |
-| 7 | Cross-cutting | Empty/loading/error states, 8-hour expiry, keyboard shortcuts, responsive layout. |
+| Order | Area                        | Why first                                                                             |
+| ----- | --------------------------- | ------------------------------------------------------------------------------------- |
+| 1     | Auth, sessions, RBAC        | Security and data exposure; every route trusts the token and a database role recheck. |
+| 2     | Uploads and storage         | Magic-byte checks, size limits and presigned URLs fail silently.                      |
+| 3     | Catalog CRUD and validation | Core value; product-code immutability, duplicate handling, limits, pagination.        |
+| 4     | Staff management            | Account creation, reset, and token invalidation.                                      |
+| 5     | Public browsing             | Unauthenticated access and no leakage of staff-only data.                             |
+| 6     | AI-disabled behavior        | 503 paths and the unavailable UI must be honest and stable.                           |
+| 7     | Cross-cutting               | Empty/loading/error states, 8-hour expiry, keyboard shortcuts, responsive layout.     |
 
 ### 4.3 RBAC matrix
 
 Each column represents a signed-in account. Staff inherits every Public permission. Admin inherits every Staff permission.
 
-| Action | Public | Staff | Admin |
-| --- | --- | --- | --- |
-| Sign in | Allow | Allow | Allow |
-| Search and view public product information | Allow | Allow | Allow |
-| Open the internal catalog and add products | Deny | Allow | Allow |
-| Upload shelf photos, run AI search and view results | Deny | Allow | Allow |
-| Open the dashboard | Deny | Deny | Allow |
-| Edit and soft-delete products | Deny | Deny | Allow |
-| Manage reference images and prepare photos for search (indexing) | Deny | Deny | Allow |
-| Correct matches | Deny | Deny | Allow |
+| Action                                                           | Public | Staff | Admin |
+| ---------------------------------------------------------------- | ------ | ----- | ----- |
+| Sign in                                                          | Allow  | Allow | Allow |
+| Search and view public product information                       | Allow  | Allow | Allow |
+| Open the internal catalog and add products                       | Deny   | Allow | Allow |
+| Upload shelf photos, run AI search and view results              | Deny   | Allow | Allow |
+| Open the dashboard                                               | Deny   | Deny  | Allow |
+| Edit and soft-delete products                                    | Deny   | Deny  | Allow |
+| Manage reference images and prepare photos for search (indexing) | Deny   | Deny  | Allow |
+| Correct matches                                                  | Deny   | Deny  | Allow |
 
 Exercise each action for all three roles in the UI and at its Express boundary, including inherited permissions. For example, valid product creation should return `201` for Staff and Admin. Staff should receive `403` when correcting even their own search result. The current product creation route requires Admin and the catalog summary route admits Staff. Test against the target matrix and report mismatches.
 
@@ -285,17 +285,17 @@ Proposed script: `"test:api:integration": "node --import tsx --test \"tests/api/
 
 Install `@playwright/test` and fill the existing `playwright.config.ts` for Chromium. All paths below are relative to `tests/e2e/`. Reuse the empty `auth.spec.ts`, `search.spec.ts` and `products.spec.ts`. The other specs are proposed files.
 
-| Feature | Spec | What to verify |
-| --- | --- | --- |
-| Create account | `auth.spec.ts` | Register a unique account, sign in as Public and verify browsing access. Check invalid input and duplicate email. |
-| Sign in and sign out | `auth.spec.ts` | Sign in through the form as Public, Staff and Admin. Check invalid credentials and loss of protected access after sign-out. |
-| Public product search | `search.spec.ts` | As a visitor and each role, search by name, brand and product code, open public details, and check empty results and pagination. |
-| Role permissions and dashboard | `rbac.spec.ts` | Check navigation and direct page access for the matrix in section 4.3. Only Admin sees dashboard totals. Pair with direct API assertions for denied reads and writes. |
-| Internal catalog and products | `products.spec.ts` | Staff and Admin can list and add products that survive reload. Check duplicate codes. Only Admin can edit and soft-delete. Verify removal from active searches and retention of the deleted record in the API integration suite. |
-| Shelf photo uploads | `shelf-photos.spec.ts` | Staff and Admin upload a valid photo and see it after reload. Check invalid file rejection and Public denial. |
-| AI search, results and corrections | `photo-search.spec.ts` | With the service disabled, check the unavailable state. With a deterministic stub, Staff and Admin run a search and view results. Only Admin can save a match correction. Reopen the result to verify it. |
-| Reference images and indexing | `reference-images.spec.ts` | Only Admin can attach reference images and use “Prepare photos for search”. Check the resulting status with the stub and the unavailable state without it. |
-| Existing staff account administration | `staff-accounts.spec.ts` | Retain regression coverage for Admin provisioning a Staff account and resetting its password. Verify the new login works and the old credentials lose access. |
+| Feature                               | Spec                       | What to verify                                                                                                                                                                                                                   |
+| ------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create account                        | `auth.spec.ts`             | Register a unique account, sign in as Public and verify browsing access. Check invalid input and duplicate email.                                                                                                                |
+| Sign in and sign out                  | `auth.spec.ts`             | Sign in through the form as Public, Staff and Admin. Check invalid credentials and loss of protected access after sign-out.                                                                                                      |
+| Public product search                 | `search.spec.ts`           | As a visitor and each role, search by name, brand and product code, open public details, and check empty results and pagination.                                                                                                 |
+| Role permissions and dashboard        | `rbac.spec.ts`             | Check navigation and direct page access for the matrix in section 4.3. Only Admin sees dashboard totals. Pair with direct API assertions for denied reads and writes.                                                            |
+| Internal catalog and products         | `products.spec.ts`         | Staff and Admin can list and add products that survive reload. Check duplicate codes. Only Admin can edit and soft-delete. Verify removal from active searches and retention of the deleted record in the API integration suite. |
+| Shelf photo uploads                   | `shelf-photos.spec.ts`     | Staff and Admin upload a valid photo and see it after reload. Check invalid file rejection and Public denial.                                                                                                                    |
+| AI search, results and corrections    | `photo-search.spec.ts`     | With the service disabled, check the unavailable state. With a deterministic stub, Staff and Admin run a search and view results. Only Admin can save a match correction. Reopen the result to verify it.                        |
+| Reference images and indexing         | `reference-images.spec.ts` | Only Admin can attach reference images and use “Prepare photos for search”. Check the resulting status with the stub and the unavailable state without it.                                                                       |
+| Existing staff account administration | `staff-accounts.spec.ts`   | Retain regression coverage for Admin provisioning a Staff account and resetting its password. Verify the new login works and the old credentials lose access.                                                                    |
 
 Use role-specific NextAuth browser sessions for feature tests and fresh browser contexts for account and sign-in tests. Use accessible role or label locators, web-first assertions and unique test records. Start the QA stack before running Playwright with `baseURL` set to `http://localhost:3000`.
 
@@ -365,13 +365,13 @@ members split areas, run independent passes and file findings directly. Develope
 
 ## 9. Open items for the developers
 
-| Item | Impact on QA | Proposed action |
-| --- | --- | --- |
-| Rate limits are hard-coded | Repeated suites lock testers out (login 10/15 min per IP). | Make limits configurable outside production. |
-| Default page size 25 vs 18 seed products | Pagination cannot be exercised through the UI. | Add 30+ fixtures or allow a smaller page size in QA. |
-| 8-hour NextAuth session holds a fixed API token | After expiry the UI can look signed in while API calls fail. | Confirm intended behavior and add a test case. |
-| Empty Playwright files | Browser coverage is pending. | Implement the suites in section 6.2. |
-| No test database isolation | A reset can destroy developer data. | Adopt the `lensistry_qa` database described here. |
+| Item                                            | Impact on QA                                                 | Proposed action                                      |
+| ----------------------------------------------- | ------------------------------------------------------------ | ---------------------------------------------------- |
+| Rate limits are hard-coded                      | Repeated suites lock testers out (login 10/15 min per IP).   | Make limits configurable outside production.         |
+| Default page size 25 vs 18 seed products        | Pagination cannot be exercised through the UI.               | Add 30+ fixtures or allow a smaller page size in QA. |
+| 8-hour NextAuth session holds a fixed API token | After expiry the UI can look signed in while API calls fail. | Confirm intended behavior and add a test case.       |
+| Empty Playwright files                          | Browser coverage is pending.                                 | Implement the suites in section 6.2.                 |
+| No test database isolation                      | A reset can destroy developer data.                          | Adopt the `lensistry_qa` database described here.    |
 
 ## 10. Limitations
 
