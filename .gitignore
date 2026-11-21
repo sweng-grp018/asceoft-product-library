@@ -56,7 +56,6 @@ __pycache__/
 /services/build/
 /services/*.egg-info/
 # Training artifacts are published separately from web application source.
-*.pt
 *.pth
 *.onnx
 .neon
