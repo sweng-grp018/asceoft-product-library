@@ -53,7 +53,7 @@ def clip_model():
 def yolo_model():
     from ultralytics import YOLO
 
-    return YOLO(os.getenv("YOLO_WEIGHTS", "yolo11n.pt"))
+    return YOLO("model/best.pt")
 
 
 def embed_image(image: Image.Image) -> list[float]:
