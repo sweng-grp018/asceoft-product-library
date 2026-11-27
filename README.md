@@ -194,7 +194,19 @@ bun run test:api
 bun run build
 ```
 
-API type checking also generates the Prisma client, including after an install that skipped lifecycle scripts. Web CI has no Python job. Standalone Python tooling has its own workflow, `.github/workflows/ai-tools.yml`, triggered manually or by changes to `services/**` or that workflow on the configured branches and pull requests; it installs lightweight test dependencies. See `services/README.md` for local commands. Model export and browser inference need separate validation with the team’s weights and representative product images. There are currently no configured Playwright browser tests or measured accuracy benchmarks; a passing static build or mocked unit tests do **not** prove production readiness.
+API type checking also generates the Prisma client, including after an install that skipped lifecycle scripts. Web CI has no Python job. Standalone Python tooling has its own workflow, `.github/workflows/ai-tools.yml`, triggered manually or by changes to `services/**` or that workflow on the configured branches and pull requests; it installs lightweight test dependencies. See `services/README.md` for local commands. Model export and browser inference need separate validation with the team’s weights and representative product images. AI accuracy benchmarks are pending; a passing static build or mocked unit tests do **not** prove production readiness.
+
+### Playwright browser tests
+
+If the local website is running, stop `bun run dev:all` with Ctrl+C in its terminal. Run these commands from the repository root in one PowerShell terminal.
+
+```powershell
+docker compose up -d --wait postgres
+bun run test:qa --headed
+bun run test:qa:report
+```
+
+On a fresh checkout, install dependencies with `bun install --frozen-lockfile` and the browser with `bunx playwright install chromium` first. The QA runner applies migrations to the local `lensistry_qa` database on port 5433, starts the website, API and photo storage, and runs all nine feature areas. Photo-search tests use a local mock AI service and also exercise the app with AI disabled. Omit `--headed` for headless Chromium. The last command opens the combined HTML report, including failed assertions and their screenshots.
 
 **Proposed POC acceptance gates (to confirm with client; none measured yet):** evaluate a held-out, SKU-stratified set of annotated shelf photos including lookalike packaging, occlusion, varying angles and lighting; target detector `mAP@0.5 ≥ 0.75` and recall `≥ 0.80`; top-1 SKU identification accuracy `≥ 0.90` on correctly detected known objects; unknown-product false acceptance `≤ 5%`. Also report end-to-end precision/recall, error by SKU and camera-angle subgroup, latency p50/p95, and manual-correction rate. Calibrate the matching threshold only on a validation split, then freeze it for test data.
 

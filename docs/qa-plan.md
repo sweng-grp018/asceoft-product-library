@@ -297,7 +297,7 @@ Install `@playwright/test` and fill the existing `playwright.config.ts` for Chro
 | Reference images and indexing         | `reference-images.spec.ts` | Only Admin can attach reference images and use “Prepare photos for search”. Check the resulting status with the stub and the unavailable state without it.                                                                       |
 | Existing staff account administration | `staff-accounts.spec.ts`   | Retain regression coverage for Admin provisioning a Staff account and resetting its password. Verify the new login works and the old credentials lose access.                                                                    |
 
-Use role-specific NextAuth browser sessions for feature tests and fresh browser contexts for account and sign-in tests. Use accessible role or label locators, web-first assertions and unique test records. Start the QA stack before running Playwright with `baseURL` set to `http://localhost:3000`.
+Use role-specific NextAuth browser sessions for feature tests and fresh browser contexts for account and sign-in tests. Use accessible role or label locators, web-first assertions and unique test records. For the complete local run, follow the [three Playwright commands in the README](../README.md#playwright-browser-tests). The runner starts the QA website and combines all feature results in one report.
 
 ### 6.3 CI
 

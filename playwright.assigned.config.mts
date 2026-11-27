@@ -5,14 +5,31 @@ const web = "http://localhost:3000";
 const api = "http://localhost:4000";
 const mock = "http://127.0.0.1:18080";
 
-const offline = process.env.QA_AI_MODE === "disabled";
+const accountSpecs = ["**/auth.spec.ts", "**/sign-in.spec.mts"];
+const offlineSpec = "**/ai-disabled.spec.mts";
+const assignedDir = "./tests/e2e/assigned";
+const phase = process.env.QA_PHASE;
+const offline = phase ? phase !== "workflows" : process.env.QA_AI_MODE === "disabled";
+const workflows = { name: "workflows", testDir: assignedDir, testIgnore: offlineSpec };
+const unavailable = { name: "ai-disabled", testDir: assignedDir, testMatch: offlineSpec };
 
 export default defineConfig({
-  testDir: "./tests/e2e/assigned",
-  testMatch: offline ? "**/ai-disabled.spec.mts" : "**/*.spec.mts",
-  testIgnore: offline ? [] : ["**/ai-disabled.spec.mts"],
-  globalSetup: "./tests/support/setup-assigned.mts",
-  outputDir: offline ? ".local/ai-disabled-results" : ".local/assigned-results",
+  testDir: "./tests/e2e",
+  projects: phase
+    ? [
+        { name: "accounts", testMatch: accountSpecs },
+        { name: "browsing", testIgnore: [...accountSpecs, "**/assigned/**"] },
+        workflows,
+        unavailable,
+      ]
+    : [offline ? unavailable : workflows],
+  globalSetup:
+    !phase || process.env.QA_SESSIONS === "true" ? "./tests/support/setup-assigned.mts" : undefined,
+  outputDir: phase
+    ? ".local/qa-results/" + phase
+    : offline
+      ? ".local/ai-disabled-results"
+      : ".local/assigned-results",
   workers: 1,
   retries: 0,
   timeout: 60000,
