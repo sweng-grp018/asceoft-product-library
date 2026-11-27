@@ -57,6 +57,7 @@ export default defineConfig({
         ]),
     {
       command: "node scripts/dev-local.mjs",
+      gracefulShutdown: { signal: "SIGTERM", timeout: 15000 },
       url: web + "/sign-in",
       reuseExistingServer: false,
       timeout: 120000,
