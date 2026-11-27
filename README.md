@@ -149,7 +149,7 @@ Configure the database, S3, authentication and JWT settings in Vercel for each e
 
 Run `bun run dev:vercel -L` from the repository root for local-only Vercel testing. It installs the Bun workspace once before starting the two Node services, avoiding concurrent installers racing on `node_modules`. Omit `-L` to use a linked Vercel project. Python is not required.
 
-Remove any previously configured `AI_SERVICE_URL` from the hosted project to keep legacy server inference disabled, then redeploy this configuration. Existing deployments do not change until redeployed. Removing the Python service addresses its oversized bundle; the web deployment still needs verification. Browser-to-storage photo uploads avoid sending photo bytes through Next.js Server Actions. The API verifies image signatures and the 10 MiB size limit before registering a completed upload.
+Remove any previously configured `AI_SERVICE_URL` from the hosted project to keep legacy server inference disabled, then redeploy this configuration. Existing deployments do not change until redeployed. To temporarily connect a deployed `api` service to a local machine running the legacy Python AI prototype, see the Cloudflare Tunnel instructions in [standalone tooling setup](services/README.md#connecting-a-deployed-api-via-cloudflare-tunnel); `cloudflared` only needs to be installed and run on the machine hosting the AI service, not in this repository. Removing the Python service addresses its oversized bundle; the web deployment still needs verification. Browser-to-storage photo uploads avoid sending photo bytes through Next.js Server Actions. The API verifies image signatures and the 10 MiB size limit before registering a completed upload.
 
 ## API contracts
 

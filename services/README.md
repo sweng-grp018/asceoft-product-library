@@ -17,6 +17,32 @@ uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 
 To exercise the legacy Express workflows locally, explicitly set `AI_SERVICE_URL=http://127.0.0.1:8000` in the web project's root `.env` and restart the API. Omit it for ordinary web development. The prototype has no service authentication and should stay bound to loopback for local experimentation.
 
+## Connecting a deployed API via Cloudflare Tunnel
+
+If the web app and Express API are deployed (for example on Vercel) and you want AI requests (`/embed` and `/detect`) forwarded to a local machine running this service, expose `http://127.0.0.1:8000` with **Cloudflare Tunnel (`cloudflared`)**.
+
+- **Install `cloudflared` only on the machine that runs the AI service.** Do not add `cloudflared` to the GitHub repository, and never commit tunnel credentials.
+- **No codebase changes are required.** The deployed Express API reads `AI_SERVICE_URL` and sends inference requests there.
+
+1. Start the local AI service on that machine (Terminal 1, from `services/`):
+
+   ```bash
+   uv sync --extra dev
+   uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+   ```
+
+2. Start a Quick Tunnel on the same machine (Terminal 2):
+
+   ```bash
+   cloudflared tunnel --url http://127.0.0.1:8000
+   ```
+
+   Keep both terminals running. Copy the generated `https://<random-name>.trycloudflare.com` URL.
+
+3. In your hosted environment (for example **Vercel → Project Settings → Environment Variables** for the `api` service), set `AI_SERVICE_URL` to that `https://...trycloudflare.com` URL (not `http://127.0.0.1:8000`) and **redeploy**.
+
+Quick Tunnel URLs change every time `cloudflared` restarts, so update `AI_SERVICE_URL` and redeploy whenever you restart the tunnel (or use a Cloudflare Named Tunnel if you have a domain on Cloudflare for a stable URL). Because this prototype has no built-in authentication, only leave the tunnel running while needed or place access controls in front of it.
+
 ## Checks
 
 ```bash
