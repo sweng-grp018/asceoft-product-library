@@ -18,4 +18,7 @@ const configSchema = z.object({
   AI_SERVICE_URL: z.url().optional(),
 });
 
-export const config = configSchema.parse(process.env);
+export const config = configSchema.parse({
+  ...process.env,
+  AI_SERVICE_URL: process.env.AI_SERVICE_URL || undefined,
+});
