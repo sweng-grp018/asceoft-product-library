@@ -3,7 +3,6 @@ test("Admin provisions Staff and replaces the sign-in password", async ({
   page,
   browser,
   baseURL,
-  account,
   key,
   db,
 }) => {
@@ -33,15 +32,30 @@ test("Admin provisions Staff and replaces the sign-in password", async ({
       await context.close();
     }
   }
-  expect(account).toBeTruthy();
+
   const before = await db.user.findUniqueOrThrow({ where: { email } });
-  await checkPassword(key, true);
-  await card.getByText("Reset password", { exact: true }).click();
-  await card.getByLabel("New password").fill(key + "-new");
-  await card.getByRole("button", { name: "Save new password" }).click();
-  await expect
-    .poll(async () => (await db.user.findUniqueOrThrow({ where: { email } })).passwordHash)
-    .not.toBe(before.passwordHash);
+  const original = await browser.newContext({ baseURL });
+  try {
+    const member = await original.newPage();
+    await login(member, email, key);
+    await expect(member).not.toHaveURL(/\/sign-in(?:\?|$)/);
+    const session = await (await member.request.get("/api/auth/session")).json();
+    expect(session.user.role).toBe("STAFF");
+    const headers = { Authorization: "Bearer " + session.accessToken };
+    const me = () => member.request.get("http://localhost:4000/auth/me", { headers });
+    expect((await me()).status()).toBe(200);
+    await card.getByText("Reset password", { exact: true }).click();
+    await card.getByLabel("New password").fill(key + "-new");
+    await card.getByRole("button", { name: "Save new password" }).click();
+    await expect
+      .poll(async () => (await db.user.findUniqueOrThrow({ where: { email } })).passwordHash)
+      .not.toBe(before.passwordHash);
+    expect((await me()).status()).toBe(401);
+    await member.goto("/account");
+    await expect(member).toHaveURL(/\/sign-in(?:\?|$)/);
+  } finally {
+    await original.close();
+  }
   await checkPassword(key, false);
   await checkPassword(key + "-new", true);
 });

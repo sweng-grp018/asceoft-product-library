@@ -99,6 +99,46 @@ jobs:
       - run: bun run db:generate
       - run: bun run build
 
+  playwright-qa:
+    name: Playwright QA
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    env:
+      DATABASE_URL: "postgresql://lensistry:lensistry@127.0.0.1:5433/lensistry_qa"
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg18-trixie
+        env:
+          POSTGRES_USER: lensistry
+          POSTGRES_PASSWORD: lensistry
+          POSTGRES_DB: lensistry_qa
+        ports:
+          - "5433:5432"
+        options: >-
+          --health-cmd "pg_isready -U lensistry -d lensistry_qa"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version-file: package.json
+      - run: bun install --frozen-lockfile
+      - run: bunx playwright install --with-deps chromium
+      - run: bun run test:qa
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: .local/qa-report/
+          include-hidden-files: true
+          retention-days: 7
+          if-no-files-found: error
+
   ci-gate:
     name: CI Gate
     needs: [lint, format, typecheck, api-tests, build]
