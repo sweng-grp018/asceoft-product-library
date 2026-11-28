@@ -3,14 +3,19 @@ import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { fileTypeFromBuffer } from "file-type";
 import { db } from "../../lib/db.js";
-import { authenticate, requireRole, type AuthenticatedRequest } from "../../lib/auth.js";
+import {
+  authenticate,
+  requireMinRole,
+  requirePermission,
+  type AuthenticatedRequest,
+} from "../../lib/auth.js";
 import { IMAGE_TYPES, uploadUrl, readImage, viewUrl, deleteImage } from "../../lib/storage.js";
 import { createAiClient, detectionResult, MATCH_THRESHOLD } from "../../lib/ai.js";
 import { config } from "../../lib/config.js";
 import { findImageMatches } from "../catalog/image-matches.js";
 
 export const repositoryRoutes = Router();
-repositoryRoutes.use(authenticate, requireRole("STAFF", "ADMIN"));
+repositoryRoutes.use(authenticate, requireMinRole("STAFF"));
 const id = z.uuid();
 const inputSchema = z.object({
   contentType: z.enum(IMAGE_TYPES),
@@ -78,7 +83,7 @@ repositoryRoutes.post("/:id/complete", async (req, res) => {
   res.status(201).json({ imageId: imageId.data });
 });
 
-repositoryRoutes.delete("/:id", requireRole("ADMIN"), async (req, res) => {
+repositoryRoutes.delete("/:id", requirePermission("repository:delete"), async (req, res) => {
   const imageId = id.safeParse(req.params.id);
   if (!imageId.success) {
     res.status(400).json({ error: "Invalid photo." });
@@ -166,6 +171,7 @@ repositoryRoutes.get("/searches/recent", async (req: AuthenticatedRequest, res) 
 
 repositoryRoutes.patch(
   "/searches/:searchId/matches/:matchId",
+  requirePermission("matches:correct"),
   async (req: AuthenticatedRequest, res) => {
     const searchId = id.safeParse(req.params.searchId);
     const matchId = id.safeParse(req.params.matchId);
@@ -176,14 +182,10 @@ repositoryRoutes.patch(
     }
     const match = await db.detectionMatch.findFirst({
       where: { id: matchId.data, searchHistoryId: searchId.data },
-      include: { history: { select: { userId: true } } },
+      select: { id: true },
     });
     if (!match) {
       res.status(404).json({ error: "Match not found" });
-      return;
-    }
-    if (match.history.userId !== req.viewer!.id && req.viewer!.role !== "ADMIN") {
-      res.status(403).json({ error: "You cannot modify another user's search" });
       return;
     }
     if (
