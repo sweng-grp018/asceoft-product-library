@@ -114,7 +114,7 @@ test("image search displays the product matching the mock embedding", async ({ p
   const match = page
     .getByRole("region", { name: "Image search results" })
     .getByRole("link", { name: new RegExp(key) });
-  await expect(match).toHaveAttribute("href", "/search/" + product.id);
+  await expect(match).toHaveAttribute("href", "/search/" + product.id + "?from=image-search");
   await expect(preview).toHaveAttribute("src", previewUrl!);
   await expect(match.getByRole("img", { name: key })).toHaveJSProperty("naturalWidth", 8);
   await match.click();
@@ -127,10 +127,20 @@ test("image search displays the product matching the mock embedding", async ({ p
     .getByRole("button", { name: "Close", exact: true })
     .click();
   await gallery.getByRole("button", { name: "Close", exact: true }).click();
-  await page.goBack();
+  await page.getByRole("link", { name: "Back to search results", exact: true }).click();
+  await expect(page).toHaveURL(/\/search\?mode=image$/);
+  await expect(page.getByRole("tab", { name: "Search by image", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
   await expect(match).toBeVisible();
   await expect(preview).toHaveAttribute("src", previewUrl!);
   await expect(preview).toHaveJSProperty("naturalWidth", 8);
+  expect(
+    await page
+      .getByLabel("Product photo", { exact: true })
+      .evaluate((input: HTMLInputElement) => input.files?.[0]?.name),
+  ).toBe(photo.name);
 
   // A separate, missing object avoids reusing the browser's decoded thumbnail.
   await db.referenceImage.update({
@@ -142,4 +152,12 @@ test("image search displays the product matching the mock embedding", async ({ p
   await page.getByLabel("Product photo", { exact: true }).setInputFiles([]);
   await expect(preview).toHaveCount(0);
   await expect(match).toHaveCount(0);
+  await page.goto("/products/" + product.id);
+  await expect(page.getByRole("link", { name: "Back to products", exact: true })).toHaveAttribute(
+    "href",
+    "/products",
+  );
+  await expect(page.getByRole("link", { name: "Back to search results", exact: true })).toHaveCount(
+    0,
+  );
 });

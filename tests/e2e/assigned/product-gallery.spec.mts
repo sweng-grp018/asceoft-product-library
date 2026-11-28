@@ -25,6 +25,13 @@ test("product photos open a gallery and a separate enlarged preview", async ({ p
     await route.fulfill({ path: "public/images/yellowChips.png", contentType: "image/png" });
   });
   await page.goto("/search/" + product.id);
+  await expect(page.getByRole("link", { name: "Back to products", exact: true })).toHaveAttribute(
+    "href",
+    "/search",
+  );
+  await expect(page.getByRole("link", { name: "Back to search results", exact: true })).toHaveCount(
+    0,
+  );
   const detailsUrl = page.url();
   const openGallery = page.getByRole("button", { name: "View 3 product photos for " + key });
   await expect(openGallery.getByRole("img", { name: key, exact: true })).toBeVisible();

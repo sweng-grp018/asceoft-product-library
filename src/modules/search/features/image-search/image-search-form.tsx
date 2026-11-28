@@ -153,7 +153,7 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
             {result.matches.map((product) => (
               <li key={product.productId}>
                 <Link
-                  href={`/search/${product.productId}`}
+                  href={`/search/${product.productId}?from=image-search`}
                   className="flex h-full items-center gap-4 rounded-xl border border-line bg-card p-4 hover:border-brand"
                 >
                   <MatchThumbnail url={product.imageUrl} name={product.name} />
