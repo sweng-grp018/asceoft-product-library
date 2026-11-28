@@ -10,7 +10,7 @@ import {
   type AuthenticatedRequest,
   type Permission,
   type Role,
-} from "./auth.js";
+} from "./rbac.js";
 
 function invokeMiddleware(
   middleware: (req: AuthenticatedRequest, res: Response, next: NextFunction) => void,
