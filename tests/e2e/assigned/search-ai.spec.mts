@@ -201,6 +201,15 @@ test("image search displays the product matching the mock embedding", async ({ p
   await expect(match).toHaveCount(0);
   await page.getByRole("button", { name: "Find matching products" }).click();
   await expect(match).toBeVisible();
+  await page.getByRole("link", { name: "My store", exact: true }).click();
+  await expect(page).toHaveURL(/\/dashboard$/);
+  await page.goBack();
+  await expect(page).toHaveURL(/\/search\?mode=image$/);
+  await expect(input).toHaveValue("");
+  await expect(preview).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
+  await page.getByRole("tab", { name: "Search by name", exact: true }).click();
+  await expect(page.getByLabel("Find grocery products", { exact: true })).toHaveValue("");
   await page.goto("/products/" + product.id);
   await expect(page.getByRole("link", { name: "Back to products", exact: true })).toHaveAttribute(
     "href",

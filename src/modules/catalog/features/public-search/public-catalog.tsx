@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { ArrowRight, Package, Search, X } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { Button } from "@/components/ui/button";
@@ -24,17 +24,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ImageSearchForm } from "@/modules/search/features/image-search/image-search-form";
 import { defaultHomePath } from "@/modules/auth/permissions";
 import type { CatalogRow } from "../list-products/list-products.types";
+import { BrowseSearchSessionContext } from "./browse-search-session";
+import { PageLoading } from "@/components/layout/page-loading";
 
-export function PublicCatalog({
-  initialQuery,
-  initialMode,
-  imageSearchEnabled,
-  rows,
-  total,
-  page,
-  pageSize,
-  account,
-}: {
+type PublicCatalogProps = {
   initialQuery: string;
   initialMode: "name" | "image";
   imageSearchEnabled: boolean;
@@ -43,7 +36,26 @@ export function PublicCatalog({
   page: number;
   pageSize: number;
   account?: { name: string; role: string } | null;
-}) {
+};
+
+export function PublicCatalog(props: PublicCatalogProps) {
+  const { visit, resetFilters } = useContext(BrowseSearchSessionContext);
+  const staleFilter = resetFilters && (Boolean(props.initialQuery) || props.page > 1);
+
+  if (staleFilter) return <PageLoading />;
+  return <CatalogContent key={visit} {...props} />;
+}
+
+function CatalogContent({
+  initialQuery,
+  initialMode,
+  imageSearchEnabled,
+  rows,
+  total,
+  page,
+  pageSize,
+  account,
+}: PublicCatalogProps) {
   const [query, setQuery] = useState(initialQuery);
   const products = rows;
   return (

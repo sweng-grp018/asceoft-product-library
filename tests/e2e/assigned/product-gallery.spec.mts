@@ -77,6 +77,7 @@ test("product photos open a gallery and a separate enlarged preview", async ({ p
   await expect(gallery.getByRole("button", { name: /^Enlarge photo/ })).toHaveCount(1);
   await gallery.getByRole("button", { name: /^Enlarge photo/ }).click();
   await expect(preview).toBeVisible();
+  await expect(preview).toHaveCSS("opacity", "1");
   await page.keyboard.press("Escape");
   await expect(preview).toHaveCount(0);
   await expect(gallery).toBeVisible();
