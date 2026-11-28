@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Package } from "lucide-react";
+import { ArrowLeft, Pencil, Package, Trash2 } from "lucide-react";
 import type { Product } from "@/lib/api";
 import { PageHeading } from "@/components/layout/page-heading";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -8,18 +8,21 @@ import { Button } from "@/components/ui/button";
 import { StatusPill } from "../features/list-products/status-pill";
 import { PhotoUploadForm } from "@/modules/repository/features/photo-upload/photo-upload-form";
 import { ActionForm } from "@/components/action-form";
-import { indexProduct } from "../features/product-management/actions";
+import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
+import { deleteReferencePhoto, indexProduct } from "../features/product-management/actions";
 
 export function ProductDetailsView({
   product,
   photos = [],
   canEdit = false,
+  canManageReferenceImages = false,
   canPrepare = false,
   publicView = false,
 }: {
   product: Product;
   photos?: { id: string; url: string }[];
   canEdit?: boolean;
+  canManageReferenceImages?: boolean;
   canPrepare?: boolean;
   publicView?: boolean;
 }) {
@@ -99,16 +102,36 @@ export function ProductDetailsView({
           <CardContent className="flex flex-col gap-5">
             {photos.length ? (
               <div className="grid grid-cols-2 gap-3">
-                {photos.map((photo) => (
-                  <div key={photo.id} className="relative aspect-square rounded-xl bg-brand-tint">
-                    <Image
-                      src={photo.url}
-                      alt={product.name}
-                      fill
-                      unoptimized
-                      sizes="(min-width:1024px) 22vw, 45vw"
-                      className="object-contain p-3"
-                    />
+                {photos.map((photo, index) => (
+                  <div key={photo.id} className="flex flex-col gap-2">
+                    <div className="relative aspect-square rounded-xl bg-brand-tint">
+                      <Image
+                        src={photo.url}
+                        alt={product.name}
+                        fill
+                        unoptimized
+                        sizes="(min-width:1024px) 22vw, 45vw"
+                        className="object-contain p-3"
+                      />
+                    </div>
+                    {canManageReferenceImages && (
+                      <ConfirmActionDialog
+                        trigger={
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            aria-label={`Remove reference photo ${index + 1} for ${product.name}`}
+                          >
+                            <Trash2 data-icon="inline-start" />
+                            Remove
+                          </Button>
+                        }
+                        title="Remove product photo?"
+                        description="This reference photo will be permanently deleted."
+                        confirmLabel="Remove photo"
+                        action={deleteReferencePhoto.bind(null, product.id, photo.id)}
+                      />
+                    )}
                   </div>
                 ))}
               </div>
@@ -120,7 +143,7 @@ export function ProductDetailsView({
                 </span>
               </div>
             )}
-            {canEdit && (
+            {canManageReferenceImages && (
               <>
                 <PhotoUploadForm productId={product.id} />
                 {canPrepare && product.images.length > 0 && product.indexStatus !== "PROCESSING" ? (

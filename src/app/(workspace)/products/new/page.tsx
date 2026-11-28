@@ -1,7 +1,6 @@
-import { redirect } from "next/navigation";
-import { currentAccount } from "@/modules/auth/server/viewer";
+import { requirePermission } from "@/modules/auth/server/permissions";
 import { ProductForm } from "@/modules/catalog/components/product-form";
 export default async function NewProduct() {
-  if ((await currentAccount())?.role !== "ADMIN") redirect("/products");
+  await requirePermission("products:create");
   return <ProductForm title="Add a product" />;
 }

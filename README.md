@@ -18,17 +18,17 @@ Standalone AI-powered product/SKU catalog and shelf-photo identification proof o
 
 Lensistry helps a grocery team keep product details and photos in one place. Store managers maintain products and staff accounts; staff browse products, save shelf photos and review the results of their current photo search. Visitors can browse products without signing in. A product code identifies one product and pack size.
 
-| Page              | Current behavior                                                                                                                                                    |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview          | Counts and recent products come from PostgreSQL.                                                                                                                    |
-| Products          | Search, pagination, create, edit and delete use the API and persist after reload. Only managers can change product details. Product codes are read-only in the app. |
-| Find from a photo | Finds products in a saved shelf photo when the optional analysis service is configured. Results and manual corrections are available in the current search.         |
-| Photos            | Shelf photos can be uploaded to private S3 storage and deleted by managers. The Product photos tab shows which products have photos ready for image search.         |
-| Staff             | Managers can list staff, create staff or manager accounts, and reset staff passwords.                                                                               |
-| Profile           | Reads and saves the signed-in user’s real name and email.                                                                                                           |
-| Browse products   | Browse by name, brand, or product code without signing in. Signed-in users can search with a product photo when the embedding service is configured.                |
-| Sign-up           | Creates a browsing-only account. Staff access is granted by a store manager.                                                                                        |
-| Password help     | Directs users to their store manager; no reset email is claimed or sent.                                                                                            |
+| Page              | Current behavior                                                                                                                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Overview          | Counts and recent products come from PostgreSQL. Available to store managers only.                                                                                                                  |
+| Products          | Search, pagination, create, edit and delete use the API and persist after reload. Staff and managers can add products; only managers can edit or remove them. Product codes are read-only in edits. |
+| Find from a photo | Finds products in a saved shelf photo when the optional analysis service is configured. Staff and managers can run searches and view results; only managers can save manual match corrections.      |
+| Photos            | Shelf photos can be uploaded to private S3 storage by staff/managers and deleted by managers. Product reference photos can be added or removed by managers.                                         |
+| Staff             | Managers can list staff, create staff or manager accounts, and reset staff passwords.                                                                                                               |
+| Profile           | Reads and saves the signed-in user’s real name and email.                                                                                                                                           |
+| Browse products   | Browse by name, brand, or product code without signing in. Signed-in users can search with a product photo when the embedding service is configured.                                                |
+| Sign-up           | Creates a browsing-only account. Staff access is granted by a store manager.                                                                                                                        |
+| Password help     | Directs users to their store manager; no reset email is claimed or sent.                                                                                                                            |
 
 JWT access checks re-read the user’s database role. Password changes invalidate older API tokens. No preview identity or browser-only role can grant access to store data.
 
@@ -155,28 +155,31 @@ Remove any previously configured `AI_SERVICE_URL` from the hosted project to kee
 
 Express provides JSON endpoints, with Zod validation and role checks at the backend:
 
-| Method            | Path                                   | Role                                        |
-| ----------------- | -------------------------------------- | ------------------------------------------- |
-| POST              | `/auth/register`                       | Public; creates browsing accounts only      |
-| GET/PATCH         | `/auth/me`                             | Signed-in; own profile                      |
-| GET               | `/auth/users`                          | Manager                                     |
-| PATCH             | `/auth/users/:id/password`             | Manager; staff password reset               |
-| POST              | `/auth/login`                          | Public credential exchange (rate limited)   |
-| POST              | `/auth/users`                          | Admin                                       |
-| GET               | `/products`, `/products/:id`           | Public                                      |
-| GET               | `/products/image-search/status`        | Public                                      |
-| POST              | `/products/image-search`               | Signed-in; transient product-photo matching |
-| POST/PATCH/DELETE | `/products`, `/products/:id`           | Admin                                       |
-| POST              | `/products/:id/images`                 | Admin; returns a presigned S3 PUT URL       |
-| POST              | `/products/:id/images/complete`        | Admin; validates and records a photo        |
-| GET               | `/products/:id/images`                 | Staff/admin; private photo links            |
-| POST              | `/products/:id/index`                  | Admin; synchronous reference embedding      |
-| GET/POST          | `/repository`                          | Staff/admin                                 |
-| POST              | `/repository/:id/complete`             | Staff/admin; validates and records a photo  |
-| DELETE            | `/repository/:id`                      | Admin                                       |
-| POST              | `/repository/:id/analyze`              | Staff/admin; YOLO and matching              |
-| GET               | `/repository/searches/recent`          | Signed-in staff/admin; own searches         |
-| PATCH             | `/repository/searches/:id/matches/:id` | Search owner or admin; manual correction    |
+| Method       | Path                                   | Role                                        |
+| ------------ | -------------------------------------- | ------------------------------------------- |
+| POST         | `/auth/register`                       | Public; creates browsing accounts only      |
+| GET/PATCH    | `/auth/me`                             | Signed-in; own profile                      |
+| GET          | `/auth/users`                          | Admin                                       |
+| PATCH        | `/auth/users/:id/password`             | Admin; staff password reset                 |
+| POST         | `/auth/login`                          | Public credential exchange (rate limited)   |
+| POST         | `/auth/users`                          | Admin                                       |
+| GET          | `/products/summary`                    | Admin; dashboard totals and recent products |
+| GET          | `/products`, `/products/:id`           | Public                                      |
+| GET          | `/products/image-search/status`        | Public                                      |
+| POST         | `/products/image-search`               | Signed-in; transient product-photo matching |
+| POST         | `/products`                            | Staff/admin                                 |
+| PATCH/DELETE | `/products/:id`                        | Admin                                       |
+| POST         | `/products/:id/images`                 | Admin; returns a presigned S3 PUT URL       |
+| POST         | `/products/:id/images/complete`        | Admin; validates and records a photo        |
+| DELETE       | `/products/:id/images/:imageId`        | Admin; deletes a reference photo            |
+| GET          | `/products/:id/images`                 | Staff/admin; private photo links            |
+| POST         | `/products/:id/index`                  | Admin; synchronous reference embedding      |
+| GET/POST     | `/repository`                          | Staff/admin                                 |
+| POST         | `/repository/:id/complete`             | Staff/admin; validates and records a photo  |
+| DELETE       | `/repository/:id`                      | Admin                                       |
+| POST         | `/repository/:id/analyze`              | Staff/admin; YOLO and matching              |
+| GET          | `/repository/searches/recent`          | Signed-in staff/admin; own searches         |
+| PATCH        | `/repository/searches/:id/matches/:id` | Admin; manual correction                    |
 
 Images are stored in S3-compatible storage; only object keys and metadata are stored in PostgreSQL. JWT validation verifies issuer, audience, expiry and the current user/role in the database. Direct API access cannot bypass these checks. NextAuth sessions provide the browser interface. Public sign-up creates a real PUBLIC browsing account; manager-created accounts use STAFF or ADMIN. The API rechecks database roles and credential versions on every protected request.
 

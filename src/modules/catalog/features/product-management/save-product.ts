@@ -2,6 +2,8 @@
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { api, type Product } from "@/lib/api";
+import { auth } from "@/modules/auth/server/session";
+import { can } from "@/modules/auth/permissions";
 import { actionError } from "@/lib/action-result";
 import { generateSku } from "../list-products/list-products.sku";
 
@@ -16,6 +18,15 @@ export async function saveCatalogProduct(
   raw: unknown,
   productId?: string,
 ): Promise<{ product?: Product; error?: string }> {
+  const session = await auth();
+  const required = productId ? "products:edit" : "products:create";
+  if (!can(session?.user.role, required)) {
+    return {
+      error: productId
+        ? "Only store managers can edit products."
+        : "Staff access is required to add products.",
+    };
+  }
   const parsed = input.safeParse(raw);
   if (!parsed.success) return { error: "Enter a product name and check the field lengths." };
   try {
@@ -39,6 +50,10 @@ export async function saveCatalogProduct(
   }
 }
 export async function removeCatalogProduct(productId: string): Promise<{ error?: string }> {
+  const session = await auth();
+  if (!can(session?.user.role, "products:delete")) {
+    return { error: "Only store managers can delete products." };
+  }
   try {
     await api(`/products/${z.uuid().parse(productId)}`, { method: "DELETE" });
     for (const route of ["/products", "/dashboard", "/search", "/repository"])

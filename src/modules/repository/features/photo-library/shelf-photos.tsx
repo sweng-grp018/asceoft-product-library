@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { api } from "@/lib/api";
 import { currentAccount } from "@/modules/auth/server/viewer";
+import { can } from "@/modules/auth/server/permissions";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -68,7 +69,7 @@ export async function ShelfPhotos() {
                   <time dateTime={image.createdAt} className="text-xs text-ink-muted">
                     {date}
                   </time>
-                  {account.role === "ADMIN" && (
+                  {can(account.role, "repository:delete") && (
                     <ConfirmActionDialog
                       trigger={
                         <Button

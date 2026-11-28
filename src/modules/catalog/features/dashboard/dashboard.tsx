@@ -26,13 +26,13 @@ export function DashboardView({
   total,
   ready: indexed,
   name,
-  canEdit,
+  canCreate,
 }: {
   rows: CatalogRow[];
   total: number;
   ready: number;
   name: string;
-  canEdit: boolean;
+  canCreate: boolean;
 }) {
   const pending = total - indexed;
   const readyPercent = total ? Math.round((indexed / total) * 100) : 0;
@@ -62,7 +62,7 @@ export function DashboardView({
         <p className="text-lg font-semibold text-brand-ink">
           Welcome, {name.split(" ")[0] || "there"}.
         </p>
-        {canEdit && (
+        {canCreate && (
           <Button asChild variant="outline" size="xl">
             <Link href="/products/new">
               <Plus data-icon="inline-start" />

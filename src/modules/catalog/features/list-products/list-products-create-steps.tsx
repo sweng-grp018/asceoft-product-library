@@ -281,17 +281,21 @@ function PhotoDropzone({
 
 export function CreateReviewStep({
   draft,
+  stepNumber,
+  canManageReferenceImages,
   photoCount,
   onEdit,
 }: {
   draft: CatalogDraft;
+  stepNumber: number;
+  canManageReferenceImages: boolean;
   photoCount: number;
   onEdit: () => void;
 }) {
   return (
     <section className="flex flex-col gap-5">
       <StepHeading
-        index={3}
+        index={stepNumber}
         icon={SparklesIcon}
         title="Review"
         hint="Check the details before saving"
@@ -311,9 +315,11 @@ export function CreateReviewStep({
           <ReviewRow label="Status">
             <StatusPill status="PENDING" />
           </ReviewRow>
-          <ReviewRow label="Photos">
-            {photoCount ? `${photoCount} selected · ready to save` : "None selected"}
-          </ReviewRow>
+          {canManageReferenceImages ? (
+            <ReviewRow label="Photos">
+              {photoCount ? `${photoCount} selected · ready to save` : "None selected"}
+            </ReviewRow>
+          ) : null}
         </dl>
 
         <div className="border-t border-line-subtle px-3 py-2">
@@ -334,15 +340,21 @@ export function CreateReviewStep({
             title="Your product is saved"
             body="Your team can find the product by its name, brand, or product code."
           />
-          <NextStep
-            icon={ImageUpIcon}
-            title="Your selected photos are saved"
-            body="Clear photos help your team recognize the pack. You can add more from the product page."
-          />
+          {canManageReferenceImages ? (
+            <NextStep
+              icon={ImageUpIcon}
+              title="Your selected photos are saved"
+              body="Clear photos help your team recognize the pack. You can add more from the product page."
+            />
+          ) : null}
           <NextStep
             icon={SparklesIcon}
             title="Photo search needs prepared photos"
-            body="When photo search is connected, your store manager can prepare these photos for matching."
+            body={
+              canManageReferenceImages
+                ? "When photo search is connected, your store manager can prepare these photos for matching."
+                : "A store manager can add reference photos and prepare this product for photo search."
+            }
           />
         </ol>
       </div>
