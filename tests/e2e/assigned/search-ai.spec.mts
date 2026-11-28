@@ -69,12 +69,14 @@ for (const role of ["ADMIN", "STAFF"] as const) {
 }
 test("unavailable inference gives an actionable message", async ({ page }) => {
   await page.goto("/search?mode=image");
+  await expect(page.getByLabel("Product photo")).toBeEnabled();
   await page.getByLabel("Product photo").setInputFiles(unavailablePhoto);
   await page.getByRole("button", { name: "Find matching products" }).click();
   await expect(
     page.getByText("Photo search is unavailable right now. Please try again later."),
   ).toBeVisible();
   await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Selected product photo" })).toBeVisible();
 });
 
 test("image search displays the product matching the mock embedding", async ({ page, key, db }) => {
@@ -100,10 +102,30 @@ test("image search displays the product matching the mock embedding", async ({ p
     },
   });
   await page.goto("/search?mode=image");
+  await page.route("**/qa/" + key + "?*", (route) =>
+    route.fulfill({ contentType: "image/png", body: photo.buffer }),
+  );
+  await expect(page.getByLabel("Product photo")).toBeEnabled();
   await page.getByLabel("Product photo").setInputFiles(photo);
+  const preview = page.getByRole("img", { name: "Selected product photo" });
+  await expect(preview).toHaveJSProperty("naturalWidth", 8);
+  const previewUrl = await preview.getAttribute("src");
   await page.getByRole("button", { name: "Find matching products" }).click();
   const match = page
     .getByRole("region", { name: "Image search results" })
     .getByRole("link", { name: new RegExp(key) });
   await expect(match).toHaveAttribute("href", "/search/" + product.id);
+  await expect(preview).toHaveAttribute("src", previewUrl!);
+  await expect(match.getByRole("img", { name: key })).toHaveJSProperty("naturalWidth", 8);
+
+  // A separate, missing object avoids reusing the browser's decoded thumbnail.
+  await db.referenceImage.update({
+    where: { objectKey: "qa/" + key },
+    data: { objectKey: "qa/missing-" + key },
+  });
+  await page.getByRole("button", { name: "Find matching products" }).click();
+  await expect(match.getByText("Photo unavailable")).toBeAttached();
+  await page.getByLabel("Product photo").setInputFiles([]);
+  await expect(preview).toHaveCount(0);
+  await expect(match).toHaveCount(0);
 });

@@ -1,19 +1,53 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useState } from "react";
-import { LoaderCircle, ScanSearch } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useState, useTransition } from "react";
+import { LoaderCircle, Package, ScanSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { searchByImage } from "./actions";
+import { searchByImage, type ImageSearchState } from "./actions";
 import { validateImageFile } from "@/lib/image";
 import { MAX_SEARCH_IMAGE_BYTES } from "./limits";
 
+function MatchThumbnail({ url, name }: { url: string | null; name: string }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  return (
+    <span className="relative flex size-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-tint">
+      {url && url !== failedUrl ? (
+        <Image
+          src={url}
+          alt={name}
+          fill
+          unoptimized
+          className="object-contain"
+          onError={() => setFailedUrl(url)}
+        />
+      ) : (
+        <>
+          <Package aria-hidden className="size-7 text-ink-muted" />
+          <span className="sr-only">Photo unavailable</span>
+        </>
+      )}
+    </span>
+  );
+}
+
 export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signedIn: boolean }) {
-  const [result, submit, pending] = useActionState(searchByImage, {});
+  const [result, setResult] = useState<ImageSearchState>({});
+  const [pending, startSearch] = useTransition();
+  const [ready, setReady] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  useEffect(() => setReady(true), []);
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
   if (!enabled) {
     return (
       <p className="rounded-xl border border-line bg-card p-5 text-sm text-ink-muted">
@@ -34,13 +68,22 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
 
   return (
     <div className="flex flex-col gap-5">
-      <Card className="max-w-2xl border-line">
+      <Card className="max-w-3xl border-line">
         <CardHeader>
           <CardTitle>Search by image</CardTitle>
           <CardDescription>Choose a clear photo of one grocery product.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <form action={submit}>
+        <CardContent className="grid items-start gap-5 sm:grid-cols-[minmax(0,1fr)_auto]">
+          <form
+            className="min-w-0"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const data = new FormData(event.currentTarget);
+              startSearch(async () => {
+                setResult(await searchByImage(data));
+              });
+            }}
+          >
             <FieldGroup>
               <Field data-invalid={Boolean(fileError || result.error)}>
                 <FieldLabel htmlFor="query-photo">Product photo</FieldLabel>
@@ -52,10 +95,13 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
                   aria-describedby="query-photo-hint"
                   aria-invalid={Boolean(fileError || result.error)}
                   required
-                  disabled={pending}
+                  disabled={!ready || pending}
                   onChange={(event) => {
                     const photo = event.currentTarget.files?.[0];
-                    setFileError(photo ? validateImageFile(photo, MAX_SEARCH_IMAGE_BYTES) : null);
+                    const error = photo ? validateImageFile(photo, MAX_SEARCH_IMAGE_BYTES) : null;
+                    setFileError(error);
+                    setPreviewUrl(photo && !error ? URL.createObjectURL(photo) : null);
+                    setResult({});
                   }}
                 />
                 <FieldDescription id="query-photo-hint">
@@ -68,7 +114,7 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
                 variant="brand"
                 size="xl"
                 className="w-fit"
-                disabled={pending || Boolean(fileError)}
+                disabled={!ready || pending || Boolean(fileError)}
               >
                 {pending ? (
                   <LoaderCircle data-icon="inline-start" className="animate-spin" />
@@ -79,6 +125,20 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
               </Button>
             </FieldGroup>
           </form>
+          {previewUrl && (
+            <Image
+              src={previewUrl}
+              alt="Selected product photo"
+              width={224}
+              height={176}
+              unoptimized
+              onError={() => {
+                setPreviewUrl(null);
+                setFileError("This photo could not be opened. Choose another photo.");
+              }}
+              className="h-44 w-full rounded-lg border border-line bg-page object-contain sm:w-56"
+            />
+          )}
         </CardContent>
       </Card>
       {!pending && result.matches && (
@@ -93,11 +153,15 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
               <li key={product.productId}>
                 <Link
                   href={`/search/${product.productId}`}
-                  className="flex h-full flex-col gap-1 rounded-xl border border-line bg-card p-4 hover:border-brand"
+                  className="flex h-full items-center gap-4 rounded-xl border border-line bg-card p-4 hover:border-brand"
                 >
-                  <span className="font-medium text-brand-ink">{product.name}</span>
-                  <span className="text-sm text-ink-muted">
-                    {[product.sku, product.brand].filter(Boolean).join(" · ")}
+                  <MatchThumbnail url={product.imageUrl} name={product.name} />
+                  <span className="flex min-w-0 flex-col gap-1 wrap-anywhere">
+                    <span className="font-medium text-brand-ink">{product.name}</span>
+                    {product.brand && (
+                      <span className="text-sm text-ink-muted">{product.brand}</span>
+                    )}
+                    <span className="text-xs text-ink-muted">Product code {product.sku}</span>
                   </span>
                 </Link>
               </li>

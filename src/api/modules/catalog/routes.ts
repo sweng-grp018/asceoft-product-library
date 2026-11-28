@@ -93,8 +93,30 @@ catalogRoutes.post(
       res.status(502).json({ error: "The photo search service returned an invalid result." });
       return;
     }
-    const matches = await findImageMatches([embedded.data.embedding], 8);
-    res.json({ matches: matches.filter((match) => match.similarity >= MATCH_THRESHOLD) });
+    const candidates = await findImageMatches([embedded.data.embedding], 8);
+    const matches = candidates.filter((match) => match.similarity >= MATCH_THRESHOLD);
+    const products = matches.length
+      ? await db.product.findMany({
+          where: { id: { in: matches.map((match) => match.productId) } },
+          select: {
+            id: true,
+            images: {
+              orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+              take: 1,
+              select: { objectKey: true },
+            },
+          },
+        })
+      : [];
+    const photos = new Map(products.map((product) => [product.id, product.images[0]?.objectKey]));
+    res.json({
+      matches: await Promise.all(
+        matches.map(async (match) => {
+          const key = photos.get(match.productId);
+          return { ...match, imageUrl: key ? await viewUrl(key).catch(() => null) : null };
+        }),
+      ),
+    });
   },
 );
 

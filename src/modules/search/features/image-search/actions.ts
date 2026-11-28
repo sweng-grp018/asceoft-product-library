@@ -5,14 +5,17 @@ import { actionError, type ActionResult } from "@/lib/action-result";
 import { validateImageFile } from "@/lib/image";
 import { MAX_SEARCH_IMAGE_BYTES } from "./limits";
 
-type ImageSearchState = ActionResult & {
-  matches?: { productId: string; name: string; sku: string; brand: string | null }[];
+export type ImageSearchState = ActionResult & {
+  matches?: {
+    productId: string;
+    name: string;
+    sku: string;
+    brand: string | null;
+    imageUrl: string | null;
+  }[];
 };
 
-export async function searchByImage(
-  _previous: ImageSearchState,
-  data: FormData,
-): Promise<ImageSearchState> {
+export async function searchByImage(data: FormData): Promise<ImageSearchState> {
   const photo = data.get("photo");
   if (!(photo instanceof File) || !photo.size) return { error: "Choose a photo first." };
   const problem = validateImageFile(photo, MAX_SEARCH_IMAGE_BYTES);
