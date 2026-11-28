@@ -1,12 +1,10 @@
 # Lensistry QA Plan
 
-> **Status:** proposed for the current POC cycle. QA runs against a local Docker Compose
-> stack; there is no hosted QA database. This document describes checks that are
-> **planned**, not tests that are already implemented or passing.
+> Section 4.3 defines the target permissions. Section 6.2 lists the automated browser suites. The dedicated API integration suite in section 6.1 is planned.
 
 - **Owner:** QA, DLSU STSWENG Group 18
 - **Applies to:** the `development` branch and `release/*` candidates
-- **Last updated:** 2026-11-21
+- **Last updated:** 2026-11-28
 
 ## 1. Purpose and scope
 
@@ -29,7 +27,7 @@ Out of scope for this cycle:
 - Load, soak and penetration testing.
 - Email-based password recovery (not implemented).
 
-## 2. Current state at the time of writing
+## 2. Baseline before browser automation
 
 This table records the starting point so later coverage claims can be checked.
 
@@ -95,7 +93,7 @@ registration is limited to 5 attempts per hour.
 | ------------------------- | ------ | ---------------------------------------------------------------------------------------------- |
 | `qa-manager@example.test` | ADMIN  | Admin-only actions and all inherited Staff and Public journeys.                                |
 | `qa-staff@example.test`   | STAFF  | Internal catalog, product creation, shelf photos, AI search and results, plus public browsing. |
-| `qa-browser@example.test` | PUBLIC | Browse-only account; must be redirected away from `/dashboard`.                                |
+| `qa-browser@example.test` | PUBLIC | Public product browsing and catalog AI search; redirected away from `/dashboard`.              |
 
 Passwords must be at least 12 characters and at most 72 UTF-8 bytes.
 
@@ -138,7 +136,7 @@ Every test result records the commit under test:
 git rev-parse --short HEAD
 ```
 
-An environment/build value looks like `QA-local · a1b2c3d · 2026-11-21`.
+An environment/build value looks like `QA-local · a1b2c3d · 2026-11-28`.
 
 ## 4. Test strategy
 
@@ -178,19 +176,21 @@ Each column represents a signed-in account. Staff inherits every Public permissi
 | ---------------------------------------------------------------- | ------ | ----- | ----- |
 | Sign in                                                          | Allow  | Allow | Allow |
 | Search and view public product information                       | Allow  | Allow | Allow |
+| Run AI search with a product photo                               | Allow  | Allow | Allow |
 | Open the internal catalog and add products                       | Deny   | Allow | Allow |
-| Upload shelf photos, run AI search and view results              | Deny   | Allow | Allow |
+| Upload shelf photos and view saved shelf-analysis results        | Deny   | Allow | Allow |
 | Open the dashboard                                               | Deny   | Deny  | Allow |
-| Edit and soft-delete products                                    | Deny   | Deny  | Allow |
+| Edit and permanently delete products                             | Deny   | Deny  | Allow |
 | Manage reference images and prepare photos for search (indexing) | Deny   | Deny  | Allow |
 | Correct matches                                                  | Deny   | Deny  | Allow |
 
-Exercise each action for all three roles in the UI and at its Express boundary, including inherited permissions. For example, valid product creation should return `201` for Staff and Admin. Staff should receive `403` when correcting even their own search result. The current product creation route requires Admin and the catalog summary route admits Staff. Test against the target matrix and report mismatches.
+Exercise each action for all three roles in the UI and at its Express boundary, including inherited permissions. For example, valid product creation should return `201` for Staff and Admin. Staff should receive `403` when correcting even their own search result. Only Admin may read the dashboard summary. Test against the target matrix and report mismatches.
 
-Signed-out visitors can still browse public information. Protected API requests require a valid token (`401` for missing, expired or malformed credentials). An authenticated account with insufficient permissions receives `403`. Recheck access after changing the database role. After a denied write, verify the stored record is unchanged.
+Signed-out visitors can browse public information. Catalog AI search requires sign-in. Public, Staff and Admin can see the public product matches from their own query. Analyzing a saved shelf photo and viewing its internal results require Staff or Admin. Protected API requests require a valid token (`401` for missing, expired or malformed credentials). An authenticated account with insufficient permissions receives `403`. Recheck access after changing the database role. After a denied write, verify the stored record is unchanged.
 
 Additional regression checks:
 
+- Admin product deletion returns `204` and permanently removes the database row. The detail endpoint then returns `404` and catalog search excludes the product. Staff and Public attempts return `403` and preserve the row and its visibility.
 - A password reset invalidates the previous token and session.
 - `PATCH /products/:id` with a changed `sku` returns `400` ("product code cannot be changed").
 - Duplicate product code or email returns `409` with the friendly message.
@@ -281,34 +281,27 @@ Run when a build arrives. If any item fails, return the build instead of startin
 
 Proposed script: `"test:api:integration": "node --import tsx --test \"tests/api/**/*.test.ts\""`.
 
-### 6.2 Planned Playwright feature suites
+### 6.2 Playwright feature suites
 
-Install `@playwright/test` and fill the existing `playwright.config.ts` for Chromium. All paths below are relative to `tests/e2e/`. Reuse the empty `auth.spec.ts`, `search.spec.ts` and `products.spec.ts`. The other specs are proposed files.
+Paths below are relative to `tests/e2e/`.
 
-| Feature                               | Spec                       | What to verify                                                                                                                                                                                                                   |
-| ------------------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Create account                        | `auth.spec.ts`             | Register a unique account, sign in as Public and verify browsing access. Check invalid input and duplicate email.                                                                                                                |
-| Sign in and sign out                  | `auth.spec.ts`             | Sign in through the form as Public, Staff and Admin. Check invalid credentials and loss of protected access after sign-out.                                                                                                      |
-| Public product search                 | `search.spec.ts`           | As a visitor and each role, search by name, brand and product code, open public details, and check empty results and pagination.                                                                                                 |
-| Role permissions and dashboard        | `rbac.spec.ts`             | Check navigation and direct page access for the matrix in section 4.3. Only Admin sees dashboard totals. Pair with direct API assertions for denied reads and writes.                                                            |
-| Internal catalog and products         | `products.spec.ts`         | Staff and Admin can list and add products that survive reload. Check duplicate codes. Only Admin can edit and soft-delete. Verify removal from active searches and retention of the deleted record in the API integration suite. |
-| Shelf photo uploads                   | `shelf-photos.spec.ts`     | Staff and Admin upload a valid photo and see it after reload. Check invalid file rejection and Public denial.                                                                                                                    |
-| AI search, results and corrections    | `photo-search.spec.ts`     | With the service disabled, check the unavailable state. With a deterministic stub, Staff and Admin run a search and view results. Only Admin can save a match correction. Reopen the result to verify it.                        |
-| Reference images and indexing         | `reference-images.spec.ts` | Only Admin can attach reference images and use “Prepare photos for search”. Check the resulting status with the stub and the unavailable state without it.                                                                       |
-| Existing staff account administration | `staff-accounts.spec.ts`   | Retain regression coverage for Admin provisioning a Staff account and resetting its password. Verify the new login works and the old credentials lose access.                                                                    |
+| Feature                               | Spec                                                           | What to verify                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Create account                        | `auth.spec.ts`                                                 | Register a unique account, sign in as Public and verify browsing access. Check invalid input and duplicate email.                                                                                                                                                                                                          |
+| Sign in and sign out                  | `sign-in.spec.mts`                                             | Sign in through the form as Public, Staff and Admin. Check invalid credentials and loss of protected access after sign-out.                                                                                                                                                                                                |
+| Public product search                 | `search.spec.mts`                                              | As a visitor and each role, search by name, brand and product code, open public details, and check empty results and pagination.                                                                                                                                                                                           |
+| Role permissions and dashboard        | `rbac.spec.mts`                                                | Check navigation and direct page access for the matrix in section 4.3. Only Admin sees dashboard totals. Pair with direct API assertions for denied reads and writes.                                                                                                                                                      |
+| Internal catalog and products         | `assigned/catalog.spec.mts`                                    | Staff and Admin can list and add products that survive reload. Check duplicate codes. Only Admin can edit and permanently delete. Check the database row, detail endpoint and search after allowed and denied deletions.                                                                                                   |
+| Shelf photo uploads                   | `assigned/photos.spec.mts`                                     | Staff and Admin upload a valid photo and see it after reload. Check invalid file rejection and Public denial.                                                                                                                                                                                                              |
+| AI search, results and corrections    | `assigned/search-ai.spec.mts`, `assigned/ai-disabled.spec.mts` | With the service disabled, check the unavailable state. With a deterministic stub, Public, Staff and Admin find matching public products by photo. Guests must sign in. Staff and Admin can also analyze a saved shelf photo and view its results. Only Admin can save a match correction. Reopen the result to verify it. |
+| Reference images and indexing         | `assigned/indexing.spec.mts`                                   | Only Admin can attach reference images and use “Prepare photos for search”. Check the resulting status with the stub and the unavailable state without it.                                                                                                                                                                 |
+| Existing staff account administration | `assigned/staff.spec.mts`                                      | Retain regression coverage for Admin provisioning a Staff account and resetting its password. Verify the new login works and the old credentials lose access.                                                                                                                                                              |
 
 Use role-specific NextAuth browser sessions for feature tests and fresh browser contexts for account and sign-in tests. Use accessible role or label locators, web-first assertions and unique test records. For the complete local run, follow the [three Playwright commands in the README](../README.md#playwright-browser-tests). The runner starts the QA website and combines all feature results in one report.
 
 ### 6.3 CI
 
-Add two jobs to `.github/workflows/ci.yml` and include both in the `ci-gate` needs list:
-
-- **`api-integration`** — `pgvector/pgvector:0.8.7-pg18-trixie` service container,
-  `db:deploy`, dummy JWT/S3 values, integration tests.
-- **`e2e`** — Postgres service, local storage service (`dev:storage`), API and web servers,
-  QA reset, `bunx playwright install --with-deps chromium`, then the journeys.
-
-Keep the existing lint, formatting, typecheck, unit and build jobs.
+The **Playwright QA** job exercises the feature suites against a temporary QA database. Download the `playwright-report` artifact within seven days to inspect individual results. During the report-first rollout, CI Gate requires lint, formatting, typechecks, API unit tests and the build.
 
 ### 6.4 Conventions
 
@@ -324,9 +317,7 @@ CI records automated results for the tested commit. The team uses this plan for 
 
 ### 7.1 Automated results
 
-- CI is the record for automated coverage. The `api-integration` and `e2e` results are attached
-  to the pull request for the commit under test.
-- A red job blocks merge. Do not report a pass from a skipped, quarantined or flaky test.
+- Review the Playwright QA result for the commit under test. Record the role and failed assertion when filing a defect.
 - A flaky test is noted in the pull request and fixed; it is not treated as a pass.
 
 ### 7.2 Manual findings
@@ -370,12 +361,10 @@ members split areas, run independent passes and file findings directly. Develope
 | Rate limits are hard-coded                      | Repeated suites lock testers out (login 10/15 min per IP).   | Make limits configurable outside production.         |
 | Default page size 25 vs 18 seed products        | Pagination cannot be exercised through the UI.               | Add 30+ fixtures or allow a smaller page size in QA. |
 | 8-hour NextAuth session holds a fixed API token | After expiry the UI can look signed in while API calls fail. | Confirm intended behavior and add a test case.       |
-| Empty Playwright files                          | Browser coverage is pending.                                 | Implement the suites in section 6.2.                 |
-| No test database isolation                      | A reset can destroy developer data.                          | Adopt the `lensistry_qa` database described here.    |
 
 ## 10. Limitations
 
-- The new API integration and Playwright suites are planned. Existing CI runs the current unit and build checks.
+- The dedicated API integration suite is planned. Playwright exercises browser flows and selected API boundaries.
 - Results are only reproducible on the recorded commit, database and storage backend.
 - Manual pass coverage is not individually recorded; only defects are tracked, so a clean cycle
   means no issues were filed, not exhaustive proof.

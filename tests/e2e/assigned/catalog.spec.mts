@@ -25,16 +25,16 @@ for (const role of ["STAFF", "ADMIN", "PUBLIC"] as Role[]) {
         role === "ADMIN" ? key + " revised" : key,
       );
     });
-    test("only Admin may soft-delete a product", async ({ page, account, key, db }) => {
+    test("only Admin may permanently delete a product", async ({ page, account, key, db }) => {
       const product = await db.product.create({ data: { sku: key, name: key } });
       const headers = account.headers;
       const url = "http://localhost:4000/products/" + product.id;
       const deletion = await page.request.delete(url, { headers });
       expect(deletion.status()).toBe(role === "ADMIN" ? 204 : 403);
-      expect(
-        await db.product.count({ where: { id: product.id } }),
-        "Soft deletion retains the product row",
-      ).toBe(1);
+      const remaining = await db.product.findUnique({ where: { id: product.id } });
+      if (role === "ADMIN") expect(remaining).toBeNull();
+      else expect(remaining).toEqual(product);
+      expect((await page.request.get(url)).status()).toBe(role === "ADMIN" ? 404 : 200);
       const list = await (
         await page.request.get("http://localhost:4000/products", { params: { q: key } })
       ).json();

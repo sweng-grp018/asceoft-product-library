@@ -1,3 +1,4 @@
+import { test as visitorTest } from "@playwright/test";
 import { test, expect, uniquePhoto, unavailablePhoto } from "../../support/qa.mjs";
 for (const role of ["ADMIN", "STAFF"] as const) {
   test.describe(role, () => {
@@ -77,33 +78,49 @@ test("unavailable inference gives an actionable message", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
 });
 
-test("image search displays the product matching the mock embedding", async ({ page, key, db }) => {
-  const photo = uniquePhoto(key);
-  const embedded = await page.request.post("http://127.0.0.1:18080/embed", {
-    data: { imageBase64: photo.buffer.toString("base64") },
-  });
-  expect(embedded.ok()).toBe(true);
-  const { embedding: vector } = await embedded.json();
-  const product = await db.product.create({
-    data: {
-      name: key,
-      sku: key,
-      indexStatus: "INDEXED",
-      images: {
-        create: {
-          objectKey: "qa/" + key,
-          contentType: "image/png",
-          embedding: vector,
-          embeddingModel: "openclip-ViT-B-32-openai",
-        },
-      },
-    },
-  });
+visitorTest("visitors must sign in to search by product photo", async ({ page, request }) => {
   await page.goto("/search?mode=image");
-  await page.getByLabel("Product photo").setInputFiles(photo);
-  await page.getByRole("button", { name: "Find matching products" }).click();
-  const match = page
-    .getByRole("region", { name: "Image search results" })
-    .getByRole("link", { name: new RegExp(key) });
-  await expect(match).toHaveAttribute("href", "/search/" + product.id);
+  await expect(page.getByText("Sign in to search with a product photo.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Find matching products" })).toHaveCount(0);
+  expect((await request.post("http://localhost:4000/products/image-search")).status()).toBe(401);
 });
+
+for (const role of ["PUBLIC", "STAFF", "ADMIN"] as const) {
+  test.describe(role, () => {
+    test.use({ role });
+    test("image search displays the product matching the mock embedding", async ({
+      page,
+      key,
+      db,
+    }) => {
+      const photo = uniquePhoto(key);
+      const embedded = await page.request.post("http://127.0.0.1:18080/embed", {
+        data: { imageBase64: photo.buffer.toString("base64") },
+      });
+      expect(embedded.ok()).toBe(true);
+      const { embedding: vector } = await embedded.json();
+      const product = await db.product.create({
+        data: {
+          name: key,
+          sku: key,
+          indexStatus: "INDEXED",
+          images: {
+            create: {
+              objectKey: "qa/" + key,
+              contentType: "image/png",
+              embedding: vector,
+              embeddingModel: "openclip-ViT-B-32-openai",
+            },
+          },
+        },
+      });
+      await page.goto("/search?mode=image");
+      await page.getByLabel("Product photo").setInputFiles(photo);
+      await page.getByRole("button", { name: "Find matching products" }).click();
+      const match = page
+        .getByRole("region", { name: "Image search results" })
+        .getByRole("link", { name: new RegExp(key) });
+      await expect(match).toHaveAttribute("href", "/search/" + product.id);
+    });
+  });
+}
