@@ -40,6 +40,7 @@ export async function api<T>(
 
 export type Product = {
   id: string;
+  imageUrl?: string | null;
   sku: string;
   name: string;
   brand: string | null;

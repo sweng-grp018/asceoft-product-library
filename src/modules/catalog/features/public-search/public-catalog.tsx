@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useState } from "react";
+import Image from "next/image";
+import { useContext, useState } from "react";
 import { ArrowRight, Package, Search, X } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
 import { Button } from "@/components/ui/button";
@@ -24,8 +25,49 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ImageSearchForm } from "@/modules/search/features/image-search/image-search-form";
 import { defaultHomePath } from "@/modules/auth/permissions";
 import type { CatalogRow } from "../list-products/list-products.types";
+import { BrowseSearchSessionContext } from "./browse-search-session";
+import { PageLoading } from "@/components/layout/page-loading";
 
-export function PublicCatalog({
+function CatalogThumbnail({ url, name }: { url: string | null; name: string }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  return (
+    <div className="relative mb-4 flex h-28 items-center justify-center overflow-hidden rounded-xl bg-brand-tint">
+      {url && failedUrl !== url ? (
+        <Image
+          src={url}
+          alt={name}
+          fill
+          unoptimized
+          className="object-contain p-3"
+          onError={() => setFailedUrl(url)}
+        />
+      ) : (
+        <Package className="size-12 text-brand/35" strokeWidth={1.2} aria-hidden />
+      )}
+    </div>
+  );
+}
+
+type PublicCatalogProps = {
+  initialQuery: string;
+  initialMode: "name" | "image";
+  imageSearchEnabled: boolean;
+  rows: (CatalogRow & { imageUrl: string | null })[];
+  total: number;
+  page: number;
+  pageSize: number;
+  account?: { name: string; role: string } | null;
+};
+
+export function PublicCatalog(props: PublicCatalogProps) {
+  const { visit, resetFilters } = useContext(BrowseSearchSessionContext);
+  const staleFilter = resetFilters && (Boolean(props.initialQuery) || props.page > 1);
+
+  if (staleFilter) return <PageLoading />;
+  return <CatalogContent key={visit} {...props} />;
+}
+
+function CatalogContent({
   initialQuery,
   initialMode,
   imageSearchEnabled,
@@ -34,16 +76,7 @@ export function PublicCatalog({
   page,
   pageSize,
   account,
-}: {
-  initialQuery: string;
-  initialMode: "name" | "image";
-  imageSearchEnabled: boolean;
-  rows: CatalogRow[];
-  total: number;
-  page: number;
-  pageSize: number;
-  account?: { name: string; role: string } | null;
-}) {
+}: PublicCatalogProps) {
   const [query, setQuery] = useState(initialQuery);
   const products = rows;
   return (
@@ -89,7 +122,11 @@ export function PublicCatalog({
               Search by image
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="name" className="flex flex-col gap-6">
+          <TabsContent
+            value="name"
+            forceMount
+            className="flex flex-col gap-6 data-[state=inactive]:hidden"
+          >
             <form action="/search" className="flex max-w-2xl items-end gap-3">
               <Field className="max-w-2xl">
                 <FieldLabel htmlFor="public-search" className="sr-only">
@@ -137,9 +174,7 @@ export function PublicCatalog({
                   className="gap-4 border-line transition-shadow hover:shadow-md"
                 >
                   <CardHeader>
-                    <div className="mb-4 flex h-28 items-center justify-center rounded-xl bg-brand-tint">
-                      <Package className="size-12 text-brand/35" strokeWidth={1.2} aria-hidden />
-                    </div>
+                    <CatalogThumbnail url={product.imageUrl} name={product.name} />
                     <CardDescription>
                       {product.brand} · {product.category}
                     </CardDescription>
@@ -209,7 +244,7 @@ export function PublicCatalog({
               )}
             </nav>
           </TabsContent>
-          <TabsContent value="image">
+          <TabsContent value="image" forceMount className="data-[state=inactive]:hidden">
             <ImageSearchForm enabled={imageSearchEnabled} signedIn={Boolean(account)} />
           </TabsContent>
         </Tabs>

@@ -1,5 +1,5 @@
-import { test as visitorTest } from "@playwright/test";
 import { test, expect, uniquePhoto, unavailablePhoto } from "../../support/qa.mjs";
+import { test as visitorTest, type Request } from "@playwright/test";
 for (const role of ["ADMIN", "STAFF"] as const) {
   test.describe(role, () => {
     test.use({ role });
@@ -70,12 +70,14 @@ for (const role of ["ADMIN", "STAFF"] as const) {
 }
 test("unavailable inference gives an actionable message", async ({ page }) => {
   await page.goto("/search?mode=image");
-  await page.getByLabel("Product photo").setInputFiles(unavailablePhoto);
+  await expect(page.getByLabel("Product photo", { exact: true })).toBeEnabled();
+  await page.getByLabel("Product photo", { exact: true }).setInputFiles(unavailablePhoto);
   await page.getByRole("button", { name: "Find matching products" }).click();
   await expect(
     page.getByText("Photo search is unavailable right now. Please try again later."),
   ).toBeVisible();
   await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
+  await expect(page.getByRole("img", { name: "Selected product photo" })).toBeVisible();
 });
 
 visitorTest("visitors must sign in to search by product photo", async ({ page, request }) => {
@@ -115,12 +117,129 @@ for (const role of ["PUBLIC", "STAFF", "ADMIN"] as const) {
         },
       });
       await page.goto("/search?mode=image");
-      await page.getByLabel("Product photo").setInputFiles(photo);
+      await page.route("**/qa/" + key + "?*", (route) =>
+        route.fulfill({ contentType: "image/png", body: photo.buffer }),
+      );
+      await expect(page.getByLabel("Product photo", { exact: true })).toBeEnabled();
+      await page.getByLabel("Product photo", { exact: true }).setInputFiles(photo);
+      const preview = page.getByRole("img", { name: "Selected product photo" });
+      await expect(preview).toHaveJSProperty("naturalWidth", 8);
+      const previewUrl = await preview.getAttribute("src");
       await page.getByRole("button", { name: "Find matching products" }).click();
       const match = page
         .getByRole("region", { name: "Image search results" })
         .getByRole("link", { name: new RegExp(key) });
-      await expect(match).toHaveAttribute("href", "/search/" + product.id);
+      await expect(match).toHaveAttribute("href", "/search/" + product.id + "?from=image-search");
+      await expect(preview).toHaveAttribute("src", previewUrl!);
+      await expect(match.getByRole("img", { name: key })).toHaveJSProperty("naturalWidth", 8);
+      const tabRequests: string[] = [];
+      const recordTabRequest = (request: Request) => {
+        if (request.headers()["next-action"] || new URL(request.url()).pathname === "/search") {
+          tabRequests.push(request.url());
+        }
+      };
+      page.on("request", recordTabRequest);
+      await page.getByRole("tab", { name: "Search by name", exact: true }).click();
+      await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
+      await page.getByLabel("Find grocery products", { exact: true }).fill(key + " draft");
+      await page.getByRole("tab", { name: "Search by image", exact: true }).click();
+      await expect(match).toBeVisible();
+      await expect(preview).toHaveAttribute("src", previewUrl!);
+      page.off("request", recordTabRequest);
+      expect(tabRequests).toEqual([]);
+      const enlargeUpload = page.getByRole("button", {
+        name: "Enlarge uploaded image",
+        exact: true,
+      });
+      await enlargeUpload.focus();
+      await page.keyboard.press("Enter");
+      const uploadPopup = page.getByRole("dialog", { name: "Uploaded image", exact: true });
+      await expect(uploadPopup.getByRole("img")).toHaveJSProperty("naturalWidth", 8);
+      await expect(uploadPopup.getByRole("img")).toHaveAttribute("src", previewUrl!);
+      await expect(uploadPopup.getByRole("img")).toHaveCSS("object-fit", "contain");
+      await uploadPopup.getByRole("button", { name: "Close", exact: true }).click();
+      await expect(uploadPopup).toHaveCount(0);
+      await expect(enlargeUpload).toBeFocused();
+      await expect(match).toBeVisible();
+      await expect(preview).toHaveAttribute("src", previewUrl!);
+      await expect(page).toHaveURL(/\/search\?mode=image$/);
+      await match.click();
+      await expect(page.getByRole("heading", { name: key, exact: true })).toBeVisible();
+      await page.getByRole("button", { name: "View 1 product photo for " + key }).click();
+      const gallery = page.getByRole("dialog", { name: "Product photos", exact: true });
+      await gallery.getByRole("button", { name: "Enlarge photo 1 of " + key }).click();
+      await page
+        .getByRole("dialog", { name: key, exact: true })
+        .getByRole("button", { name: "Close", exact: true })
+        .click();
+      await gallery.getByRole("button", { name: "Close", exact: true }).click();
+      await page.getByRole("link", { name: "Back to search results", exact: true }).click();
+      await expect(page).toHaveURL(/\/search\?mode=image$/);
+      await expect(page.getByRole("tab", { name: "Search by image", exact: true })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      await expect(match).toBeVisible();
+      await expect(preview).toHaveJSProperty("naturalWidth", 8);
+      // The preview must load again after the search page's effects resume.
+      await enlargeUpload.click();
+      await expect(uploadPopup.getByRole("img")).toHaveJSProperty("naturalWidth", 8);
+      await page.keyboard.press("Escape");
+      await expect(uploadPopup).toHaveCount(0);
+      expect(
+        await page
+          .getByLabel("Product photo", { exact: true })
+          .evaluate((input: HTMLInputElement) => input.files?.[0]?.name),
+      ).toBe(photo.name);
+
+      // A separate, missing object avoids reusing the browser's decoded thumbnail.
+      await db.referenceImage.update({
+        where: { objectKey: "qa/" + key },
+        data: { objectKey: "qa/missing-" + key },
+      });
+      await page.getByRole("button", { name: "Find matching products" }).click();
+      await expect(match.getByText("Photo unavailable")).toBeAttached();
+      await page.getByRole("button", { name: "Remove uploaded image", exact: true }).click();
+      await expect(preview).toHaveCount(0);
+      await expect(match).toHaveCount(0);
+      await expect(uploadPopup).toHaveCount(0);
+      const input = page.getByLabel("Product photo", { exact: true });
+      await expect(input).toHaveValue("");
+      await expect(input).toBeFocused();
+      await page.getByRole("tab", { name: "Search by name", exact: true }).click();
+      await expect(page.getByLabel("Find grocery products", { exact: true })).toHaveValue(
+        key + " draft",
+      );
+      await page.getByRole("tab", { name: "Search by image", exact: true }).click();
+      await expect(preview).toHaveCount(0);
+      await expect(match).toHaveCount(0);
+      await input.setInputFiles(photo);
+      await expect(preview).toHaveJSProperty("naturalWidth", 8);
+      await expect(match).toHaveCount(0);
+      await page.getByRole("button", { name: "Find matching products" }).click();
+      await expect(match).toBeVisible();
+      await page
+        .getByRole("link", { name: role === "PUBLIC" ? "Profile" : "My store", exact: true })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(
+          (role === "PUBLIC" ? "/account" : role === "STAFF" ? "/products" : "/dashboard") + "$",
+        ),
+      );
+      await page.goBack();
+      await expect(page).toHaveURL(/\/search\?mode=image$/);
+      await expect(input).toHaveValue("");
+      await expect(preview).toHaveCount(0);
+      await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
+      await page.getByRole("tab", { name: "Search by name", exact: true }).click();
+      await expect(page.getByLabel("Find grocery products", { exact: true })).toHaveValue("");
+      await page.goto((role === "PUBLIC" ? "/search/" : "/products/") + product.id);
+      await expect(
+        page.getByRole("link", { name: "Back to products", exact: true }),
+      ).toHaveAttribute("href", role === "PUBLIC" ? "/search" : "/products");
+      await expect(
+        page.getByRole("link", { name: "Back to search results", exact: true }),
+      ).toHaveCount(0);
     });
   });
 }

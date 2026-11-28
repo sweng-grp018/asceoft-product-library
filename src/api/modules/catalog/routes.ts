@@ -93,8 +93,30 @@ catalogRoutes.post(
       res.status(502).json({ error: "The photo search service returned an invalid result." });
       return;
     }
-    const matches = await findImageMatches([embedded.data.embedding], 8);
-    res.json({ matches: matches.filter((match) => match.similarity >= MATCH_THRESHOLD) });
+    const candidates = await findImageMatches([embedded.data.embedding], 8);
+    const matches = candidates.filter((match) => match.similarity >= MATCH_THRESHOLD);
+    const products = matches.length
+      ? await db.product.findMany({
+          where: { id: { in: matches.map((match) => match.productId) } },
+          select: {
+            id: true,
+            images: {
+              orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+              take: 1,
+              select: { objectKey: true },
+            },
+          },
+        })
+      : [];
+    const photos = new Map(products.map((product) => [product.id, product.images[0]?.objectKey]));
+    res.json({
+      matches: await Promise.all(
+        matches.map(async (match) => {
+          const key = photos.get(match.productId);
+          return { ...match, imageUrl: key ? await viewUrl(key).catch(() => null) : null };
+        }),
+      ),
+    });
   },
 );
 
@@ -126,11 +148,30 @@ catalogRoutes.get("/", async (req, res) => {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { images: { select: { id: true, isPrimary: true } } },
+      include: {
+        images: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: { id: true, isPrimary: true, objectKey: true },
+        },
+      },
     }),
     db.product.count({ where }),
   ]);
-  res.json({ products, total, page, pageSize });
+  res.json({
+    products: await Promise.all(
+      products.map(async (product) => {
+        const key = product.images[0]?.objectKey;
+        return {
+          ...product,
+          images: product.images.map(({ objectKey: _objectKey, ...image }) => image),
+          imageUrl: key ? await viewUrl(key).catch(() => null) : null,
+        };
+      }),
+    ),
+    total,
+    page,
+    pageSize,
+  });
 });
 
 catalogRoutes.get("/:id", async (req, res) => {
@@ -142,14 +183,36 @@ catalogRoutes.get("/:id", async (req, res) => {
   const product = await db.product.findUnique({
     where: { id: parsed.data },
     include: {
-      images: { select: { id: true, isPrimary: true, contentType: true, embeddingModel: true } },
+      images: {
+        orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+        select: {
+          id: true,
+          isPrimary: true,
+          contentType: true,
+          embeddingModel: true,
+          objectKey: true,
+        },
+      },
     },
   });
   if (!product) {
     res.status(404).json({ error: "Product not found" });
     return;
   }
-  res.json({ product, serverInferenceEnabled: Boolean(config.AI_SERVICE_URL) });
+  const photos = await Promise.all(
+    product.images.map(async (image) => ({
+      id: image.id,
+      url: await viewUrl(image.objectKey).catch(() => null),
+    })),
+  );
+  res.json({
+    product: {
+      ...product,
+      images: product.images.map(({ objectKey: _objectKey, ...image }) => image),
+    },
+    photos,
+    serverInferenceEnabled: Boolean(config.AI_SERVICE_URL),
+  });
 });
 
 catalogRoutes.post("/", authenticate, requirePermission("products:create"), async (req, res) => {

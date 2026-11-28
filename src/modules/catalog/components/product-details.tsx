@@ -1,6 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Pencil, Package, Trash2 } from "lucide-react";
+import { Pencil, Package, Trash2 } from "lucide-react";
 import type { Product } from "@/lib/api";
 import { PageHeading } from "@/components/layout/page-heading";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -10,6 +9,8 @@ import { PhotoUploadForm } from "@/modules/repository/features/photo-upload/phot
 import { ActionForm } from "@/components/action-form";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { deleteReferencePhoto, indexProduct } from "../features/product-management/actions";
+import { ProductPhotoGallery, ProductPhotoImage } from "./product-photo-gallery";
+import { ProductDetailsBackLink } from "./product-details-back-link";
 
 export function ProductDetailsView({
   product,
@@ -18,23 +19,19 @@ export function ProductDetailsView({
   canManageReferenceImages = false,
   canPrepare = false,
   publicView = false,
+  fromImageSearch = false,
 }: {
   product: Product;
-  photos?: { id: string; url: string }[];
+  photos?: { id: string; url: string | null }[];
   canEdit?: boolean;
   canManageReferenceImages?: boolean;
   canPrepare?: boolean;
   publicView?: boolean;
+  fromImageSearch?: boolean;
 }) {
   return (
     <div className="flex flex-col gap-6">
-      <Link
-        href={publicView ? "/search" : "/products"}
-        className="flex w-fit items-center gap-2 text-sm text-brand hover:underline"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        Back to products
-      </Link>
+      <ProductDetailsBackLink publicView={publicView} fromImageSearch={fromImageSearch} />
       <PageHeading
         title={product.name}
         description={`${product.brand || "No brand"} · ${product.sku}`}
@@ -95,24 +92,19 @@ export function ProductDetailsView({
             <CardTitle>Product photos</CardTitle>
             <CardDescription>
               {publicView
-                ? "For more details, contact the store."
+                ? "Select a photo to open the gallery."
                 : "Clear photos help your team recognize similar packs."}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
-            {photos.length ? (
+            {publicView ? (
+              <ProductPhotoGallery photos={photos} productName={product.name} />
+            ) : photos.length ? (
               <div className="grid grid-cols-2 gap-3">
                 {photos.map((photo, index) => (
                   <div key={photo.id} className="flex flex-col gap-2">
                     <div className="relative aspect-square rounded-xl bg-brand-tint">
-                      <Image
-                        src={photo.url}
-                        alt={product.name}
-                        fill
-                        unoptimized
-                        sizes="(min-width:1024px) 22vw, 45vw"
-                        className="object-contain p-3"
-                      />
+                      <ProductPhotoImage photo={photo} name={product.name} />
                     </div>
                     {canManageReferenceImages && (
                       <ConfirmActionDialog
