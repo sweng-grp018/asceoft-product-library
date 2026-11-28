@@ -69,8 +69,8 @@ for (const role of ["ADMIN", "STAFF"] as const) {
 }
 test("unavailable inference gives an actionable message", async ({ page }) => {
   await page.goto("/search?mode=image");
-  await expect(page.getByLabel("Product photo")).toBeEnabled();
-  await page.getByLabel("Product photo").setInputFiles(unavailablePhoto);
+  await expect(page.getByLabel("Product photo", { exact: true })).toBeEnabled();
+  await page.getByLabel("Product photo", { exact: true }).setInputFiles(unavailablePhoto);
   await page.getByRole("button", { name: "Find matching products" }).click();
   await expect(
     page.getByText("Photo search is unavailable right now. Please try again later."),
@@ -105,8 +105,8 @@ test("image search displays the product matching the mock embedding", async ({ p
   await page.route("**/qa/" + key + "?*", (route) =>
     route.fulfill({ contentType: "image/png", body: photo.buffer }),
   );
-  await expect(page.getByLabel("Product photo")).toBeEnabled();
-  await page.getByLabel("Product photo").setInputFiles(photo);
+  await expect(page.getByLabel("Product photo", { exact: true })).toBeEnabled();
+  await page.getByLabel("Product photo", { exact: true }).setInputFiles(photo);
   const preview = page.getByRole("img", { name: "Selected product photo" });
   await expect(preview).toHaveJSProperty("naturalWidth", 8);
   const previewUrl = await preview.getAttribute("src");
@@ -117,6 +117,20 @@ test("image search displays the product matching the mock embedding", async ({ p
   await expect(match).toHaveAttribute("href", "/search/" + product.id);
   await expect(preview).toHaveAttribute("src", previewUrl!);
   await expect(match.getByRole("img", { name: key })).toHaveJSProperty("naturalWidth", 8);
+  await match.click();
+  await expect(page.getByRole("heading", { name: key, exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "View 1 product photo for " + key }).click();
+  const gallery = page.getByRole("dialog", { name: "Product photos", exact: true });
+  await gallery.getByRole("button", { name: "Enlarge photo 1 of " + key }).click();
+  await page
+    .getByRole("dialog", { name: key, exact: true })
+    .getByRole("button", { name: "Close", exact: true })
+    .click();
+  await gallery.getByRole("button", { name: "Close", exact: true }).click();
+  await page.goBack();
+  await expect(match).toBeVisible();
+  await expect(preview).toHaveAttribute("src", previewUrl!);
+  await expect(preview).toHaveJSProperty("naturalWidth", 8);
 
   // A separate, missing object avoids reusing the browser's decoded thumbnail.
   await db.referenceImage.update({
@@ -125,7 +139,7 @@ test("image search displays the product matching the mock embedding", async ({ p
   });
   await page.getByRole("button", { name: "Find matching products" }).click();
   await expect(match.getByText("Photo unavailable")).toBeAttached();
-  await page.getByLabel("Product photo").setInputFiles([]);
+  await page.getByLabel("Product photo", { exact: true }).setInputFiles([]);
   await expect(preview).toHaveCount(0);
   await expect(match).toHaveCount(0);
 });

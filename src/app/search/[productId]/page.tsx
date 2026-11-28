@@ -7,12 +7,11 @@ import { PageLoading } from "@/components/layout/page-loading";
 async function Details({ params }: { params: Promise<{ productId: string }> }) {
   const { productId } = await params;
   try {
-    const { product } = await api<{ product: Product }>(
-      `/products/${encodeURIComponent(productId)}`,
-      {},
-      false,
-    );
-    return <ProductDetailsView product={product} publicView />;
+    const { product, photos } = await api<{
+      product: Product;
+      photos: { id: string; url: string | null }[];
+    }>(`/products/${encodeURIComponent(productId)}`, {}, false);
+    return <ProductDetailsView product={product} photos={photos} publicView />;
   } catch (error) {
     if (error instanceof Error && "status" in error && [400, 404].includes(Number(error.status)))
       notFound();

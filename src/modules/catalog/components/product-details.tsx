@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Pencil, Package, Trash2 } from "lucide-react";
 import type { Product } from "@/lib/api";
@@ -10,6 +9,7 @@ import { PhotoUploadForm } from "@/modules/repository/features/photo-upload/phot
 import { ActionForm } from "@/components/action-form";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { deleteReferencePhoto, indexProduct } from "../features/product-management/actions";
+import { ProductPhotoGallery, ProductPhotoImage } from "./product-photo-gallery";
 
 export function ProductDetailsView({
   product,
@@ -20,7 +20,7 @@ export function ProductDetailsView({
   publicView = false,
 }: {
   product: Product;
-  photos?: { id: string; url: string }[];
+  photos?: { id: string; url: string | null }[];
   canEdit?: boolean;
   canManageReferenceImages?: boolean;
   canPrepare?: boolean;
@@ -95,24 +95,19 @@ export function ProductDetailsView({
             <CardTitle>Product photos</CardTitle>
             <CardDescription>
               {publicView
-                ? "For more details, contact the store."
+                ? "Select a photo to open the gallery."
                 : "Clear photos help your team recognize similar packs."}
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
-            {photos.length ? (
+            {publicView ? (
+              <ProductPhotoGallery photos={photos} productName={product.name} />
+            ) : photos.length ? (
               <div className="grid grid-cols-2 gap-3">
                 {photos.map((photo, index) => (
                   <div key={photo.id} className="flex flex-col gap-2">
                     <div className="relative aspect-square rounded-xl bg-brand-tint">
-                      <Image
-                        src={photo.url}
-                        alt={product.name}
-                        fill
-                        unoptimized
-                        sizes="(min-width:1024px) 22vw, 45vw"
-                        className="object-contain p-3"
-                      />
+                      <ProductPhotoImage photo={photo} name={product.name} />
                     </div>
                     {canManageReferenceImages && (
                       <ConfirmActionDialog

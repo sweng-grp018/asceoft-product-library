@@ -91,6 +91,7 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
                   id="query-photo"
                   name="photo"
                   type="file"
+                  className="h-auto py-1.5 file:mr-3 file:h-8 file:cursor-pointer file:rounded-md file:bg-brand-tint file:px-3 file:text-brand-ink file:transition-colors file:duration-150 hover:file:bg-muted active:file:bg-brand active:file:text-white focus-visible:file:bg-muted motion-reduce:file:transition-none"
                   accept="image/jpeg,image/png,image/webp"
                   aria-describedby="query-photo-hint"
                   aria-invalid={Boolean(fileError || result.error)}

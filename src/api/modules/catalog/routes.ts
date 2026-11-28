@@ -164,14 +164,36 @@ catalogRoutes.get("/:id", async (req, res) => {
   const product = await db.product.findUnique({
     where: { id: parsed.data },
     include: {
-      images: { select: { id: true, isPrimary: true, contentType: true, embeddingModel: true } },
+      images: {
+        orderBy: [{ isPrimary: "desc" }, { id: "asc" }],
+        select: {
+          id: true,
+          isPrimary: true,
+          contentType: true,
+          embeddingModel: true,
+          objectKey: true,
+        },
+      },
     },
   });
   if (!product) {
     res.status(404).json({ error: "Product not found" });
     return;
   }
-  res.json({ product, serverInferenceEnabled: Boolean(config.AI_SERVICE_URL) });
+  const photos = await Promise.all(
+    product.images.map(async (image) => ({
+      id: image.id,
+      url: await viewUrl(image.objectKey).catch(() => null),
+    })),
+  );
+  res.json({
+    product: {
+      ...product,
+      images: product.images.map(({ objectKey: _objectKey, ...image }) => image),
+    },
+    photos,
+    serverInferenceEnabled: Boolean(config.AI_SERVICE_URL),
+  });
 });
 
 catalogRoutes.post("/", authenticate, requirePermission("products:create"), async (req, res) => {
