@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
-import { LoaderCircle, Package, ScanSearch } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { LoaderCircle, Package, ScanSearch, X, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import { PhotoPreviewContent } from "@/components/photo-preview-content";
 import { searchByImage, type ImageSearchState } from "./actions";
 import { validateImageFile } from "@/lib/image";
 import { MAX_SEARCH_IMAGE_BYTES } from "./limits";
@@ -39,15 +41,20 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
   const [result, setResult] = useState<ImageSearchState>({});
   const [pending, startSearch] = useTransition();
   const [ready, setReady] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const [fileError, setFileError] = useState<string | null>(null);
   useEffect(() => setReady(true), []);
-  useEffect(
-    () => () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    },
-    [previewUrl],
-  );
+  useEffect(() => {
+    if (!selectedPhoto) {
+      setPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(selectedPhoto);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedPhoto]);
   if (!enabled) {
     return (
       <p className="rounded-xl border border-line bg-card p-5 text-sm text-ink-muted">
@@ -88,6 +95,7 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
               <Field data-invalid={Boolean(fileError || result.error)}>
                 <FieldLabel htmlFor="query-photo">Product photo</FieldLabel>
                 <Input
+                  ref={inputRef}
                   id="query-photo"
                   name="photo"
                   type="file"
@@ -101,7 +109,7 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
                     const photo = event.currentTarget.files?.[0];
                     const error = photo ? validateImageFile(photo, MAX_SEARCH_IMAGE_BYTES) : null;
                     setFileError(error);
-                    setPreviewUrl(photo && !error ? URL.createObjectURL(photo) : null);
+                    setSelectedPhoto(photo && !error ? photo : null);
                     setResult({});
                   }}
                 />
@@ -127,18 +135,64 @@ export function ImageSearchForm({ enabled, signedIn }: { enabled: boolean; signe
             </FieldGroup>
           </form>
           {previewUrl && (
-            <Image
-              src={previewUrl}
-              alt="Selected product photo"
-              width={224}
-              height={176}
-              unoptimized
-              onError={() => {
-                setPreviewUrl(null);
-                setFileError("This photo could not be opened. Choose another photo.");
-              }}
-              className="h-44 w-full rounded-lg border border-line bg-page object-contain sm:w-56"
-            />
+            <div className="relative w-full sm:w-56">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Enlarge uploaded image"
+                    className="group relative block h-44 w-full cursor-zoom-in overflow-hidden rounded-lg border border-line bg-page outline-none transition-colors duration-150 hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:bg-brand-tint motion-reduce:transition-none"
+                  >
+                    <Image
+                      src={previewUrl}
+                      alt="Selected product photo"
+                      fill
+                      unoptimized
+                      onError={() => {
+                        setSelectedPhoto(null);
+                        setFileError("This photo could not be opened. Choose another photo.");
+                      }}
+                      className="object-contain"
+                    />
+                    <span className="absolute bottom-2 right-2 rounded-md bg-background p-1.5 text-brand transition-colors group-hover:bg-brand-tint">
+                      <ZoomIn aria-hidden className="size-4" />
+                    </span>
+                  </button>
+                </DialogTrigger>
+                <PhotoPreviewContent
+                  title="Uploaded image"
+                  description="Preview the photo selected for this search."
+                >
+                  <Image
+                    src={previewUrl}
+                    alt="Uploaded product photo"
+                    fill
+                    unoptimized
+                    className="object-contain"
+                  />
+                </PhotoPreviewContent>
+              </Dialog>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-lg"
+                className="absolute top-2 right-2"
+                aria-label="Remove uploaded image"
+                title="Remove uploaded image"
+                disabled={pending}
+                onClick={() => {
+                  setSelectedPhoto(null);
+                  setResult({});
+                  setFileError(null);
+                  if (inputRef.current) {
+                    inputRef.current.value = "";
+                    inputRef.current.focus();
+                  }
+                }}
+              >
+                <X aria-hidden />
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>

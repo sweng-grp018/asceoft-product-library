@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { Images, Package, ZoomIn } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { PhotoPreviewContent } from "@/components/photo-preview-content";
 import {
   Dialog,
   DialogContent,
@@ -119,17 +120,12 @@ export function ProductPhotoGallery({
                     </span>
                   </button>
                 </DialogTrigger>
-                <DialogContent className="max-h-[90dvh] max-w-[calc(100vw_-_2rem)] sm:max-w-5xl motion-reduce:animate-none">
-                  <DialogHeader className="pr-8">
-                    <DialogTitle>{productName}</DialogTitle>
-                    <DialogDescription>
-                      Photo {index + 1} of {photos.length}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="relative h-[65dvh] overflow-hidden rounded-lg bg-background">
-                    <ProductPhotoImage photo={photo} name={`${productName}, photo ${index + 1}`} />
-                  </div>
-                </DialogContent>
+                <PhotoPreviewContent
+                  title={productName}
+                  description={`Photo ${index + 1} of ${photos.length}`}
+                >
+                  <ProductPhotoImage photo={photo} name={`${productName}, photo ${index + 1}`} />
+                </PhotoPreviewContent>
               </Dialog>
             ))}
           </div>
