@@ -2,6 +2,7 @@
 import { z } from "zod";
 import { api } from "@/lib/api";
 import { auth } from "@/modules/auth/server/session";
+import { can } from "@/modules/auth/permissions";
 import { revalidatePath } from "next/cache";
 import { actionError, type ActionResult } from "@/lib/action-result";
 
@@ -12,7 +13,7 @@ const userSchema = z.object({
   role: z.enum(["ADMIN", "STAFF"]),
 });
 export async function createStaffUser(data: FormData): Promise<ActionResult> {
-  if ((await auth())?.user.role !== "ADMIN")
+  if (!can((await auth())?.user.role, "users:manage"))
     return { error: "Only your store manager can add staff." };
   const user = userSchema.safeParse({
     email: data.get("email"),
@@ -48,6 +49,8 @@ export async function updateAccount(data: FormData): Promise<ActionResult> {
 }
 
 export async function resetStaffPassword(userId: string, data: FormData): Promise<ActionResult> {
+  if (!can((await auth())?.user.role, "users:manage"))
+    return { error: "Only your store manager can reset passwords." };
   const input = z.string().min(12).max(128).safeParse(data.get("password"));
   if (!input.success) return { error: "Use a password with at least 12 characters." };
   try {

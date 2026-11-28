@@ -12,9 +12,11 @@ type ProductChoice = { id: string; name: string; sku: string };
 export function ShelfAnalysisForm({
   images,
   products,
+  canCorrectMatches,
 }: {
   images: { id: string; label: string }[];
   products: ProductChoice[];
+  canCorrectMatches: boolean;
 }) {
   const [result, submit, pending] = useActionState(analyzeSelectedShelf, {});
   const { searchId, matches } = result;
@@ -51,20 +53,31 @@ export function ShelfAnalysisForm({
               ? `${matches.length} ${matches.length === 1 ? "item" : "items"} found`
               : "No products were found in this photo."}
           </p>
-          {matches.map((match, index) => (
-            <section
-              key={match.id}
-              className="flex flex-col gap-3 rounded-xl border border-line p-4"
-            >
-              <h2 className="font-medium text-brand-ink">Item {index + 1}</h2>
-              <MatchChoice
-                searchId={searchId}
-                matchId={match.id}
-                initialProductId={match.productId}
-                products={products}
-              />
-            </section>
-          ))}
+          {matches.map((match, index) => {
+            const matched = match.productId
+              ? products.find((product) => product.id === match.productId)
+              : undefined;
+            return (
+              <section
+                key={match.id}
+                className="flex flex-col gap-3 rounded-xl border border-line p-4"
+              >
+                <h2 className="font-medium text-brand-ink">Item {index + 1}</h2>
+                {canCorrectMatches ? (
+                  <MatchChoice
+                    searchId={searchId}
+                    matchId={match.id}
+                    initialProductId={match.productId}
+                    products={products}
+                  />
+                ) : (
+                  <p className="text-sm text-ink-muted">
+                    {matched ? `${matched.name} — ${matched.sku}` : "Unknown product"}
+                  </p>
+                )}
+              </section>
+            );
+          })}
         </div>
       )}
     </div>

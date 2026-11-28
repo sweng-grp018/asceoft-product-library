@@ -3,9 +3,11 @@
 import { CheckIcon } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "@/components/ui/button";
-import { CREATE_STEPS } from "./list-products.data";
+
+export type StepItem = { readonly key: string; readonly label: string };
 
 type ListProductsStepperProps = {
+  steps: readonly StepItem[];
   /** Zero-based index of the active step. */
   current: number;
   /** Only completed steps are navigable; forward jumps wait for validation. */
@@ -14,12 +16,12 @@ type ListProductsStepperProps = {
 
 /**
  * Onboarding progress for the create drawer. Rendered as an ordered list so a
- * screen reader announces `1 of 3` style progress instead of three loose spans.
+ * screen reader announces `1 of N` style progress instead of loose spans.
  */
-export function ListProductsStepper({ current, onSelect }: ListProductsStepperProps) {
+export function ListProductsStepper({ steps, current, onSelect }: ListProductsStepperProps) {
   return (
-    <ol className="grid grid-cols-3 gap-2 pt-1">
-      {CREATE_STEPS.map((step, index) => {
+    <ol className={cn("grid gap-2 pt-1", steps.length === 2 ? "grid-cols-2" : "grid-cols-3")}>
+      {steps.map((step, index) => {
         const isDone = index < current;
         const isCurrent = index === current;
         const isNavigable = isDone;
