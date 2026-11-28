@@ -1,4 +1,5 @@
 import { test, expect, uniquePhoto, unavailablePhoto } from "../../support/qa.mjs";
+import type { Request } from "@playwright/test";
 for (const role of ["ADMIN", "STAFF"] as const) {
   test.describe(role, () => {
     test.use({ role });
@@ -117,6 +118,21 @@ test("image search displays the product matching the mock embedding", async ({ p
   await expect(match).toHaveAttribute("href", "/search/" + product.id + "?from=image-search");
   await expect(preview).toHaveAttribute("src", previewUrl!);
   await expect(match.getByRole("img", { name: key })).toHaveJSProperty("naturalWidth", 8);
+  const tabRequests: string[] = [];
+  const recordTabRequest = (request: Request) => {
+    if (request.headers()["next-action"] || new URL(request.url()).pathname === "/search") {
+      tabRequests.push(request.url());
+    }
+  };
+  page.on("request", recordTabRequest);
+  await page.getByRole("tab", { name: "Search by name", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Image search results" })).toHaveCount(0);
+  await page.getByLabel("Find grocery products", { exact: true }).fill(key + " draft");
+  await page.getByRole("tab", { name: "Search by image", exact: true }).click();
+  await expect(match).toBeVisible();
+  await expect(preview).toHaveAttribute("src", previewUrl!);
+  page.off("request", recordTabRequest);
+  expect(tabRequests).toEqual([]);
   const enlargeUpload = page.getByRole("button", { name: "Enlarge uploaded image", exact: true });
   await enlargeUpload.focus();
   await page.keyboard.press("Enter");
@@ -173,6 +189,13 @@ test("image search displays the product matching the mock embedding", async ({ p
   const input = page.getByLabel("Product photo", { exact: true });
   await expect(input).toHaveValue("");
   await expect(input).toBeFocused();
+  await page.getByRole("tab", { name: "Search by name", exact: true }).click();
+  await expect(page.getByLabel("Find grocery products", { exact: true })).toHaveValue(
+    key + " draft",
+  );
+  await page.getByRole("tab", { name: "Search by image", exact: true }).click();
+  await expect(preview).toHaveCount(0);
+  await expect(match).toHaveCount(0);
   await input.setInputFiles(photo);
   await expect(preview).toHaveJSProperty("naturalWidth", 8);
   await expect(match).toHaveCount(0);

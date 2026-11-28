@@ -89,7 +89,11 @@ export function PublicCatalog({
               Search by image
             </TabsTrigger>
           </TabsList>
-          <TabsContent value="name" className="flex flex-col gap-6">
+          <TabsContent
+            value="name"
+            forceMount
+            className="flex flex-col gap-6 data-[state=inactive]:hidden"
+          >
             <form action="/search" className="flex max-w-2xl items-end gap-3">
               <Field className="max-w-2xl">
                 <FieldLabel htmlFor="public-search" className="sr-only">
@@ -209,7 +213,7 @@ export function PublicCatalog({
               )}
             </nav>
           </TabsContent>
-          <TabsContent value="image">
+          <TabsContent value="image" forceMount className="data-[state=inactive]:hidden">
             <ImageSearchForm enabled={imageSearchEnabled} signedIn={Boolean(account)} />
           </TabsContent>
         </Tabs>
