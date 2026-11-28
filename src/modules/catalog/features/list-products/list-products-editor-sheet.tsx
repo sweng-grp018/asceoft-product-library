@@ -26,6 +26,7 @@ type ListProductsEditorSheetProps = {
   editor: CatalogEditor | null;
   /** SKUs already in the catalog, so the create step can reject a duplicate. */
   existingSkus: readonly string[];
+  canManageReferenceImages: boolean;
   onClose: () => void;
   onUpdate: (id: string, draft: CatalogDraft) => void;
   onCreate: (draft: CatalogDraft, photos: import("./list-products.types").CatalogPhoto[]) => void;
@@ -35,13 +36,14 @@ type ListProductsEditorSheetProps = {
 
 /**
  * Right-hand drawer for both flows. Editing is one scrolling form; creating is a
- * three-step wizard, so the shell only owns the Sheet and the mode dispatch.
+ * wizard (with reference photos for managers), so the shell only owns the Sheet and the mode dispatch.
  * Each body is keyed by the editor session so opening another record never
  * inherits stale fields.
  */
 export function ListProductsEditorSheet({
   editor,
   existingSkus,
+  canManageReferenceImages,
   onClose,
   onUpdate,
   onCreate,
@@ -64,6 +66,7 @@ export function ListProductsEditorSheet({
             <ListProductsCreateWizard
               key={editor.session}
               existingSkus={existingSkus}
+              canManageReferenceImages={canManageReferenceImages}
               pending={pending}
               onCreate={onCreate}
             />

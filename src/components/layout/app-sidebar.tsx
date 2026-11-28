@@ -21,6 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Brand } from "./brand";
 import { accountPages, visibleStorePages } from "./navigation";
 import { PageGuide } from "./page-guide";
+import { defaultHomePath } from "@/modules/auth/permissions";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { ConfirmActionDialog } from "@/components/confirm-action-dialog";
 import { GlobalSearchDialog } from "./global-search";
@@ -58,7 +59,7 @@ export function AppSidebar({
     <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
       <Sidebar className="border-r border-sidebar-border">
         <SidebarHeader className="px-6 py-7">
-          <Brand />
+          <Brand href={defaultHomePath(role)} />
         </SidebarHeader>
         <SidebarContent className="px-3">
           <SidebarGroup>
