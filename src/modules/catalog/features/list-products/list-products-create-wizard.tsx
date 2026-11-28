@@ -25,28 +25,31 @@ import { useReferencePhotos } from "./use-reference-photos";
 type ListProductsCreateWizardProps = {
   /** SKUs already in the catalog; the API enforces `@unique` on the column. */
   existingSkus: readonly string[];
+  canManageReferenceImages: boolean;
   onCreate: (draft: CatalogDraft, photos: CatalogPhoto[]) => void;
   pending?: boolean;
 };
 
 /**
- * Three-step onboarding for a new SKU: metadata, staged reference photos, and a
- * review that spells out what indexing will do. Steps one and two must pass the
- * same checks the API applies (`sku` required and unique), so a reviewer cannot
- * reach the create action with a draft that would be rejected.
+ * Onboarding wizard for a new SKU: metadata, optional reference photos (for managers),
+ * and a review step. Metadata checks match the API (`sku` required and unique).
  */
 export function ListProductsCreateWizard({
   existingSkus,
+  canManageReferenceImages,
   onCreate,
   pending,
 }: ListProductsCreateWizardProps) {
+  const steps = canManageReferenceImages
+    ? CREATE_STEPS
+    : CREATE_STEPS.filter((item) => item.key !== "photos");
   const [stepIndex, setStepIndex] = useState(0);
   const [draft, setDraft] = useState<CatalogDraft>(() => ({ ...EMPTY_DRAFT, sku: generateSku() }));
   const [errors, setErrors] = useState<CatalogDraftErrors>({});
   const { photos, rejections, addFiles, removePhoto, isFull } = useReferencePhotos();
 
-  const step = CREATE_STEPS[stepIndex];
-  const isLastStep = stepIndex === CREATE_STEPS.length - 1;
+  const step = steps[stepIndex];
+  const isLastStep = stepIndex === steps.length - 1;
 
   function update<K extends keyof CatalogDraft>(key: K, value: CatalogDraft[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -75,7 +78,7 @@ export function ListProductsCreateWizard({
 
   function advance() {
     if (stepIndex === 0 && !validate()) return;
-    setStepIndex((current) => Math.min(current + 1, CREATE_STEPS.length - 1));
+    setStepIndex((current) => Math.min(current + 1, steps.length - 1));
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -91,7 +94,7 @@ export function ListProductsCreateWizard({
       return;
     }
 
-    onCreate(draft, photos);
+    onCreate(draft, canManageReferenceImages ? photos : []);
   }
 
   return (
@@ -100,9 +103,13 @@ export function ListProductsCreateWizard({
         eyebrow={<SheetEyebrow>New product</SheetEyebrow>}
 
         title="Add product"
-        description="Add product details, choose photos, and check before saving."
+        description={
+          canManageReferenceImages
+            ? "Add product details, choose photos, and check before saving."
+            : "Add product details and check before saving."
+        }
       >
-        <ListProductsStepper current={stepIndex} onSelect={setStepIndex} />
+        <ListProductsStepper steps={steps} current={stepIndex} onSelect={setStepIndex} />
       </SheetPanelHeader>
 
       <SheetPanelBody resetKey={step.key}>
@@ -115,7 +122,7 @@ export function ListProductsCreateWizard({
           />
         ) : null}
 
-        {step.key === "photos" ? (
+        {step.key === "photos" && canManageReferenceImages ? (
           <CreatePhotosStep
             photos={photos}
             rejections={rejections}
@@ -128,6 +135,8 @@ export function ListProductsCreateWizard({
         {step.key === "review" ? (
           <CreateReviewStep
             draft={draft}
+            stepNumber={steps.length}
+            canManageReferenceImages={canManageReferenceImages}
             photoCount={photos.length}
             onEdit={() => setStepIndex(0)}
           />

@@ -1,12 +1,22 @@
-import type { Request, Response, NextFunction } from "express";
+import type { Response, NextFunction } from "express";
 import { SignJWT, jwtVerify } from "jose";
 import { createHash } from "node:crypto";
 import { db } from "./db.js";
 import { config } from "./config.js";
+import type { AuthenticatedRequest, Viewer } from "./rbac.js";
 
-export type Role = "ADMIN" | "STAFF" | "PUBLIC";
-export type Viewer = { id: string; email: string; role: Role };
-export type AuthenticatedRequest = Request & { viewer?: Viewer };
+export {
+  PERMISSION_MIN_ROLE,
+  hasMinRole,
+  hasPermission,
+  requireMinRole,
+  requirePermission,
+  type AuthenticatedRequest,
+  type Permission,
+  type Role,
+  type Viewer,
+} from "./rbac.js";
+
 const secret = new TextEncoder().encode(config.JWT_SECRET);
 
 const credentialStamp = (passwordHash: string) =>
@@ -48,14 +58,4 @@ export async function authenticate(req: AuthenticatedRequest, res: Response, nex
   } catch {
     res.status(401).json({ error: "Invalid or expired token" });
   }
-}
-
-export function requireRole(...roles: Role[]) {
-  return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    if (!req.viewer || !roles.includes(req.viewer.role)) {
-      res.status(403).json({ error: "Insufficient permissions" });
-      return;
-    }
-    next();
-  };
 }

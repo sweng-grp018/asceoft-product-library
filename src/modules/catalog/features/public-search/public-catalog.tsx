@@ -22,6 +22,7 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ImageSearchForm } from "@/modules/search/features/image-search/image-search-form";
+import { defaultHomePath } from "@/modules/auth/permissions";
 import type { CatalogRow } from "../list-products/list-products.types";
 
 export function PublicCatalog({
@@ -52,7 +53,13 @@ export function PublicCatalog({
           <Brand href="/search" />
           <Button asChild variant="outline" size="xl">
             <Link
-              href={account ? (account.role === "PUBLIC" ? "/account" : "/dashboard") : "/sign-in"}
+              href={
+                account
+                  ? account.role === "PUBLIC"
+                    ? "/account"
+                    : defaultHomePath(account.role)
+                  : "/sign-in"
+              }
             >
               {account ? (account.role === "PUBLIC" ? "Profile" : "My store") : "Sign in"}
               <ArrowRight data-icon="inline-end" />

@@ -7,15 +7,26 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { hasMinRole, type Role } from "@/modules/auth/permissions";
 
 export const appPurpose =
   "Lensistry keeps a grocery store’s product details and photos together, so the team can find the right item and pack size without searching through separate lists.";
 
-export const storePages = [
+export type StorePage = {
+  label: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  minRole: Role;
+  purpose: string;
+  example: string;
+};
+
+export const storePages: StorePage[] = [
   {
     label: "Overview",
     href: "/dashboard",
     icon: LayoutDashboard,
+    minRole: "ADMIN",
     purpose: "See product totals and recently added items.",
     example: "I check how many groceries are saved before adding a new delivery.",
   },
@@ -23,7 +34,8 @@ export const storePages = [
     label: "Products",
     href: "/products",
     icon: Package,
-    purpose: "Find products. Store managers can add, edit, or remove them.",
+    minRole: "STAFF",
+    purpose: "Find and add products. Store managers can also edit or remove them.",
     example:
       "I add Isla Pantry Banana Ketchup 320 g with its brand and product code so staff can find the right pack.",
   },
@@ -31,6 +43,7 @@ export const storePages = [
     label: "Find from a photo",
     href: "/detection",
     icon: ScanSearch,
+    minRole: "STAFF",
     purpose: "Find a product from a pack photo or look for products in a saved shelf photo.",
     example: "I upload a photo of an unfamiliar pack to look for matches in the catalog.",
   },
@@ -38,6 +51,7 @@ export const storePages = [
     label: "Photos",
     href: "/repository",
     icon: Images,
+    minRole: "STAFF",
     purpose: "Save shelf photos and see which product photos are ready for search.",
     example: "I save a shelf photo, then check whether the sardines have a prepared product photo.",
   },
@@ -45,7 +59,7 @@ export const storePages = [
     label: "Staff",
     href: "/users",
     icon: Users,
-    managerOnly: true,
+    minRole: "ADMIN",
     purpose: "Let a store manager add staff accounts or reset staff passwords.",
     example:
       "I create an account for a colleague so they can save shelf photos with their own sign-in.",
@@ -70,7 +84,5 @@ export const accountPages = [
 ];
 
 export function visibleStorePages(role: string) {
-  return storePages.filter(
-    (page) => !("managerOnly" in page && page.managerOnly) || role === "ADMIN",
-  );
+  return storePages.filter((page) => hasMinRole(role, page.minRole));
 }
