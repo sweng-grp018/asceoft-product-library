@@ -148,11 +148,30 @@ catalogRoutes.get("/", async (req, res) => {
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { images: { select: { id: true, isPrimary: true } } },
+      include: {
+        images: {
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: { id: true, isPrimary: true, objectKey: true },
+        },
+      },
     }),
     db.product.count({ where }),
   ]);
-  res.json({ products, total, page, pageSize });
+  res.json({
+    products: await Promise.all(
+      products.map(async (product) => {
+        const key = product.images[0]?.objectKey;
+        return {
+          ...product,
+          images: product.images.map(({ objectKey: _objectKey, ...image }) => image),
+          imageUrl: key ? await viewUrl(key).catch(() => null) : null,
+        };
+      }),
+    ),
+    total,
+    page,
+    pageSize,
+  });
 });
 
 catalogRoutes.get("/:id", async (req, res) => {

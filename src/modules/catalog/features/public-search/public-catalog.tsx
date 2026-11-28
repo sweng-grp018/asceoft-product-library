@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { useContext, useState } from "react";
 import { ArrowRight, Package, Search, X } from "lucide-react";
 import { Brand } from "@/components/layout/brand";
@@ -27,11 +28,31 @@ import type { CatalogRow } from "../list-products/list-products.types";
 import { BrowseSearchSessionContext } from "./browse-search-session";
 import { PageLoading } from "@/components/layout/page-loading";
 
+function CatalogThumbnail({ url, name }: { url: string | null; name: string }) {
+  const [failedUrl, setFailedUrl] = useState<string | null>(null);
+  return (
+    <div className="relative mb-4 flex h-28 items-center justify-center overflow-hidden rounded-xl bg-brand-tint">
+      {url && failedUrl !== url ? (
+        <Image
+          src={url}
+          alt={name}
+          fill
+          unoptimized
+          className="object-contain p-3"
+          onError={() => setFailedUrl(url)}
+        />
+      ) : (
+        <Package className="size-12 text-brand/35" strokeWidth={1.2} aria-hidden />
+      )}
+    </div>
+  );
+}
+
 type PublicCatalogProps = {
   initialQuery: string;
   initialMode: "name" | "image";
   imageSearchEnabled: boolean;
-  rows: CatalogRow[];
+  rows: (CatalogRow & { imageUrl: string | null })[];
   total: number;
   page: number;
   pageSize: number;
@@ -153,9 +174,7 @@ function CatalogContent({
                   className="gap-4 border-line transition-shadow hover:shadow-md"
                 >
                   <CardHeader>
-                    <div className="mb-4 flex h-28 items-center justify-center rounded-xl bg-brand-tint">
-                      <Package className="size-12 text-brand/35" strokeWidth={1.2} aria-hidden />
-                    </div>
+                    <CatalogThumbnail url={product.imageUrl} name={product.name} />
                     <CardDescription>
                       {product.brand} · {product.category}
                     </CardDescription>

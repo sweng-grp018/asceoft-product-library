@@ -29,7 +29,10 @@ async function Results({
         key={`${q}:${page}:${params.mode ?? ""}`}
         initialMode={params.mode === "image" ? "image" : "name"}
         imageSearchEnabled={imageSearch.enabled}
-        rows={result.products.map(catalogRow)}
+        rows={result.products.map((product) => ({
+          ...catalogRow(product),
+          imageUrl: product.imageUrl ?? null,
+        }))}
         total={result.total}
         page={result.page}
         pageSize={result.pageSize}
