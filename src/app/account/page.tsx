@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { currentAccount } from "@/modules/auth/server/viewer";
+import { defaultHomePath } from "@/modules/auth/server/permissions";
 import { AccountDetails } from "@/modules/auth/components/account-details";
 import { Brand } from "@/components/layout/brand";
 import { Button } from "@/components/ui/button";
@@ -26,10 +27,7 @@ export default async function Account() {
           action={logout}
         />
       </div>
-      <Link
-        href={account.role === "PUBLIC" ? "/search" : "/dashboard"}
-        className="text-sm text-brand hover:underline"
-      >
+      <Link href={defaultHomePath(account.role)} className="text-sm text-brand hover:underline">
         Back to {account.role === "PUBLIC" ? "products" : "your store"}
       </Link>
       <AccountDetails account={account} />

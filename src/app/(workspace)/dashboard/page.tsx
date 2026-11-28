@@ -6,7 +6,7 @@ import { PageHeading } from "@/components/layout/page-heading";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api, type Product } from "@/lib/api";
-import { currentAccount } from "@/modules/auth/server/viewer";
+import { can, requirePermission } from "@/modules/auth/server/permissions";
 import { catalogRow } from "@/modules/catalog/server/products";
 import { DashboardView } from "@/modules/catalog/features/dashboard/dashboard";
 export const metadata: Metadata = { title: "Overview" };
@@ -49,8 +49,7 @@ export default function Dashboard() {
 }
 
 async function DashboardData() {
-  const account = await currentAccount();
-  if (!account || account.role === "PUBLIC") return null;
+  const account = await requirePermission("dashboard:view");
 
   const summary = await api<{ total: number; ready: number; recent: Product[] }>(
     "/products/summary",
@@ -61,7 +60,7 @@ async function DashboardData() {
       total={summary.total}
       ready={summary.ready}
       name={account.name}
-      canEdit={account.role === "ADMIN"}
+      canCreate={can(account.role, "products:create")}
     />
   );
 }

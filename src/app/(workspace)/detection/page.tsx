@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { api } from "@/lib/api";
 import { allProducts } from "@/modules/catalog/server/products";
 import { currentAccount } from "@/modules/auth/server/viewer";
+import { can } from "@/modules/auth/server/permissions";
 import { PageHeading } from "@/components/layout/page-heading";
 import { PageLoading } from "@/components/layout/page-loading";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -67,6 +68,7 @@ async function ShelfAnalysis() {
               label: formatShelfPhotoDate(createdAt),
             }))}
             products={products.map(({ id, name, sku }) => ({ id, name, sku }))}
+            canCorrectMatches={can(account.role, "matches:correct")}
           />
         ) : (
           <Button asChild variant="outline">

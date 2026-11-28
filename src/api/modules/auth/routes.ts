@@ -6,7 +6,7 @@ import { db } from "../../lib/db.js";
 import {
   issueToken,
   authenticate,
-  requireRole,
+  requirePermission,
   type AuthenticatedRequest,
 } from "../../lib/auth.js";
 import { profileInput, registrationInput, passwordInput } from "./input.js";
@@ -84,7 +84,7 @@ authRoutes.post(
   },
 );
 
-authRoutes.get("/users", authenticate, requireRole("ADMIN"), async (_req, res) => {
+authRoutes.get("/users", authenticate, requirePermission("users:manage"), async (_req, res) => {
   const users = await db.user.findMany({
     where: { role: { in: ["ADMIN", "STAFF"] } },
     select: { id: true, name: true, email: true, role: true },
@@ -94,26 +94,31 @@ authRoutes.get("/users", authenticate, requireRole("ADMIN"), async (_req, res) =
   res.json({ users });
 });
 
-authRoutes.patch("/users/:id/password", authenticate, requireRole("ADMIN"), async (req, res) => {
-  const input = passwordInput.safeParse(req.body);
-  const id = z.uuid().safeParse(req.params.id);
-  if (!input.success || !id.success) {
-    res.status(400).json({
-      error: input.success ? "Choose a staff member." : input.error.issues[0].message,
+authRoutes.patch(
+  "/users/:id/password",
+  authenticate,
+  requirePermission("users:manage"),
+  async (req, res) => {
+    const input = passwordInput.safeParse(req.body);
+    const id = z.uuid().safeParse(req.params.id);
+    if (!input.success || !id.success) {
+      res.status(400).json({
+        error: input.success ? "Choose a staff member." : input.error.issues[0].message,
+      });
+      return;
+    }
+    const user = await db.user.findUnique({ where: { id: id.data }, select: { role: true } });
+    if (!user || user.role === "PUBLIC") {
+      res.status(404).json({ error: "Staff member not found." });
+      return;
+    }
+    await db.user.update({
+      where: { id: id.data },
+      data: { passwordHash: await hash(input.data.password, 12) },
     });
-    return;
-  }
-  const user = await db.user.findUnique({ where: { id: id.data }, select: { role: true } });
-  if (!user || user.role === "PUBLIC") {
-    res.status(404).json({ error: "Staff member not found." });
-    return;
-  }
-  await db.user.update({
-    where: { id: id.data },
-    data: { passwordHash: await hash(input.data.password, 12) },
-  });
-  res.status(204).end();
-});
+    res.status(204).end();
+  },
+);
 
 const newUser = z.object({
   email: z.email(),
@@ -121,7 +126,7 @@ const newUser = z.object({
   name: z.string().trim().min(2).max(100),
   role: z.enum(["ADMIN", "STAFF"]),
 });
-authRoutes.post("/users", authenticate, requireRole("ADMIN"), async (req, res) => {
+authRoutes.post("/users", authenticate, requirePermission("users:manage"), async (req, res) => {
   const parsed = newUser.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({

@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import { redirect, notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { api, type Product } from "@/lib/api";
-import { currentAccount } from "@/modules/auth/server/viewer";
+import { requirePermission } from "@/modules/auth/server/permissions";
 import { ProductForm } from "@/modules/catalog/components/product-form";
 import { PageLoading } from "@/components/layout/page-loading";
 async function Edit({ params }: { params: Promise<{ productId: string }> }) {
-  if ((await currentAccount())?.role !== "ADMIN") redirect("/products");
+  await requirePermission("products:edit", "/products");
   const { productId } = await params;
   try {
     const { product } = await api<{ product: Product }>(

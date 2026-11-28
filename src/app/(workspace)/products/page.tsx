@@ -1,5 +1,6 @@
 import { ListProducts } from "@/modules/catalog/features/list-products/list-products";
 import { currentAccount } from "@/modules/auth/server/viewer";
+import { can } from "@/modules/auth/server/permissions";
 import { productPage, catalogRow } from "@/modules/catalog/server/products";
 
 export const metadata: Metadata = { title: "Products" };
@@ -36,7 +37,9 @@ async function ProductList({ searchParams }: Props) {
       page={result.page}
       pageSize={result.pageSize}
       initialQuery={q}
-      canEdit={account?.role === "ADMIN"}
+      canCreate={can(account?.role, "products:create")}
+      canEdit={can(account?.role, "products:edit")}
+      canManageReferenceImages={can(account?.role, "reference-images:manage")}
     />
   );
 }

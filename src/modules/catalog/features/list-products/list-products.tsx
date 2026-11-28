@@ -18,14 +18,18 @@ import { uploadPhoto } from "@/modules/repository/features/photo-upload/upload-p
 import type { CatalogPhoto } from "./list-products.types";
 
 export function ListProducts({
+  canCreate,
   canEdit,
+  canManageReferenceImages,
   initialRows,
   total,
   page,
   pageSize,
   initialQuery,
 }: {
+  canCreate: boolean;
   canEdit: boolean;
+  canManageReferenceImages: boolean;
   initialRows: CatalogRow[];
   total: number;
   page: number;
@@ -126,7 +130,7 @@ export function ListProducts({
         title="Products"
         description="Keep your store’s grocery products easy to find."
         action={
-          canEdit && (
+          canCreate && (
             <Button type="button" variant="brand" size="xl" onClick={openCreate}>
               <PlusIcon data-icon="inline-start" />
               Add product
@@ -183,6 +187,7 @@ export function ListProducts({
         pending={pending}
         editor={editor}
         existingSkus={existingSkus}
+        canManageReferenceImages={canManageReferenceImages}
         onClose={closeEditor}
         onUpdate={updateProduct}
         onCreate={createProduct}

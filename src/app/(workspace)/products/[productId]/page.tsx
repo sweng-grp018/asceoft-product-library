@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { api, type Product } from "@/lib/api";
 import { currentAccount } from "@/modules/auth/server/viewer";
+import { can } from "@/modules/auth/server/permissions";
 import { ProductDetailsView } from "@/modules/catalog/components/product-details";
 import { PageLoading } from "@/components/layout/page-loading";
 async function Details({ params }: { params: Promise<{ productId: string }> }) {
@@ -22,8 +23,9 @@ async function Details({ params }: { params: Promise<{ productId: string }> }) {
       <ProductDetailsView
         product={result.product}
         photos={photoResult.images}
-        canEdit={account?.role === "ADMIN"}
-        canPrepare={result.serverInferenceEnabled}
+        canEdit={can(account?.role, "products:edit")}
+        canManageReferenceImages={can(account?.role, "reference-images:manage")}
+        canPrepare={result.serverInferenceEnabled && can(account?.role, "indexing:run")}
       />
     );
   } catch (error) {

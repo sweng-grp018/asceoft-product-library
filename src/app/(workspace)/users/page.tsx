@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
 import { api } from "@/lib/api";
-import { currentAccount, type Account } from "@/modules/auth/server/viewer";
+import { type Account } from "@/modules/auth/server/viewer";
+import { requirePermission } from "@/modules/auth/server/permissions";
 import { createStaffUser, resetStaffPassword } from "@/modules/auth/features/manage-users/actions";
 import { PasswordInput } from "@/modules/auth/components/password-input";
 import { PageHeading } from "@/components/layout/page-heading";
@@ -41,7 +41,7 @@ export default function Staff() {
 }
 
 async function StaffContent() {
-  if ((await currentAccount())?.role !== "ADMIN") redirect("/dashboard");
+  await requirePermission("users:manage");
   const { users } = await api<{ users: Account[] }>("/auth/users");
   return (
     <div className="grid items-start gap-6 xl:grid-cols-[1fr_350px]">
